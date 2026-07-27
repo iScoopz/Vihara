@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --bg-main: #f8fafc;
+    --bg-card: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+  }
+
+  .dark {
+    --bg-main: #0b0717;
+    --bg-card: #160e29;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --border-color: #2c1a4d;
+  }
+
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+}
+
+/* Custom MNSBDI Royal Purple Gradients & Classes */
+.gradient-mnsbdi {
+  background: linear-gradient(135deg, #6d28d9 0%, #7c3aed 50%, #d97706 100%);
+}
+
+.gradient-purple {
+  background: linear-gradient(135deg, #4c1d95 0%, #6d28d9 100%);
+}
+
+.gradient-gold {
+  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+}
+
+/* ----------------------------------------------------
+   BULLETPROOF NEXT.JS PRINT CSS FOR A4 PDF EXPORT
+   ---------------------------------------------------- */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm;
+  }
+
+  /* Hide navigation, sidebars, buttons, and screen headers */
+  nav, header, aside, button, .print\:hidden {
+    display: none !important;
+  }
+
+  /* Make document container flow naturally for print */
+  #printable-pdf-document-wrapper {
+    position: static !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    display: block !important;
+    visibility: visible !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
+  #printable-pdf-document-wrapper > div {
+    position: static !important;
+    height: auto !important;
+    max-height: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #printable-pdf-document, #printable-pdf-document * {
+    visibility: visible !important;
+  }
+
+  #printable-pdf-document {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+  }
+
+  /* Page break rules */
+  .print-avoid-break, tr, .signature-block {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  /* Ensure colors and borders print sharply */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
