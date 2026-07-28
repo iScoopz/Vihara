@@ -75,11 +75,22 @@ export default function CreateNewEventPage() {
       vip_list: vipList
     };
 
+    const parsedDate = eventDate ? new Date(eventDate) : new Date();
+    const validEventDate = isNaN(parsedDate.getTime()) ? new Date().toISOString() : parsedDate.toISOString();
+
+    let validEndDate: string | undefined = undefined;
+    if (endDate) {
+      const parsedEnd = new Date(endDate);
+      if (!isNaN(parsedEnd.getTime())) {
+        validEndDate = parsedEnd.toISOString();
+      }
+    }
+
     await createEvent({
       title,
       description,
-      event_date: new Date(eventDate).toISOString(),
-      end_date: endDate ? new Date(endDate).toISOString() : undefined,
+      event_date: validEventDate,
+      end_date: validEndDate,
       location,
       category,
       is_complex: isComplex,
