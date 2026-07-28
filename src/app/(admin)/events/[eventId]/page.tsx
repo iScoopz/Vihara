@@ -19,6 +19,7 @@ import {
   Trash2,
   FileSpreadsheet,
   Printer,
+  Edit2,
   X
 } from 'lucide-react';
 import { 
@@ -29,6 +30,7 @@ import {
   addBudgetItem, 
   getProfiles,
   addSubSectionToOrg,
+  updateSubSectionInOrg,
   deleteSubSectionFromOrg
 } from '@/lib/actions/vihara-actions';
 import { ViharaEvent, Profile, EventRegistration } from '@/types/database';
@@ -64,6 +66,13 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
   const [subSectionType, setSubSectionType] = useState<'sub_acara' | 'sub_umum'>('sub_acara');
   const [subRoleName, setSubRoleName] = useState('');
   const [subPicName, setSubPicName] = useState('');
+
+  // Edit Sub-Section Form State
+  const [isEditSubModalOpen, setIsEditSubModalOpen] = useState(false);
+  const [editSubId, setEditSubId] = useState('');
+  const [editSubType, setEditSubType] = useState<'sub_acara' | 'sub_umum'>('sub_acara');
+  const [editSubRoleName, setEditSubRoleName] = useState('');
+  const [editSubPicName, setEditSubPicName] = useState('');
 
   const loadData = async () => {
     const ev = await getEventById(eventId);
@@ -122,6 +131,21 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
 
   const handleDeleteSubSection = async (type: 'sub_acara' | 'sub_umum', subId: string) => {
     await deleteSubSectionFromOrg(event.id, type, subId);
+    loadData();
+  };
+
+  const openEditSubModal = (type: 'sub_acara' | 'sub_umum', sub: { id: string; role_name: string; pic_name: string }) => {
+    setEditSubType(type);
+    setEditSubId(sub.id);
+    setEditSubRoleName(sub.role_name);
+    setEditSubPicName(sub.pic_name);
+    setIsEditSubModalOpen(true);
+  };
+
+  const handleUpdateSubSection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await updateSubSectionInOrg(event.id, editSubType, editSubId, editSubRoleName, editSubPicName);
+    setIsEditSubModalOpen(false);
     loadData();
   };
 
@@ -407,13 +431,22 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                     <div key={sub.id} className="p-4 rounded-xl bg-purple-50/70 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800 space-y-1 relative group">
                       <div className="flex justify-between items-start">
                         <span className="text-xs font-black text-purple-950 dark:text-purple-100 block pr-4">{sub.role_name}</span>
-                        <button
-                          onClick={() => handleDeleteSubSection('sub_acara', sub.id)}
-                          className="text-slate-400 hover:text-rose-500 transition cursor-pointer"
-                          title="Hapus Sub-Bagian Ini"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => openEditSubModal('sub_acara', sub)}
+                            className="text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950 p-1 rounded transition cursor-pointer"
+                            title="Edit PJ & Sub-Bagian Ini"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSubSection('sub_acara', sub.id)}
+                            className="text-slate-400 hover:text-rose-500 p-1 rounded transition cursor-pointer"
+                            title="Hapus Sub-Bagian Ini"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </div>
                       <p className="text-xs text-purple-700 dark:text-purple-300 font-bold">PJ: <strong className="text-slate-900 dark:text-white">{sub.pic_name}</strong></p>
                     </div>
@@ -451,13 +484,22 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                     <div key={sub.id} className="p-4 rounded-xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 space-y-1 relative group">
                       <div className="flex justify-between items-start">
                         <span className="text-xs font-black text-slate-900 dark:text-white block pr-4">{sub.role_name}</span>
-                        <button
-                          onClick={() => handleDeleteSubSection('sub_umum', sub.id)}
-                          className="text-slate-400 hover:text-rose-500 transition cursor-pointer"
-                          title="Hapus Sub-Bagian Ini"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => openEditSubModal('sub_umum', sub)}
+                            className="text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950 p-1 rounded transition cursor-pointer"
+                            title="Edit PJ & Sub-Bagian Ini"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSubSection('sub_umum', sub.id)}
+                            className="text-slate-400 hover:text-rose-500 p-1 rounded transition cursor-pointer"
+                            title="Hapus Sub-Bagian Ini"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </div>
                       <p className="text-xs text-amber-800 dark:text-amber-300 font-bold">PJ: <strong className="text-slate-900 dark:text-white">{sub.pic_name}</strong></p>
                     </div>
@@ -948,6 +990,47 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
               <div className="flex justify-end gap-3 pt-3 border-t border-purple-100 dark:border-purple-900/60">
                 <button type="button" onClick={() => setIsAddSubModalOpen(false)} className="px-4 py-2 rounded-xl font-bold text-slate-500 cursor-pointer">Batal</button>
                 <button type="submit" className="gradient-mnsbdi text-white font-extrabold px-4 py-2 rounded-xl text-xs shadow-md cursor-pointer">Simpan Sub-Bagian</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Edit Sub-Section */}
+      {isEditSubModalOpen && (
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:hidden">
+          <div className="bg-white dark:bg-[#160e29] border border-purple-200 dark:border-purple-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <h3 className="text-lg font-extrabold text-slate-900 dark:text-white border-b border-purple-100 dark:border-purple-900/60 pb-3 flex items-center gap-2">
+              <Edit2 size={18} className="text-amber-500" />
+              <span>Edit Sub-Bagian & Penanggung Jawab</span>
+            </h3>
+            
+            <form onSubmit={handleUpdateSubSection} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Nama Seksi / Sub-Bagian</label>
+                <input
+                  type="text"
+                  required
+                  value={editSubRoleName}
+                  onChange={(e) => setEditSubRoleName(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Penanggung Jawab (PJ Sub-Bagian)</label>
+                <input
+                  type="text"
+                  required
+                  value={editSubPicName}
+                  onChange={(e) => setEditSubPicName(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-extrabold text-purple-950 dark:text-purple-200"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-purple-100 dark:border-purple-900/60">
+                <button type="button" onClick={() => setIsEditSubModalOpen(false)} className="px-4 py-2 rounded-xl font-bold text-slate-500 cursor-pointer">Batal</button>
+                <button type="submit" className="gradient-mnsbdi text-white font-extrabold px-4 py-2 rounded-xl text-xs shadow-md cursor-pointer">Simpan Perubahan</button>
               </div>
             </form>
           </div>

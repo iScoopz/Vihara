@@ -359,6 +359,30 @@ export async function addSubSectionToOrg(eventId: string, sectionType: 'sub_acar
   return { success: true, subSection: newSub };
 }
 
+export async function updateSubSectionInOrg(
+  eventId: string,
+  sectionType: 'sub_acara' | 'sub_umum',
+  subId: string,
+  roleName: string,
+  picName: string
+) {
+  const ev = eventsStore.find(e => e.id === eventId);
+  if (!ev || !ev.org_structure) return { error: 'Event tidak ditemukan' };
+
+  const org = ev.org_structure;
+  const list = sectionType === 'sub_acara' ? org.sub_acara : org.sub_umum;
+  if (list) {
+    const item = list.find(s => s.id === subId);
+    if (item) {
+      item.role_name = roleName;
+      item.pic_name = picName;
+    }
+  }
+
+  revalidatePath(`/events/${eventId}`);
+  return { success: true };
+}
+
 export async function deleteSubSectionFromOrg(eventId: string, sectionType: 'sub_acara' | 'sub_umum', subId: string) {
   const ev = eventsStore.find(e => e.id === eventId);
   if (!ev || !ev.org_structure) return { error: 'Event tidak ditemukan' };
