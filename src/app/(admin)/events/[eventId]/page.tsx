@@ -60,16 +60,19 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
   // Proposal Rundown Modal State
   const [isProposalRundownModalOpen, setIsProposalRundownModalOpen] = useState(false);
   const [editingProposalRundown, setEditingProposalRundown] = useState<EventProposalRundown | null>(null);
-  const [prDayDate, setPrDayDate] = useState('');
-  const [prTimeSlot, setPrTimeSlot] = useState('');
+  const [prDate, setPrDate] = useState('');
+  const [prStartTime, setPrStartTime] = useState('08:00');
+  const [prEndTime, setPrEndTime] = useState('09:30');
   const [prActivity, setPrActivity] = useState('');
   const [prNotes, setPrNotes] = useState('');
 
   // Skenario Kerja (SK) Modal State
   const [isSkenarioKerjaModalOpen, setIsSkenarioKerjaModalOpen] = useState(false);
   const [editingSkenarioKerja, setEditingSkenarioKerja] = useState<EventSkenarioKerja | null>(null);
-  const [skDayPhase, setSkDayPhase] = useState('');
-  const [skTimeSlot, setSkTimeSlot] = useState('');
+  const [skPhaseTag, setSkPhaseTag] = useState('H-1');
+  const [skDate, setSkDate] = useState('');
+  const [skStartTime, setSkStartTime] = useState('14:00');
+  const [skEndTime, setSkEndTime] = useState('17:00');
   const [skExecutorBidangPj, setSkExecutorBidangPj] = useState('');
   const [skActivity, setSkActivity] = useState('');
   const [skInterbidBidangPj, setSkInterbidBidangPj] = useState('');
@@ -192,16 +195,20 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
 
   // Proposal Rundown Handlers
   const openProposalRundownModal = (item?: EventProposalRundown) => {
+    const defaultDateStr = event.event_date ? event.event_date.split('T')[0] : new Date().toISOString().split('T')[0];
     if (item) {
       setEditingProposalRundown(item);
-      setPrDayDate(item.day_date);
-      setPrTimeSlot(item.time_slot);
+      setPrDate(defaultDateStr);
+      const times = item.time_slot.split(' - ');
+      setPrStartTime(times[0] || '08:00');
+      setPrEndTime(times[1] || '09:30');
       setPrActivity(item.activity);
       setPrNotes(item.notes || '');
     } else {
       setEditingProposalRundown(null);
-      setPrDayDate('Sabtu, 1 Agustus 2026');
-      setPrTimeSlot('08:00 - 09:00');
+      setPrDate(defaultDateStr);
+      setPrStartTime('08:00');
+      setPrEndTime('09:30');
       setPrActivity('');
       setPrNotes('');
     }
@@ -210,17 +217,22 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
 
   const handleSaveProposalRundown = async (e: React.FormEvent) => {
     e.preventDefault();
+    const formattedDate = prDate 
+      ? new Date(prDate).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+      : 'Hari Pelaksanaan';
+    const formattedTime = `${prStartTime} - ${prEndTime}`;
+
     if (editingProposalRundown) {
       await updateProposalRundown(event.id, editingProposalRundown.id, {
-        day_date: prDayDate,
-        time_slot: prTimeSlot,
+        day_date: formattedDate,
+        time_slot: formattedTime,
         activity: prActivity,
         notes: prNotes
       });
     } else {
       await addProposalRundown(event.id, {
-        day_date: prDayDate,
-        time_slot: prTimeSlot,
+        day_date: formattedDate,
+        time_slot: formattedTime,
         activity: prActivity,
         notes: prNotes
       });
@@ -236,21 +248,30 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
 
   // Skenario Kerja Handlers
   const openSkenarioKerjaModal = (item?: EventSkenarioKerja) => {
+    const defaultDateStr = event.event_date ? event.event_date.split('T')[0] : new Date().toISOString().split('T')[0];
+    const defaultExec = org?.pj_acara_name ? `PJ Acara Utama - ${org.pj_acara_name}` : (org?.ketua_name ? `Ketua Panitia - ${org.ketua_name}` : '');
+    const defaultInter = org?.pj_umum_name ? `PJ Bidang Umum Utama - ${org.pj_umum_name}` : '';
+
     if (item) {
       setEditingSkenarioKerja(item);
-      setSkDayPhase(item.day_phase);
-      setSkTimeSlot(item.time_slot);
+      setSkPhaseTag('H-1');
+      setSkDate(defaultDateStr);
+      const times = item.time_slot.split(' - ');
+      setSkStartTime(times[0] || '14:00');
+      setSkEndTime(times[1] || '17:00');
       setSkExecutorBidangPj(item.executor_bidang_pj);
       setSkActivity(item.activity);
       setSkInterbidBidangPj(item.interbid_bidang_pj);
       setSkNotes(item.notes || '');
     } else {
       setEditingSkenarioKerja(null);
-      setSkDayPhase('H-1 (Jumat, 31 Juli 2026)');
-      setSkTimeSlot('14:00 - 16:00');
-      setSkExecutorBidangPj(event.org_structure?.pj_acara_name ? `Bidang Acara - ${event.org_structure.pj_acara_name}` : 'Bidang Acara');
+      setSkPhaseTag('H-1');
+      setSkDate(defaultDateStr);
+      setSkStartTime('14:00');
+      setSkEndTime('17:00');
+      setSkExecutorBidangPj(defaultExec);
       setSkActivity('');
-      setSkInterbidBidangPj(event.org_structure?.pj_umum_name ? `Bidang Umum - ${event.org_structure.pj_umum_name}` : 'Bidang Umum');
+      setSkInterbidBidangPj(defaultInter);
       setSkNotes('');
     }
     setIsSkenarioKerjaModalOpen(true);
@@ -258,22 +279,28 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
 
   const handleSaveSkenarioKerja = async (e: React.FormEvent) => {
     e.preventDefault();
+    const formattedDateStr = skDate 
+      ? new Date(skDate).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+      : '';
+    const formattedPhase = `${skPhaseTag} (${formattedDateStr})`;
+    const formattedTime = `${skStartTime} - ${skEndTime}`;
+
     if (editingSkenarioKerja) {
       await updateSkenarioKerja(event.id, editingSkenarioKerja.id, {
-        day_phase: skDayPhase,
-        time_slot: skTimeSlot,
-        executor_bidang_pj: skExecutorBidangPj,
+        day_phase: formattedPhase,
+        time_slot: formattedTime,
+        executor_bidang_pj: skExecutorBidangPj || (org?.pj_acara_name ? `PJ Acara Utama - ${org.pj_acara_name}` : 'Bidang Acara'),
         activity: skActivity,
-        interbid_bidang_pj: skInterbidBidangPj,
+        interbid_bidang_pj: skInterbidBidangPj || (org?.pj_umum_name ? `PJ Bidang Umum Utama - ${org.pj_umum_name}` : 'Bidang Umum'),
         notes: skNotes
       });
     } else {
       await addSkenarioKerja(event.id, {
-        day_phase: skDayPhase,
-        time_slot: skTimeSlot,
-        executor_bidang_pj: skExecutorBidangPj,
+        day_phase: formattedPhase,
+        time_slot: formattedTime,
+        executor_bidang_pj: skExecutorBidangPj || (org?.pj_acara_name ? `PJ Acara Utama - ${org.pj_acara_name}` : 'Bidang Acara'),
         activity: skActivity,
-        interbid_bidang_pj: skInterbidBidangPj,
+        interbid_bidang_pj: skInterbidBidangPj || (org?.pj_umum_name ? `PJ Bidang Umum Utama - ${org.pj_umum_name}` : 'Bidang Umum'),
         notes: skNotes
       });
     }
@@ -1062,27 +1089,38 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
 
             <form onSubmit={handleSaveProposalRundown} className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Hari / Tanggal</label>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Pilih Tanggal Agenda</label>
                 <input
-                  type="text"
+                  type="date"
                   required
-                  placeholder="misal: Sabtu, 1 Agustus 2026"
-                  value={prDayDate}
-                  onChange={(e) => setPrDayDate(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
+                  value={prDate}
+                  onChange={(e) => setPrDate(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-bold"
                 />
               </div>
 
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Waktu / Jam</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="misal: 08:00 - 09:30"
-                  value={prTimeSlot}
-                  onChange={(e) => setPrTimeSlot(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Jam Mulai</label>
+                  <input
+                    type="time"
+                    required
+                    value={prStartTime}
+                    onChange={(e) => setPrStartTime(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Jam Selesai</label>
+                  <input
+                    type="time"
+                    required
+                    value={prEndTime}
+                    onChange={(e) => setPrEndTime(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-bold"
+                  />
+                </div>
               </div>
 
               <div>
@@ -1129,36 +1167,62 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
             <form onSubmit={handleSaveSkenarioKerja} className="space-y-3 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Hari / Tanggal / Tahap</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Pilih Tahap Persiapan</label>
+                  <select
+                    value={skPhaseTag}
+                    onChange={(e) => setSkPhaseTag(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-amber-900 dark:text-amber-300 font-extrabold focus:outline-none focus:border-purple-600 cursor-pointer"
+                  >
+                    <option value="H-2">H-2 (Persiapan Awal)</option>
+                    <option value="H-1">H-1 (Persiapan Akhir)</option>
+                    <option value="Hari-H">Hari-H (Utama)</option>
+                    <option value="H+1">H+1 (Clean Up & Evaluasi)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Tanggal Pelaksanaan</label>
                   <input
-                    type="text"
+                    type="date"
                     required
-                    placeholder="misal: H-1 (Jumat, 31 Juli 2026)"
-                    value={skDayPhase}
-                    onChange={(e) => setSkDayPhase(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-bold text-amber-900 dark:text-amber-300"
+                    value={skDate}
+                    onChange={(e) => setSkDate(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Jam Mulai</label>
+                  <input
+                    type="time"
+                    required
+                    value={skStartTime}
+                    onChange={(e) => setSkStartTime(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-bold"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Waktu / Jam</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Jam Selesai</label>
                   <input
-                    type="text"
+                    type="time"
                     required
-                    placeholder="misal: 14:00 - 17:00"
-                    value={skTimeSlot}
-                    onChange={(e) => setSkTimeSlot(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
+                    value={skEndTime}
+                    onChange={(e) => setSkEndTime(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-bold"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Bidang & PJ Pelaksana</label>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Pilih Bidang & PJ Pelaksana</label>
                 <select
+                  required
                   value={skExecutorBidangPj}
                   onChange={(e) => setSkExecutorBidangPj(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-bold mb-1.5 cursor-pointer"
+                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-bold cursor-pointer"
                 >
                   <option value="">-- Pilih dari Struktur Panitia Event --</option>
                   {org?.ketua_name && <option value={`Ketua Panitia - ${org.ketua_name}`}>Ketua Panitia - {org.ketua_name}</option>}
@@ -1173,14 +1237,6 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                     <option key={s.id} value={`${s.role_name} - ${s.pic_name}`}>{s.role_name} - {s.pic_name}</option>
                   ))}
                 </select>
-                <input
-                  type="text"
-                  required
-                  placeholder="Atau ketik kustom..."
-                  value={skExecutorBidangPj}
-                  onChange={(e) => setSkExecutorBidangPj(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-bold"
-                />
               </div>
 
               <div>
@@ -1196,11 +1252,12 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Interbid (Bidang & PJ Tujuan)</label>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Pilih Interbid (Bidang & PJ Tujuan)</label>
                 <select
+                  required
                   value={skInterbidBidangPj}
                   onChange={(e) => setSkInterbidBidangPj(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-sky-900 dark:text-sky-300 focus:outline-none focus:border-purple-600 font-bold mb-1.5 cursor-pointer"
+                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-sky-900 dark:text-sky-300 focus:outline-none focus:border-purple-600 font-bold cursor-pointer"
                 >
                   <option value="">-- Pilih dari Struktur Panitia Event --</option>
                   {org?.ketua_name && <option value={`Ketua Panitia - ${org.ketua_name}`}>Ketua Panitia - {org.ketua_name}</option>}
@@ -1215,14 +1272,6 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                     <option key={s.id} value={`${s.role_name} - ${s.pic_name}`}>{s.role_name} - {s.pic_name}</option>
                   ))}
                 </select>
-                <input
-                  type="text"
-                  required
-                  placeholder="Atau ketik kustom..."
-                  value={skInterbidBidangPj}
-                  onChange={(e) => setSkInterbidBidangPj(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-bold text-sky-800 dark:text-sky-300"
-                />
               </div>
 
               <div>
