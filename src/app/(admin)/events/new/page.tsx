@@ -164,7 +164,7 @@ export default function CreateNewEventPage() {
             <div>
               <label className="block font-extrabold text-slate-700 dark:text-slate-300 mb-1">Tanggal Mulai Event</label>
               <input
-                type="datetime-local"
+                type="date"
                 required
                 value={eventDate}
                 onChange={(e) => setEventDate(e.target.value)}
@@ -175,7 +175,7 @@ export default function CreateNewEventPage() {
             <div>
               <label className="block font-extrabold text-slate-700 dark:text-slate-300 mb-1">Tanggal Selesai (Opsional)</label>
               <input
-                type="datetime-local"
+                type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
