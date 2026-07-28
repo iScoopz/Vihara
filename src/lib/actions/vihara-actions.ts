@@ -43,9 +43,10 @@ let cetyasStore = [...INITIAL_CETYAS];
 let hansStore = [...INITIAL_HANS];
 
 function isSupabaseConfigured() {
-  return (
+  return Boolean(
     process.env.NEXT_PUBLIC_SUPABASE_URL && 
-    process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co'
+    process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co' &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
 }
 
@@ -55,6 +56,13 @@ export async function getSentras(): Promise<string[]> {
 }
 
 export async function getCetyas(): Promise<CetyaProfile[]> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase.from('cetyas').select('*').order('created_at', { ascending: false });
+      if (!error && data && data.length > 0) return data;
+    } catch (e) {}
+  }
   return [...cetyasStore];
 }
 
@@ -64,27 +72,56 @@ export async function addCetya(cetya: Omit<CetyaProfile, 'id' | 'created_at'>) {
     id: `cetya_${Date.now()}`,
     created_at: new Date().toISOString()
   };
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      await supabase.from('cetyas').insert([newCetya]);
+    } catch (e) {}
+  }
+
   cetyasStore.push(newCetya);
   revalidatePath('/umat');
   return { success: true, cetya: newCetya };
 }
 
 export async function updateCetya(id: string, data: Partial<Omit<CetyaProfile, 'id' | 'created_at'>>) {
-  const index = cetyasStore.findIndex(c => c.id === id);
-  if (index === -1) return { error: 'Cetya tidak ditemukan' };
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      await supabase.from('cetyas').update(data).eq('id', id);
+    } catch (e) {}
+  }
 
-  cetyasStore[index] = { ...cetyasStore[index], ...data };
+  const index = cetyasStore.findIndex(c => c.id === id);
+  if (index !== -1) {
+    cetyasStore[index] = { ...cetyasStore[index], ...data };
+  }
   revalidatePath('/umat');
   return { success: true, cetya: cetyasStore[index] };
 }
 
 export async function deleteCetya(id: string) {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      await supabase.from('cetyas').delete().eq('id', id);
+    } catch (e) {}
+  }
+
   cetyasStore = cetyasStore.filter(c => c.id !== id);
   revalidatePath('/umat');
   return { success: true };
 }
 
 export async function getHans(): Promise<HanProfile[]> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase.from('hans').select('*').order('created_at', { ascending: false });
+      if (!error && data && data.length > 0) return data;
+    } catch (e) {}
+  }
   return [...hansStore];
 }
 
@@ -94,21 +131,43 @@ export async function addHan(han: Omit<HanProfile, 'id' | 'created_at'>) {
     id: `han_${Date.now()}`,
     created_at: new Date().toISOString()
   };
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      await supabase.from('hans').insert([newHan]);
+    } catch (e) {}
+  }
+
   hansStore.push(newHan);
   revalidatePath('/umat');
   return { success: true, han: newHan };
 }
 
 export async function updateHan(id: string, data: Partial<Omit<HanProfile, 'id' | 'created_at'>>) {
-  const index = hansStore.findIndex(h => h.id === id);
-  if (index === -1) return { error: 'HAN tidak ditemukan' };
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      await supabase.from('hans').update(data).eq('id', id);
+    } catch (e) {}
+  }
 
-  hansStore[index] = { ...hansStore[index], ...data };
+  const index = hansStore.findIndex(h => h.id === id);
+  if (index !== -1) {
+    hansStore[index] = { ...hansStore[index], ...data };
+  }
   revalidatePath('/umat');
   return { success: true, han: hansStore[index] };
 }
 
 export async function deleteHan(id: string) {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      await supabase.from('hans').delete().eq('id', id);
+    } catch (e) {}
+  }
+
   hansStore = hansStore.filter(h => h.id !== id);
   revalidatePath('/umat');
   return { success: true };
@@ -121,7 +180,7 @@ export async function getUpcomingBirthdays(targetMonth?: number): Promise<Profil
     try {
       const supabase = await createClient();
       const { data, error } = await supabase.rpc('get_birthdays_by_month', { target_month: currentMonth });
-      if (!error && data) return data;
+      if (!error && data && data.length > 0) return data;
     } catch (e) {}
   }
 
@@ -166,6 +225,13 @@ export async function registerForEvent(eventId: string, targetUmatId?: string, c
     created_at: new Date().toISOString()
   };
 
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      await supabase.from('event_registrations').insert([newReg]);
+    } catch (e) {}
+  }
+
   registrationsStore.push(newReg);
 
   revalidatePath('/events');
@@ -176,6 +242,13 @@ export async function registerForEvent(eventId: string, targetUmatId?: string, c
 }
 
 export async function getInventory(): Promise<InventoryItem[]> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase.from('inventory').select('*').order('last_updated', { ascending: false });
+      if (!error && data && data.length > 0) return data;
+    } catch (e) {}
+  }
   return [...inventoryStore];
 }
 
@@ -210,6 +283,14 @@ export async function recordInventoryPurchase(
     notes
   };
 
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      await supabase.from('inventory').update({ stock_quantity: item.stock_quantity, last_updated: item.last_updated }).eq('id', inventoryId);
+      await supabase.from('inventory_transactions').insert([transaction]);
+    } catch (e) {}
+  }
+
   transactionsStore.unshift(transaction);
 
   revalidatePath('/inventory');
@@ -217,6 +298,13 @@ export async function recordInventoryPurchase(
 }
 
 export async function getInventoryTransactions(): Promise<InventoryTransaction[]> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase.from('inventory_transactions').select('*').order('transaction_date', { ascending: false });
+      if (!error && data && data.length > 0) return data;
+    } catch (e) {}
+  }
   return [...transactionsStore];
 }
 
@@ -225,6 +313,13 @@ export async function updateStockQuantity(itemId: string, delta: number) {
   if (item) {
     item.stock_quantity = Math.max(0, item.stock_quantity + delta);
     item.last_updated = new Date().toISOString();
+
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = await createClient();
+        await supabase.from('inventory').update({ stock_quantity: item.stock_quantity, last_updated: item.last_updated }).eq('id', itemId);
+      } catch (e) {}
+    }
   }
   revalidatePath('/inventory');
   return { success: true, newQuantity: item?.stock_quantity };
@@ -236,12 +331,27 @@ export async function addInventoryItem(item: Omit<InventoryItem, 'id' | 'last_up
     id: `inv_${Date.now()}`,
     last_updated: new Date().toISOString()
   };
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      await supabase.from('inventory').insert([newItem]);
+    } catch (e) {}
+  }
+
   inventoryStore.unshift(newItem);
   revalidatePath('/inventory');
   return { success: true, item: newItem };
 }
 
 export async function getDonations(): Promise<Donation[]> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase.from('donations').select('*').order('created_at', { ascending: false });
+      if (!error && data && data.length > 0) return data;
+    } catch (e) {}
+  }
   return [...donationsStore];
 }
 
@@ -251,12 +361,27 @@ export async function addDonation(donation: Omit<Donation, 'id' | 'created_at'>)
     id: `d_${Date.now()}`,
     created_at: new Date().toISOString()
   };
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      await supabase.from('donations').insert([newDonation]);
+    } catch (e) {}
+  }
+
   donationsStore.unshift(newDonation);
   revalidatePath('/donations');
   return { success: true, donation: newDonation };
 }
 
 export async function getProfiles(): Promise<Profile[]> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+      if (!error && data && data.length > 0) return data;
+    } catch (e) {}
+  }
   return [...profilesStore];
 }
 
@@ -266,19 +391,34 @@ export async function addProfile(profile: Omit<Profile, 'id' | 'created_at'>) {
     id: `p_${Date.now()}`,
     created_at: new Date().toISOString()
   };
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      await supabase.from('profiles').insert([newProfile]);
+    } catch (e) {}
+  }
+
   profilesStore.push(newProfile);
   revalidatePath('/umat');
   return { success: true, profile: newProfile };
 }
 
 export async function updateProfile(id: string, updatedData: Partial<Omit<Profile, 'id' | 'created_at'>>) {
-  const index = profilesStore.findIndex(p => p.id === id);
-  if (index === -1) return { error: 'Data umat tidak ditemukan.' };
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      await supabase.from('profiles').update(updatedData).eq('id', id);
+    } catch (e) {}
+  }
 
-  profilesStore[index] = {
-    ...profilesStore[index],
-    ...updatedData
-  };
+  const index = profilesStore.findIndex(p => p.id === id);
+  if (index !== -1) {
+    profilesStore[index] = {
+      ...profilesStore[index],
+      ...updatedData
+    };
+  }
 
   revalidatePath('/umat');
   revalidatePath('/profil');
@@ -289,12 +429,34 @@ export async function updateProfile(id: string, updatedData: Partial<Omit<Profil
 }
 
 export async function deleteProfile(id: string) {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      await supabase.from('profiles').delete().eq('id', id);
+    } catch (e) {}
+  }
+
   profilesStore = profilesStore.filter(p => p.id !== id);
   revalidatePath('/umat');
   return { success: true };
 }
 
 export async function getEvents(): Promise<ViharaEvent[]> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase.from('events').select('*').order('event_date', { ascending: true });
+      if (!error && data && data.length > 0) {
+        return data.map(ev => ({
+          ...ev,
+          registrations_count: registrationsStore.filter(r => r.event_id === ev.id).length,
+          budgets: budgetsStore.filter(b => b.event_id === ev.id),
+          committees: committeesStore.filter(c => c.event_id === ev.id)
+        }));
+      }
+    } catch (e) {}
+  }
+
   return eventsStore.map(ev => ({
     ...ev,
     registrations_count: registrationsStore.filter(r => r.event_id === ev.id).length,
@@ -305,6 +467,21 @@ export async function getEvents(): Promise<ViharaEvent[]> {
 }
 
 export async function getEventById(id: string): Promise<ViharaEvent | null> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase.from('events').select('*').eq('id', id).single();
+      if (!error && data) {
+        return {
+          ...data,
+          registrations_count: registrationsStore.filter(r => r.event_id === id).length,
+          budgets: budgetsStore.filter(b => b.event_id === id),
+          committees: committeesStore.filter(c => c.event_id === id)
+        };
+      }
+    } catch (e) {}
+  }
+
   const ev = eventsStore.find(e => e.id === id);
   if (!ev) return null;
 
@@ -324,6 +501,14 @@ export async function createEvent(eventData: Omit<ViharaEvent, 'id' | 'created_a
     created_at: new Date().toISOString(),
     org_structure: eventData.org_structure || (eventData.is_complex ? INITIAL_ORG_STRUCTURE : undefined)
   };
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      await supabase.from('events').insert([newEvent]);
+    } catch (e) {}
+  }
+
   eventsStore.unshift(newEvent);
   revalidatePath('/events');
   revalidatePath('/kegiatan');
@@ -355,6 +540,13 @@ export async function addSubSectionToOrg(eventId: string, sectionType: 'sub_acar
     org.sub_umum.push(newSub);
   }
 
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      await supabase.from('events').update({ org_structure: org }).eq('id', eventId);
+    } catch (e) {}
+  }
+
   revalidatePath(`/events/${eventId}`);
   return { success: true, subSection: newSub };
 }
@@ -379,6 +571,13 @@ export async function updateSubSectionInOrg(
     }
   }
 
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      await supabase.from('events').update({ org_structure: org }).eq('id', eventId);
+    } catch (e) {}
+  }
+
   revalidatePath(`/events/${eventId}`);
   return { success: true };
 }
@@ -399,6 +598,13 @@ export async function deleteSubSectionFromOrg(eventId: string, sectionType: 'sub
     }
   }
 
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      await supabase.from('events').update({ org_structure: org }).eq('id', eventId);
+    } catch (e) {}
+  }
+
   revalidatePath(`/events/${eventId}`);
   return { success: true };
 }
@@ -408,12 +614,33 @@ export async function addBudgetItem(budget: Omit<EventBudget, 'id'>) {
     ...budget,
     id: `b_${Date.now()}`
   };
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      await supabase.from('event_budgets').insert([newBudget]);
+    } catch (e) {}
+  }
+
   budgetsStore.push(newBudget);
   revalidatePath('/events');
   return { success: true, budget: newBudget };
 }
 
 export async function getRegistrationsForEvent(eventId: string) {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase.from('event_registrations').select('*').eq('event_id', eventId);
+      if (!error && data && data.length > 0) {
+        return data.map(r => ({
+          ...r,
+          profile: profilesStore.find(p => p.id === r.profile_id)
+        }));
+      }
+    } catch (e) {}
+  }
+
   return registrationsStore
     .filter(r => r.event_id === eventId)
     .map(r => ({
@@ -427,6 +654,13 @@ export async function toggleAttendance(registrationId: string) {
   if (reg) {
     reg.is_attended = !reg.is_attended;
     reg.attended_at = reg.is_attended ? new Date().toISOString() : undefined;
+
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = await createClient();
+        await supabase.from('event_registrations').update({ is_attended: reg.is_attended, attended_at: reg.attended_at }).eq('id', registrationId);
+      } catch (e) {}
+    }
   }
   revalidatePath('/events');
   return { success: true, is_attended: reg?.is_attended };
