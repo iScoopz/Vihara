@@ -39,11 +39,13 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     async function loadData() {
       const currentMonth = new Date().getMonth() + 1;
-      const bdays = await getUpcomingBirthdays(currentMonth);
-      const profs = await getProfiles();
-      const evs = await getEvents();
-      const dons = await getDonations();
-      const invs = await getInventory();
+      const [bdays, profs, evs, dons, invs] = await Promise.all([
+        getUpcomingBirthdays(currentMonth),
+        getProfiles(),
+        getEvents(),
+        getDonations(),
+        getInventory()
+      ]);
 
       setBirthdays(bdays);
       setProfiles(profs);

@@ -121,17 +121,20 @@ export default function UmatDirectoryPage() {
   });
 
   const loadAllData = async () => {
-    const pList = await getProfiles();
+    const [pList, sList, cList, hList] = await Promise.all([
+      getProfiles(),
+      getSentras(),
+      getCetyas(),
+      getHans()
+    ]);
+
     setProfiles(pList);
-    const sList = await getSentras();
     setSentras(sList);
-    const cList = await getCetyas();
     setCetyas(cList);
     if (cList.length > 0) {
       setCetya(cList[0].name);
       setHanCetyaInput(cList[0].name);
     }
-    const hList = await getHans();
     setHans(hList);
     if (hList.length > 0) {
       setHan(hList[0].name);
