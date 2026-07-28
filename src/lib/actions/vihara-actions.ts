@@ -60,8 +60,14 @@ export async function getCetyas(): Promise<CetyaProfile[]> {
     try {
       const supabase = await createClient();
       const { data, error } = await supabase.from('cetyas').select('*').order('created_at', { ascending: false });
-      if (!error && data && data.length > 0) return data;
-    } catch (e) {}
+      if (error) {
+        console.error('Supabase getCetyas error:', error);
+      } else if (data && data.length > 0) {
+        return data;
+      }
+    } catch (e) {
+      console.error('getCetyas exception:', e);
+    }
   }
   return [...cetyasStore];
 }
@@ -76,8 +82,11 @@ export async function addCetya(cetya: Omit<CetyaProfile, 'id' | 'created_at'>) {
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      await supabase.from('cetyas').insert([newCetya]);
-    } catch (e) {}
+      const { error } = await supabase.from('cetyas').insert([newCetya]);
+      if (error) console.error('Supabase addCetya error:', error);
+    } catch (e) {
+      console.error('addCetya exception:', e);
+    }
   }
 
   cetyasStore.push(newCetya);
@@ -89,8 +98,11 @@ export async function updateCetya(id: string, data: Partial<Omit<CetyaProfile, '
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      await supabase.from('cetyas').update(data).eq('id', id);
-    } catch (e) {}
+      const { error } = await supabase.from('cetyas').update(data).eq('id', id);
+      if (error) console.error('Supabase updateCetya error:', error);
+    } catch (e) {
+      console.error('updateCetya exception:', e);
+    }
   }
 
   const index = cetyasStore.findIndex(c => c.id === id);
@@ -105,8 +117,11 @@ export async function deleteCetya(id: string) {
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      await supabase.from('cetyas').delete().eq('id', id);
-    } catch (e) {}
+      const { error } = await supabase.from('cetyas').delete().eq('id', id);
+      if (error) console.error('Supabase deleteCetya error:', error);
+    } catch (e) {
+      console.error('deleteCetya exception:', e);
+    }
   }
 
   cetyasStore = cetyasStore.filter(c => c.id !== id);
@@ -119,8 +134,14 @@ export async function getHans(): Promise<HanProfile[]> {
     try {
       const supabase = await createClient();
       const { data, error } = await supabase.from('hans').select('*').order('created_at', { ascending: false });
-      if (!error && data && data.length > 0) return data;
-    } catch (e) {}
+      if (error) {
+        console.error('Supabase getHans error:', error);
+      } else if (data && data.length > 0) {
+        return data;
+      }
+    } catch (e) {
+      console.error('getHans exception:', e);
+    }
   }
   return [...hansStore];
 }
@@ -135,8 +156,11 @@ export async function addHan(han: Omit<HanProfile, 'id' | 'created_at'>) {
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      await supabase.from('hans').insert([newHan]);
-    } catch (e) {}
+      const { error } = await supabase.from('hans').insert([newHan]);
+      if (error) console.error('Supabase addHan error:', error);
+    } catch (e) {
+      console.error('addHan exception:', e);
+    }
   }
 
   hansStore.push(newHan);
@@ -148,8 +172,11 @@ export async function updateHan(id: string, data: Partial<Omit<HanProfile, 'id' 
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      await supabase.from('hans').update(data).eq('id', id);
-    } catch (e) {}
+      const { error } = await supabase.from('hans').update(data).eq('id', id);
+      if (error) console.error('Supabase updateHan error:', error);
+    } catch (e) {
+      console.error('updateHan exception:', e);
+    }
   }
 
   const index = hansStore.findIndex(h => h.id === id);
@@ -164,8 +191,11 @@ export async function deleteHan(id: string) {
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      await supabase.from('hans').delete().eq('id', id);
-    } catch (e) {}
+      const { error } = await supabase.from('hans').delete().eq('id', id);
+      if (error) console.error('Supabase deleteHan error:', error);
+    } catch (e) {
+      console.error('deleteHan exception:', e);
+    }
   }
 
   hansStore = hansStore.filter(h => h.id !== id);
@@ -180,8 +210,14 @@ export async function getUpcomingBirthdays(targetMonth?: number): Promise<Profil
     try {
       const supabase = await createClient();
       const { data, error } = await supabase.rpc('get_birthdays_by_month', { target_month: currentMonth });
-      if (!error && data && data.length > 0) return data;
-    } catch (e) {}
+      if (error) {
+        console.error('Supabase getUpcomingBirthdays rpc error:', error);
+      } else if (data && data.length > 0) {
+        return data;
+      }
+    } catch (e) {
+      console.error('getUpcomingBirthdays exception:', e);
+    }
   }
 
   return profilesStore.filter((profile) => {
@@ -228,8 +264,11 @@ export async function registerForEvent(eventId: string, targetUmatId?: string, c
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      await supabase.from('event_registrations').insert([newReg]);
-    } catch (e) {}
+      const { error } = await supabase.from('event_registrations').insert([newReg]);
+      if (error) console.error('Supabase registerForEvent error:', error);
+    } catch (e) {
+      console.error('registerForEvent exception:', e);
+    }
   }
 
   registrationsStore.push(newReg);
@@ -246,8 +285,14 @@ export async function getInventory(): Promise<InventoryItem[]> {
     try {
       const supabase = await createClient();
       const { data, error } = await supabase.from('inventory').select('*').order('last_updated', { ascending: false });
-      if (!error && data && data.length > 0) return data;
-    } catch (e) {}
+      if (error) {
+        console.error('Supabase getInventory error:', error);
+      } else if (data && data.length > 0) {
+        return data;
+      }
+    } catch (e) {
+      console.error('getInventory exception:', e);
+    }
   }
   return [...inventoryStore];
 }
@@ -288,7 +333,9 @@ export async function recordInventoryPurchase(
       const supabase = await createClient();
       await supabase.from('inventory').update({ stock_quantity: item.stock_quantity, last_updated: item.last_updated }).eq('id', inventoryId);
       await supabase.from('inventory_transactions').insert([transaction]);
-    } catch (e) {}
+    } catch (e) {
+      console.error('recordInventoryPurchase exception:', e);
+    }
   }
 
   transactionsStore.unshift(transaction);
@@ -302,8 +349,14 @@ export async function getInventoryTransactions(): Promise<InventoryTransaction[]
     try {
       const supabase = await createClient();
       const { data, error } = await supabase.from('inventory_transactions').select('*').order('transaction_date', { ascending: false });
-      if (!error && data && data.length > 0) return data;
-    } catch (e) {}
+      if (error) {
+        console.error('Supabase getInventoryTransactions error:', error);
+      } else if (data && data.length > 0) {
+        return data;
+      }
+    } catch (e) {
+      console.error('getInventoryTransactions exception:', e);
+    }
   }
   return [...transactionsStore];
 }
@@ -318,7 +371,9 @@ export async function updateStockQuantity(itemId: string, delta: number) {
       try {
         const supabase = await createClient();
         await supabase.from('inventory').update({ stock_quantity: item.stock_quantity, last_updated: item.last_updated }).eq('id', itemId);
-      } catch (e) {}
+      } catch (e) {
+        console.error('updateStockQuantity exception:', e);
+      }
     }
   }
   revalidatePath('/inventory');
@@ -335,8 +390,11 @@ export async function addInventoryItem(item: Omit<InventoryItem, 'id' | 'last_up
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      await supabase.from('inventory').insert([newItem]);
-    } catch (e) {}
+      const { error } = await supabase.from('inventory').insert([newItem]);
+      if (error) console.error('Supabase addInventoryItem error:', error);
+    } catch (e) {
+      console.error('addInventoryItem exception:', e);
+    }
   }
 
   inventoryStore.unshift(newItem);
@@ -349,8 +407,14 @@ export async function getDonations(): Promise<Donation[]> {
     try {
       const supabase = await createClient();
       const { data, error } = await supabase.from('donations').select('*').order('created_at', { ascending: false });
-      if (!error && data && data.length > 0) return data;
-    } catch (e) {}
+      if (error) {
+        console.error('Supabase getDonations error:', error);
+      } else if (data && data.length > 0) {
+        return data;
+      }
+    } catch (e) {
+      console.error('getDonations exception:', e);
+    }
   }
   return [...donationsStore];
 }
@@ -365,8 +429,11 @@ export async function addDonation(donation: Omit<Donation, 'id' | 'created_at'>)
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      await supabase.from('donations').insert([newDonation]);
-    } catch (e) {}
+      const { error } = await supabase.from('donations').insert([newDonation]);
+      if (error) console.error('Supabase addDonation error:', error);
+    } catch (e) {
+      console.error('addDonation exception:', e);
+    }
   }
 
   donationsStore.unshift(newDonation);
@@ -379,8 +446,14 @@ export async function getProfiles(): Promise<Profile[]> {
     try {
       const supabase = await createClient();
       const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-      if (!error && data && data.length > 0) return data;
-    } catch (e) {}
+      if (error) {
+        console.error('Supabase getProfiles error:', error);
+      } else if (data && data.length > 0) {
+        return data;
+      }
+    } catch (e) {
+      console.error('getProfiles exception:', e);
+    }
   }
   return [...profilesStore];
 }
@@ -395,8 +468,11 @@ export async function addProfile(profile: Omit<Profile, 'id' | 'created_at'>) {
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      await supabase.from('profiles').insert([newProfile]);
-    } catch (e) {}
+      const { error } = await supabase.from('profiles').insert([newProfile]);
+      if (error) console.error('Supabase addProfile error:', error);
+    } catch (e) {
+      console.error('addProfile exception:', e);
+    }
   }
 
   profilesStore.push(newProfile);
@@ -408,8 +484,11 @@ export async function updateProfile(id: string, updatedData: Partial<Omit<Profil
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      await supabase.from('profiles').update(updatedData).eq('id', id);
-    } catch (e) {}
+      const { error } = await supabase.from('profiles').update(updatedData).eq('id', id);
+      if (error) console.error('Supabase updateProfile error:', error);
+    } catch (e) {
+      console.error('updateProfile exception:', e);
+    }
   }
 
   const index = profilesStore.findIndex(p => p.id === id);
@@ -432,8 +511,11 @@ export async function deleteProfile(id: string) {
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      await supabase.from('profiles').delete().eq('id', id);
-    } catch (e) {}
+      const { error } = await supabase.from('profiles').delete().eq('id', id);
+      if (error) console.error('Supabase deleteProfile error:', error);
+    } catch (e) {
+      console.error('deleteProfile exception:', e);
+    }
   }
 
   profilesStore = profilesStore.filter(p => p.id !== id);
@@ -446,7 +528,9 @@ export async function getEvents(): Promise<ViharaEvent[]> {
     try {
       const supabase = await createClient();
       const { data, error } = await supabase.from('events').select('*').order('event_date', { ascending: true });
-      if (!error && data && data.length > 0) {
+      if (error) {
+        console.error('Supabase getEvents error:', error);
+      } else if (data && data.length > 0) {
         return data.map(ev => ({
           ...ev,
           registrations_count: registrationsStore.filter(r => r.event_id === ev.id).length,
@@ -454,7 +538,9 @@ export async function getEvents(): Promise<ViharaEvent[]> {
           committees: committeesStore.filter(c => c.event_id === ev.id)
         }));
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('getEvents exception:', e);
+    }
   }
 
   return eventsStore.map(ev => ({
@@ -471,7 +557,9 @@ export async function getEventById(id: string): Promise<ViharaEvent | null> {
     try {
       const supabase = await createClient();
       const { data, error } = await supabase.from('events').select('*').eq('id', id).single();
-      if (!error && data) {
+      if (error) {
+        console.error('Supabase getEventById error:', error);
+      } else if (data) {
         return {
           ...data,
           registrations_count: registrationsStore.filter(r => r.event_id === id).length,
@@ -479,7 +567,9 @@ export async function getEventById(id: string): Promise<ViharaEvent | null> {
           committees: committeesStore.filter(c => c.event_id === id)
         };
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('getEventById exception:', e);
+    }
   }
 
   const ev = eventsStore.find(e => e.id === id);
@@ -505,8 +595,11 @@ export async function createEvent(eventData: Omit<ViharaEvent, 'id' | 'created_a
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      await supabase.from('events').insert([newEvent]);
-    } catch (e) {}
+      const { error } = await supabase.from('events').insert([newEvent]);
+      if (error) console.error('Supabase createEvent error:', error);
+    } catch (e) {
+      console.error('createEvent exception:', e);
+    }
   }
 
   eventsStore.unshift(newEvent);
@@ -543,8 +636,11 @@ export async function addSubSectionToOrg(eventId: string, sectionType: 'sub_acar
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      await supabase.from('events').update({ org_structure: org }).eq('id', eventId);
-    } catch (e) {}
+      const { error } = await supabase.from('events').update({ org_structure: org }).eq('id', eventId);
+      if (error) console.error('Supabase addSubSectionToOrg error:', error);
+    } catch (e) {
+      console.error('addSubSectionToOrg exception:', e);
+    }
   }
 
   revalidatePath(`/events/${eventId}`);
@@ -574,8 +670,11 @@ export async function updateSubSectionInOrg(
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      await supabase.from('events').update({ org_structure: org }).eq('id', eventId);
-    } catch (e) {}
+      const { error } = await supabase.from('events').update({ org_structure: org }).eq('id', eventId);
+      if (error) console.error('Supabase updateSubSectionInOrg error:', error);
+    } catch (e) {
+      console.error('updateSubSectionInOrg exception:', e);
+    }
   }
 
   revalidatePath(`/events/${eventId}`);
@@ -601,8 +700,11 @@ export async function deleteSubSectionFromOrg(eventId: string, sectionType: 'sub
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      await supabase.from('events').update({ org_structure: org }).eq('id', eventId);
-    } catch (e) {}
+      const { error } = await supabase.from('events').update({ org_structure: org }).eq('id', eventId);
+      if (error) console.error('Supabase deleteSubSectionFromOrg error:', error);
+    } catch (e) {
+      console.error('deleteSubSectionFromOrg exception:', e);
+    }
   }
 
   revalidatePath(`/events/${eventId}`);
@@ -618,8 +720,11 @@ export async function addBudgetItem(budget: Omit<EventBudget, 'id'>) {
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      await supabase.from('event_budgets').insert([newBudget]);
-    } catch (e) {}
+      const { error } = await supabase.from('event_budgets').insert([newBudget]);
+      if (error) console.error('Supabase addBudgetItem error:', error);
+    } catch (e) {
+      console.error('addBudgetItem exception:', e);
+    }
   }
 
   budgetsStore.push(newBudget);
@@ -632,13 +737,17 @@ export async function getRegistrationsForEvent(eventId: string) {
     try {
       const supabase = await createClient();
       const { data, error } = await supabase.from('event_registrations').select('*').eq('event_id', eventId);
-      if (!error && data && data.length > 0) {
+      if (error) {
+        console.error('Supabase getRegistrationsForEvent error:', error);
+      } else if (data && data.length > 0) {
         return data.map(r => ({
           ...r,
           profile: profilesStore.find(p => p.id === r.profile_id)
         }));
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('getRegistrationsForEvent exception:', e);
+    }
   }
 
   return registrationsStore
@@ -658,8 +767,11 @@ export async function toggleAttendance(registrationId: string) {
     if (isSupabaseConfigured()) {
       try {
         const supabase = await createClient();
-        await supabase.from('event_registrations').update({ is_attended: reg.is_attended, attended_at: reg.attended_at }).eq('id', registrationId);
-      } catch (e) {}
+        const { error } = await supabase.from('event_registrations').update({ is_attended: reg.is_attended, attended_at: reg.attended_at }).eq('id', registrationId);
+        if (error) console.error('Supabase toggleAttendance error:', error);
+      } catch (e) {
+        console.error('toggleAttendance exception:', e);
+      }
     }
   }
   revalidatePath('/events');
