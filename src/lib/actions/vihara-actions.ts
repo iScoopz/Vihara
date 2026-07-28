@@ -11,9 +11,25 @@ import {
   INITIAL_BUDGETS,
   INITIAL_COMMITTEES,
   INITIAL_TRANSACTIONS,
-  INITIAL_ORG_STRUCTURE
+  INITIAL_ORG_STRUCTURE,
+  INITIAL_SENTRAS,
+  INITIAL_CETYAS,
+  INITIAL_HANS
 } from '@/lib/mock-data';
-import { Profile, ViharaEvent, InventoryItem, Donation, EventRegistration, EventBudget, EventCommittee, InventoryTransaction, EventOrgStructure, SubSectionRole } from '@/types/database';
+import { 
+  Profile, 
+  ViharaEvent, 
+  InventoryItem, 
+  Donation, 
+  EventRegistration, 
+  EventBudget, 
+  EventCommittee, 
+  InventoryTransaction, 
+  EventOrgStructure, 
+  SubSectionRole,
+  CetyaProfile,
+  HanProfile
+} from '@/types/database';
 
 let profilesStore = [...INITIAL_PROFILES];
 let eventsStore = [...INITIAL_EVENTS];
@@ -23,12 +39,79 @@ let registrationsStore = [...INITIAL_REGISTRATIONS];
 let budgetsStore = [...INITIAL_BUDGETS];
 let committeesStore = [...INITIAL_COMMITTEES];
 let transactionsStore = [...INITIAL_TRANSACTIONS];
+let cetyasStore = [...INITIAL_CETYAS];
+let hansStore = [...INITIAL_HANS];
 
 function isSupabaseConfigured() {
   return (
     process.env.NEXT_PUBLIC_SUPABASE_URL && 
     process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co'
   );
+}
+
+// SENTRA, CETYA, HAN ACTIONS
+export async function getSentras(): Promise<string[]> {
+  return [...INITIAL_SENTRAS];
+}
+
+export async function getCetyas(): Promise<CetyaProfile[]> {
+  return [...cetyasStore];
+}
+
+export async function addCetya(cetya: Omit<CetyaProfile, 'id' | 'created_at'>) {
+  const newCetya: CetyaProfile = {
+    ...cetya,
+    id: `cetya_${Date.now()}`,
+    created_at: new Date().toISOString()
+  };
+  cetyasStore.push(newCetya);
+  revalidatePath('/umat');
+  return { success: true, cetya: newCetya };
+}
+
+export async function updateCetya(id: string, data: Partial<Omit<CetyaProfile, 'id' | 'created_at'>>) {
+  const index = cetyasStore.findIndex(c => c.id === id);
+  if (index === -1) return { error: 'Cetya tidak ditemukan' };
+
+  cetyasStore[index] = { ...cetyasStore[index], ...data };
+  revalidatePath('/umat');
+  return { success: true, cetya: cetyasStore[index] };
+}
+
+export async function deleteCetya(id: string) {
+  cetyasStore = cetyasStore.filter(c => c.id !== id);
+  revalidatePath('/umat');
+  return { success: true };
+}
+
+export async function getHans(): Promise<HanProfile[]> {
+  return [...hansStore];
+}
+
+export async function addHan(han: Omit<HanProfile, 'id' | 'created_at'>) {
+  const newHan: HanProfile = {
+    ...han,
+    id: `han_${Date.now()}`,
+    created_at: new Date().toISOString()
+  };
+  hansStore.push(newHan);
+  revalidatePath('/umat');
+  return { success: true, han: newHan };
+}
+
+export async function updateHan(id: string, data: Partial<Omit<HanProfile, 'id' | 'created_at'>>) {
+  const index = hansStore.findIndex(h => h.id === id);
+  if (index === -1) return { error: 'HAN tidak ditemukan' };
+
+  hansStore[index] = { ...hansStore[index], ...data };
+  revalidatePath('/umat');
+  return { success: true, han: hansStore[index] };
+}
+
+export async function deleteHan(id: string) {
+  hansStore = hansStore.filter(h => h.id !== id);
+  revalidatePath('/umat');
+  return { success: true };
 }
 
 export async function getUpcomingBirthdays(targetMonth?: number): Promise<Profile[]> {
@@ -186,6 +269,23 @@ export async function addProfile(profile: Omit<Profile, 'id' | 'created_at'>) {
   profilesStore.push(newProfile);
   revalidatePath('/umat');
   return { success: true, profile: newProfile };
+}
+
+export async function updateProfile(id: string, updatedData: Partial<Omit<Profile, 'id' | 'created_at'>>) {
+  const index = profilesStore.findIndex(p => p.id === id);
+  if (index === -1) return { error: 'Data umat tidak ditemukan.' };
+
+  profilesStore[index] = {
+    ...profilesStore[index],
+    ...updatedData
+  };
+
+  revalidatePath('/umat');
+  revalidatePath('/profil');
+  revalidatePath('/dashboard');
+  revalidatePath('/calendar');
+
+  return { success: true, profile: profilesStore[index] };
 }
 
 export async function deleteProfile(id: string) {

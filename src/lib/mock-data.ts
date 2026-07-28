@@ -1,73 +1,142 @@
-import { Profile, ViharaEvent, InventoryItem, Donation, EventRegistration, EventBudget, EventCommittee, InventoryTransaction, EventOrgStructure } from '@/types/database';
+import { 
+  Profile, 
+  ViharaEvent, 
+  InventoryItem, 
+  Donation, 
+  EventRegistration, 
+  EventBudget, 
+  EventCommittee,
+  InventoryTransaction,
+  EventOrgStructure,
+  CetyaProfile,
+  HanProfile
+} from '@/types/database';
+
+export const INITIAL_SENTRAS = [
+  'Sentra Makassar',
+  'Sentra Jakarta',
+  'Sentra Surabaya',
+  'Sentra Medan'
+];
+
+export const INITIAL_CETYAS: CetyaProfile[] = [
+  {
+    id: 'cetya_1',
+    name: 'Cetya Avalokitesvara Makassar',
+    sentra: 'Sentra Makassar',
+    address: 'Jl. Sulawesi No. 88, Makassar',
+    leader_name: 'Upasaka Hendra Kurniawan',
+    phone: '0411-876543',
+    created_at: '2024-01-01T00:00:00Z'
+  },
+  {
+    id: 'cetya_2',
+    name: 'Cetya Maitreya Makassar',
+    sentra: 'Sentra Makassar',
+    address: 'Jl. Veteran Selatan No. 120, Makassar',
+    leader_name: 'Budi Santoso',
+    phone: '0411-876544',
+    created_at: '2024-01-02T00:00:00Z'
+  },
+  {
+    id: 'cetya_3',
+    name: 'Cetya Buddha Gaya Jakarta',
+    sentra: 'Sentra Jakarta',
+    address: 'Jl. Pluit Kencana No. 45, Jakarta Utara',
+    leader_name: 'Tan Sri Wijaya',
+    phone: '021-6698765',
+    created_at: '2024-01-03T00:00:00Z'
+  }
+];
+
+export const INITIAL_HANS: HanProfile[] = [
+  {
+    id: 'han_1',
+    name: 'HAN Makassar 01',
+    cetya_name: 'Cetya Avalokitesvara Makassar',
+    sentra: 'Sentra Makassar',
+    leader_name: 'Upasaka Hendra Kurniawan',
+    created_at: '2024-01-01T00:00:00Z'
+  },
+  {
+    id: 'han_2',
+    name: 'HAN Makassar 02',
+    cetya_name: 'Cetya Maitreya Makassar',
+    sentra: 'Sentra Makassar',
+    leader_name: 'Suryani Dewi',
+    created_at: '2024-01-02T00:00:00Z'
+  },
+  {
+    id: 'han_3',
+    name: 'HAN Jakarta 01',
+    cetya_name: 'Cetya Buddha Gaya Jakarta',
+    sentra: 'Sentra Jakarta',
+    leader_name: 'Tan Sri Wijaya',
+    created_at: '2024-01-03T00:00:00Z'
+  }
+];
 
 export const INITIAL_PROFILES: Profile[] = [
   {
     id: 'p1',
     role: 'admin',
     full_name: 'Upasaka Hendra Kurniawan',
-    han: 'HAN-Jakarta-01',
-    cetya: 'Cetya Avalokitesvara',
+    sentra: 'Sentra Makassar',
+    cetya: 'Cetya Avalokitesvara Makassar',
+    han: 'HAN Makassar 01',
     phone: '081234567890',
     birth_date: '1985-07-15',
     gender: 'L',
-    address: 'Jl. Pluit Kencana No. 12, Jakarta Utara',
-    emergency_contact: '081299887766 (Istri)',
+    address: 'Jl. Sulawesi No. 88, Makassar',
+    emergency_contact: '081299998888',
     is_active: true,
-    created_at: '2024-01-10T08:00:00Z',
+    created_at: '2024-01-01T00:00:00Z'
   },
   {
     id: 'p2',
     role: 'umat',
     full_name: 'Suryani Dewi',
-    han: 'HAN-Jakarta-02',
-    cetya: 'Cetya Maitreya',
+    sentra: 'Sentra Makassar',
+    cetya: 'Cetya Maitreya Makassar',
+    han: 'HAN Makassar 02',
     phone: '081987654321',
     birth_date: '1992-07-28',
     gender: 'P',
-    address: 'Jl. Sunter Agung Barat 5 No. 8, Jakarta Utara',
-    emergency_contact: '081911223344 (Suami)',
+    address: 'Jl. Veteran Selatan No. 120, Makassar',
+    emergency_contact: '081911112222',
     is_active: true,
-    created_at: '2024-02-15T09:30:00Z',
+    created_at: '2024-01-02T00:00:00Z'
   },
   {
     id: 'p3',
     role: 'umat',
     full_name: 'Budi Santoso',
-    han: 'HAN-Jakarta-01',
-    cetya: 'Cetya Avalokitesvara',
-    phone: '081311223344',
-    birth_date: '1990-11-12',
+    sentra: 'Sentra Makassar',
+    cetya: 'Cetya Avalokitesvara Makassar',
+    han: 'HAN Makassar 01',
+    phone: '085678901234',
+    birth_date: '1988-08-10',
     gender: 'L',
-    address: 'Jl. Jelambar Utama No. 45, Jakarta Barat',
+    address: 'Jl. Gunung Latimojong No. 45, Makassar',
+    emergency_contact: '085633334444',
     is_active: true,
-    created_at: '2024-03-01T10:15:00Z',
+    created_at: '2024-01-03T00:00:00Z'
   },
   {
     id: 'p4',
     role: 'umat',
-    full_name: 'Lani Wijaya',
-    han: 'HAN-Tangerang-01',
-    cetya: 'Cetya Buddha Gaya',
-    phone: '081555667788',
-    birth_date: '1998-07-04',
+    full_name: 'Tan Sri Wijaya',
+    sentra: 'Sentra Jakarta',
+    cetya: 'Cetya Buddha Gaya Jakarta',
+    han: 'HAN Jakarta 01',
+    phone: '087812345678',
+    birth_date: '1995-12-05',
     gender: 'P',
-    address: 'Gading Serpong Cluster Bovinia No. 15, Tangerang',
+    address: 'Jl. Pluit Kencana No. 45, Jakarta Utara',
+    emergency_contact: '087855556666',
     is_active: true,
-    created_at: '2024-04-12T14:20:00Z',
-  },
-  {
-    id: 'p5',
-    role: 'umat',
-    full_name: 'Kevin Tan',
-    han: 'HAN-Jakarta-02',
-    cetya: 'Cetya Maitreya',
-    phone: '081777889900',
-    birth_date: '2001-03-22',
-    gender: 'L',
-    address: 'Jl. Boulevard Kelapa Gading No. 88, Jakarta Utara',
-    is_active: true,
-    created_at: '2024-05-05T11:00:00Z',
-  },
+    created_at: '2024-01-04T00:00:00Z'
+  }
 ];
 
 export const INITIAL_ORG_STRUCTURE: EventOrgStructure = {
@@ -75,122 +144,169 @@ export const INITIAL_ORG_STRUCTURE: EventOrgStructure = {
   sekretaris_name: 'Suryani Dewi',
   bendahara_name: 'Budi Santoso',
   pj_acara_name: 'Suryani Dewi',
-  sub_acara: [
-    { id: 'sub_a1', role_name: 'Seksi Ritual Gongyo & Daimoku', pic_name: 'Suryani Dewi' },
-    { id: 'sub_a2', role_name: 'Seksi Pembicara Kensyu MNSBDI', pic_name: 'Budi Santoso' },
-    { id: 'sub_a3', role_name: 'Seksi Protocol & Penerima Tamu', pic_name: 'Kevin Tan' }
-  ],
   pj_umum_name: 'Budi Santoso',
-  sub_umum: [
-    { id: 'sub_u1', role_name: 'Seksi Akomodasi & Transportasi Peserta Kensyu', pic_name: 'Budi Santoso' },
-    { id: 'sub_u2', role_name: 'Seksi Sound System & Media Pembacaan', pic_name: 'Kevin Tan' },
-    { id: 'sub_u3', role_name: 'Seksi Konsumsi Umat MNSBDI', pic_name: 'Lani Wijaya' },
-    { id: 'sub_u4', role_name: 'Seksi Keamanan & Parkir', pic_name: 'Hendra Kurniawan' }
+  sub_acara: [
+    { id: 'sub_a1', role_name: 'Seksi Ritual Gongyo & Altar Utama', pic_name: 'Suryani Dewi' },
+    { id: 'sub_a2', role_name: 'Seksi Protocol & Pendamping Sangha', pic_name: 'Tan Sri Wijaya' }
   ],
-  vip_list: ['Bhante / Pandita MNSBDI', 'Pengurus Pusat MNSBDI']
+  sub_umum: [
+    { id: 'sub_u1', role_name: 'Seksi Akomodasi & Transportasi Umat', pic_name: 'Budi Santoso' },
+    { id: 'sub_u2', role_name: 'Seksi Sound System & Media Peliputan', pic_name: 'Hendra Kurniawan' }
+  ],
+  vip_list: ['VIP Pengurus Wilayah Sentra Makassar', 'Tamu Kehormatan Sangha']
 };
 
 export const INITIAL_EVENTS: ViharaEvent[] = [
   {
     id: 'e1',
-    title: 'Gongyo & Oteshiki MNSBDI Akbar',
-    description: 'Upacara pembacaan Gongyo bersama umat Nichiren Shoshu Buddha Dharma Indonesia (MNSBDI).',
-    event_date: '2026-08-02T09:00:00Z',
-    end_date: '2026-08-02T13:00:00Z',
-    location: 'Dhammasala Utama Cetya MNSBDI',
+    title: 'Gongyo & Oteshiki Bulanan Umat MNSBDI',
+    description: 'Upacara pembacaan Paritta Gongyo bersama dan peringatan Oteshiki untuk mempererat persaudaraan umat MNSBDI.',
+    event_date: '2026-08-01T08:00:00Z',
+    end_date: '2026-08-01T12:00:00Z',
+    location: 'Cetya Avalokitesvara Makassar',
+    quota: 150,
     category: 'Gongyo',
     is_complex: true,
-    quota: 250,
-    pic_profile_id: 'p1',
     pic_name: 'Upasaka Hendra Kurniawan',
-    status: 'upcoming',
-    created_at: '2026-07-01T00:00:00Z',
-    org_structure: INITIAL_ORG_STRUCTURE
+    org_structure: INITIAL_ORG_STRUCTURE,
+    created_at: '2024-01-10T00:00:00Z'
   },
   {
     id: 'e2',
-    title: 'Kensyu Penataran Umat MNSBDI 2026',
-    description: 'Pelatihan dan penataran pendalaman ajaran MNSBDI untuk umat daerah.',
-    event_date: '2026-08-15T08:00:00Z',
-    end_date: '2026-08-15T15:00:00Z',
-    location: 'Aula Kensyu MNSBDI',
+    title: 'Kensyu Penataran & Pelatihan Umat MNSBDI',
+    description: 'Kensyu pendalaman ajaran Buddha Dharma Niren Shoshu bagi para pengurus HAN dan Cetya.',
+    event_date: '2026-08-15T09:00:00Z',
+    end_date: '2026-08-16T17:00:00Z',
+    location: 'Sentra Makassar Center',
+    quota: 80,
     category: 'Kensyu',
     is_complex: true,
-    quota: 150,
-    pic_profile_id: 'p2',
     pic_name: 'Suryani Dewi',
-    status: 'upcoming',
-    created_at: '2026-07-10T00:00:00Z',
-    org_structure: INITIAL_ORG_STRUCTURE
+    org_structure: {
+      ...INITIAL_ORG_STRUCTURE,
+      ketua_name: 'Suryani Dewi',
+      pj_acara_name: 'Upasaka Hendra Kurniawan'
+    },
+    created_at: '2024-01-12T00:00:00Z'
   },
   {
     id: 'e3',
-    title: 'Pertemuan Rutin Umat MNSBDI Wilayah Jakarta',
-    description: 'Diskusi dan silaturahmi rutin bulanan pengurus dan umat MNSBDI.',
-    event_date: '2026-07-28T19:00:00Z',
-    end_date: '2026-07-28T21:00:00Z',
-    location: 'Ruang Pertemuan Cetya',
+    title: 'Pertemuan Rutin Pengurus HAN & Cetya',
+    description: 'Rapat koordinasi mingguan pengurus Cetya dan pimpinan HAN membahas kegiatan pelayanan umat.',
+    event_date: '2026-08-20T19:00:00Z',
+    location: 'Ruang Rapat Cetya Maitreya Makassar',
+    quota: 30,
     category: 'Pertemuan',
     is_complex: false,
-    quota: 50,
-    pic_profile_id: 'p1',
-    pic_name: 'Upasaka Hendra Kurniawan',
-    status: 'ongoing',
-    created_at: '2026-07-01T00:00:00Z',
+    pic_name: 'Budi Santoso',
+    created_at: '2024-01-15T00:00:00Z'
+  }
+];
+
+export const INITIAL_INVENTORY: InventoryItem[] = [
+  {
+    id: 'inv1',
+    item_name: 'Buku Paritta Gongyo MNSBDI',
+    category: 'Perlengkapan Ritual',
+    stock_quantity: 45,
+    price_per_unit: 35000,
+    unit: 'buku',
+    last_updated: '2026-07-01T00:00:00Z'
   },
+  {
+    id: 'inv2',
+    item_name: 'Juzu (Tasbih Doa)',
+    category: 'Perlengkapan Umat',
+    stock_quantity: 20,
+    price_per_unit: 75000,
+    unit: 'pcs',
+    last_updated: '2026-07-02T00:00:00Z'
+  },
+  {
+    id: 'inv3',
+    item_name: 'Lilin Altar Merah Big Size',
+    category: 'Perlengkapan Altar',
+    stock_quantity: 60,
+    price_per_unit: 25000,
+    unit: 'pasang',
+    last_updated: '2026-07-03T00:00:00Z'
+  },
+  {
+    id: 'inv4',
+    item_name: 'Dupa Hio Cendana Super',
+    category: 'Perlengkapan Altar',
+    stock_quantity: 100,
+    price_per_unit: 15000,
+    unit: 'pack',
+    last_updated: '2026-07-04T00:00:00Z'
+  }
 ];
 
-export const INITIAL_COMMITTEES: EventCommittee[] = [
-  { id: 'c1', event_id: 'e1', profile_id: 'p1', committee_role: 'Ketua Panitia', profile_name: 'Upasaka Hendra Kurniawan' },
-  { id: 'c2', event_id: 'e1', profile_id: 'p2', committee_role: 'Sekretaris', profile_name: 'Suryani Dewi' },
-  { id: 'c3', event_id: 'e1', profile_id: 'p3', committee_role: 'Bendahara', profile_name: 'Budi Santoso' },
-];
-
-export const INITIAL_BUDGETS: EventBudget[] = [
-  { id: 'b1', event_id: 'e1', item_name: 'Persembahan Altar & Bunga Segar', budget_type: 'rab', amount: 1500000, notes: 'Anggaran Bunga & Buah' },
-  { id: 'b2', event_id: 'e1', item_name: 'Konsumsi Umat & Peserta Kensyu', budget_type: 'rab', amount: 3500000, notes: 'Makanan Vegetaris 200 Porsi' },
-  { id: 'b3', event_id: 'e1', item_name: 'Cenderamata & Transport Pembicara', budget_type: 'rab', amount: 2000000, notes: 'Akomodasi MNSBDI' },
-  { id: 'b4', event_id: 'e1', item_name: 'Persembahan Altar & Bunga Segar', budget_type: 'realisasi', amount: 1420000, notes: 'Nota Pasar Kembang' },
-  { id: 'b5', event_id: 'e1', item_name: 'Konsumsi Umat & Peserta Kensyu', budget_type: 'realisasi', amount: 3300000, notes: 'Katering Vegetaris Sukses' },
+export const INITIAL_DONATIONS: Donation[] = [
+  {
+    id: 'd1',
+    donor_name: 'Suryani Dewi',
+    amount: 500000,
+    donation_type: 'paramita',
+    donation_date: '2026-07-20',
+    notes: 'Dana Paramita Pelaksanaan Gongyo'
+  },
+  {
+    id: 'd2',
+    donor_name: 'Budi Santoso',
+    amount: 1000000,
+    donation_type: 'operasional',
+    donation_date: '2026-07-22',
+    notes: 'Dana Operasional Cetya Avalokitesvara'
+  },
+  {
+    id: 'd3',
+    donor_name: 'Hendra Kurniawan',
+    amount: 2500000,
+    donation_type: 'pembangunan',
+    donation_date: '2026-07-25',
+    notes: 'Dana Renovasi Ruang Kebaktian Utama'
+  }
 ];
 
 export const INITIAL_REGISTRATIONS: EventRegistration[] = [
   {
     id: 'r1',
     event_id: 'e1',
-    profile_id: 'p2',
+    profile_id: 'p1',
     registration_method: 'self',
-    is_attended: false,
-    created_at: '2026-07-22T10:00:00Z',
+    is_attended: true,
+    attended_at: '2026-08-01T08:15:00Z',
+    created_at: '2026-07-15T00:00:00Z'
   },
   {
     id: 'r2',
     event_id: 'e1',
-    profile_id: 'p3',
+    profile_id: 'p2',
     registration_method: 'admin',
     registered_by: 'p1',
     is_attended: true,
-    attended_at: '2026-07-22T10:30:00Z',
-    created_at: '2026-07-22T10:30:00Z',
+    attended_at: '2026-08-01T08:20:00Z',
+    created_at: '2026-07-16T00:00:00Z'
   },
+  {
+    id: 'r3',
+    event_id: 'e2',
+    profile_id: 'p2',
+    registration_method: 'self',
+    is_attended: false,
+    created_at: '2026-07-18T00:00:00Z'
+  }
 ];
 
-export const INITIAL_INVENTORY: InventoryItem[] = [
-  { id: 'inv1', item_name: 'Dupa Harum Cendana (Isi 100)', category: 'Dupa', stock_quantity: 145, price_per_unit: 45000, unit: 'Karton', min_stock_alert: 20, last_updated: '2026-07-25T10:00:00Z' },
-  { id: 'inv2', item_name: 'Dupa Merah Jumbo (Isi 50)', category: 'Dupa', stock_quantity: 12, price_per_unit: 65000, unit: 'Karton', min_stock_alert: 15, last_updated: '2026-07-24T12:00:00Z' },
-  { id: 'inv3', item_name: 'Lilin Merah 24 Jam', category: 'Lilin', stock_quantity: 85, price_per_unit: 35000, unit: 'Pasang', min_stock_alert: 30, last_updated: '2026-07-26T09:00:00Z' },
-  { id: 'inv4', item_name: 'Lilin Lotus 3 Hari', category: 'Lilin', stock_quantity: 8, price_per_unit: 120000, unit: 'Pasang', min_stock_alert: 10, last_updated: '2026-07-20T11:00:00Z' },
-  { id: 'inv5', item_name: 'Minyak Pelita Murni 1 Liter', category: 'Minyak', stock_quantity: 45, price_per_unit: 28000, unit: 'Botol', min_stock_alert: 15, last_updated: '2026-07-27T08:00:00Z' },
-  { id: 'inv6', item_name: 'Buku Paritta & Gongyo MNSBDI', category: 'Buku', stock_quantity: 200, price_per_unit: 50000, unit: 'Pcs', min_stock_alert: 50, last_updated: '2026-07-15T15:00:00Z' },
+export const INITIAL_BUDGETS: EventBudget[] = [
+  { id: 'b1', event_id: 'e1', item_name: 'Konsumsi Umat & Sangha', budget_type: 'rab', amount: 3500000, notes: 'Target 150 porsi' },
+  { id: 'b2', event_id: 'e1', item_name: 'Dekorasi & Bunga Altar Utama', budget_type: 'rab', amount: 1500000, notes: 'Bunga Segar' },
+  { id: 'b3', event_id: 'e1', item_name: 'Sound System & Media Stream', budget_type: 'rab', amount: 2000000 },
+  { id: 'b4', event_id: 'e1', item_name: 'Konsumsi Umat & Sangha', budget_type: 'realisasi', amount: 3200000, notes: 'Realisasi Hemat Rp 300rb' },
+  { id: 'b5', event_id: 'e1', item_name: 'Dekorasi & Bunga Altar Utama', budget_type: 'realisasi', amount: 1500000 },
+  { id: 'b6', event_id: 'e1', item_name: 'Sound System & Media Stream', budget_type: 'realisasi', amount: 1800000, notes: 'Diskon Sewa' }
 ];
 
-export const INITIAL_TRANSACTIONS: InventoryTransaction[] = [
-  { id: 't1', inventory_id: 'inv1', item_name: 'Dupa Harum Cendana (Isi 100)', profile_id: 'p2', buyer_name: 'Suryani Dewi', quantity: 2, unit_price: 45000, total_price: 90000, transaction_date: '2026-07-26T14:00:00Z', notes: 'Pembelian langsung di sekretariat' },
-  { id: 't2', inventory_id: 'inv3', item_name: 'Lilin Merah 24 Jam', profile_id: 'p3', buyer_name: 'Budi Santoso', quantity: 1, unit_price: 35000, total_price: 35000, transaction_date: '2026-07-27T09:30:00Z', notes: 'Untuk pelita persembahan' },
-];
-
-export const INITIAL_DONATIONS: Donation[] = [
-  { id: 'd1', profile_id: 'p2', donor_name: 'Suryani Dewi', amount: 500000, donation_date: '2026-07-25', purpose: 'Dana Operasional Cetya MNSBDI', payment_method: 'Transfer Bank', notes: 'Transfer via BCA', created_at: '2026-07-25T10:00:00Z' },
-  { id: 'd2', donor_name: 'Hamba Buddha MNSBDI (Anonim)', amount: 1500000, donation_date: '2026-07-26', purpose: 'Dana Kensyu MNSBDI', payment_method: 'Tunai', notes: 'Kotak Dana Vihara', created_at: '2026-07-26T14:00:00Z' },
-  { id: 'd3', profile_id: 'p3', donor_name: 'Budi Santoso', amount: 300000, donation_date: '2026-07-27', purpose: 'Dana Pelita Gongyo', payment_method: 'QRIS', notes: 'Tunai di sekretariat', created_at: '2026-07-27T09:00:00Z' },
-];
+export const INITIAL_COMMITTEES: EventCommittee[] = [];
+export const INITIAL_TRANSACTIONS: InventoryTransaction[] = [];

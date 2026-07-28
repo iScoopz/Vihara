@@ -4,85 +4,94 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   CalendarDays, 
-  PlusCircle, 
+  Plus, 
+  Search, 
+  Filter, 
+  MapPin, 
   Users, 
-  Clock, 
-  MapPin,
-  ArrowRight,
+  ChevronRight, 
+  Building,
   Sparkles,
-  Tag
+  CheckCircle2
 } from 'lucide-react';
 import { getEvents } from '@/lib/actions/vihara-actions';
-import { ViharaEvent } from '@/types/database';
+import { ViharaEvent, EventCategory } from '@/types/database';
 
-export default function EventsManagementPage() {
+export default function AdminEventsListPage() {
   const [events, setEvents] = useState<ViharaEvent[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   useEffect(() => {
-    async function loadInitialData() {
-      const evs = await getEvents();
-      setEvents(evs);
+    async function loadData() {
+      const data = await getEvents();
+      setEvents(data);
     }
-    loadInitialData();
+    loadData();
   }, []);
 
-  const categories = ['Kensyu', 'Pertemuan', 'Gongyo'];
+  const categories: ('all' | EventCategory)[] = ['all', 'Gongyo', 'Kensyu', 'Pertemuan'];
 
-  const filteredEvents = events.filter(e => {
-    return selectedCategory === 'all' || e.category === selectedCategory;
+  const filteredEvents = events.filter(ev => {
+    const matchSearch = ev.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        ev.location.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchCat = selectedCategory === 'all' || ev.category === selectedCategory;
+    return matchSearch && matchCat;
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+          <h1 className="text-2xl font-extrabold text-purple-950 dark:text-white tracking-tight flex items-center gap-2">
             <CalendarDays className="text-purple-600 dark:text-purple-400" size={28} />
-            <span>Kelola Event MNSBDI</span>
+            <span>Manajemen Event & Kebaktian Vihara</span>
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Manajemen Kegiatan Kensyu, Pertemuan, & Gongyo MNSBDI
-          </p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Pengelolaan agenda Kensyu, Pertemuan, & Gongyo MNSBDI</p>
         </div>
 
         <Link
           href="/events/new"
-          className="inline-flex items-center gap-2 gradient-mnsbdi text-white font-extrabold px-4 py-2.5 rounded-xl transition shadow-lg shadow-purple-500/25 text-sm"
+          className="inline-flex items-center gap-2 gradient-mnsbdi text-white font-extrabold px-4 py-2.5 rounded-xl transition shadow-lg shadow-purple-500/25 text-sm hover:opacity-95 cursor-pointer"
         >
-          <PlusCircle size={18} />
-          <span>Buat Event MNSBDI</span>
+          <Plus size={18} />
+          <span>Buat Event Baru</span>
         </Link>
       </div>
 
-      {/* Category Filter Pills */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm flex items-center gap-2 overflow-x-auto">
-        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider pr-2">Kategori MNSBDI:</span>
-        <button
-          onClick={() => setSelectedCategory('all')}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold whitespace-nowrap transition cursor-pointer ${
-            selectedCategory === 'all'
-              ? 'gradient-mnsbdi text-white shadow-md'
-              : 'bg-purple-50 dark:bg-purple-950 text-slate-600 dark:text-slate-300'
-          }`}
-        >
-          Semua Kategori ({events.length})
-        </button>
+      {/* Filter Toolbar */}
+      <div className="p-5 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
+          <input
+            type="text"
+            placeholder="Cari Judul Event / Lokasi Pelaksanaan..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-purple-600"
+          />
+        </div>
+      </div>
 
-        {categories.map(cat => {
-          const count = events.filter(e => e.category === cat).length;
+      {/* Category Tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-2">
+        {categories.map((cat) => {
+          const count = cat === 'all' 
+            ? events.length 
+            : events.filter(e => e.category === cat).length;
+
           return (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold whitespace-nowrap transition cursor-pointer ${
+              className={`px-4 py-2 rounded-xl text-xs font-black transition whitespace-nowrap cursor-pointer ${
                 selectedCategory === cat
                   ? 'gradient-mnsbdi text-white shadow-md'
-                  : 'bg-purple-50 dark:bg-purple-950 text-slate-600 dark:text-slate-300'
+                  : 'bg-white dark:bg-[#160e29] text-slate-600 dark:text-slate-300 border border-purple-100 dark:border-purple-900/60 hover:bg-purple-50'
               }`}
             >
-              {cat} ({count})
+              {cat === 'all' ? 'Semua Event' : cat} ({count})
             </button>
           );
         })}
@@ -91,7 +100,7 @@ export default function EventsManagementPage() {
       {/* Events Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredEvents.map((ev) => {
-          const isPast = ev.status === 'completed';
+          const isPast = new Date(ev.event_date) < new Date();
           const regCount = ev.registrations_count || 0;
           const quota = ev.quota || 100;
           const percentage = Math.min(100, Math.round((regCount / quota) * 100));
@@ -103,56 +112,58 @@ export default function EventsManagementPage() {
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className={`text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full ${
-                    ev.category === 'Kensyu' ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-200' :
-                    ev.category === 'Pertemuan' ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200' :
-                    'bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-300 border border-purple-200'
-                  }`}>
+                  <span className="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-200">
                     {ev.category || 'Gongyo'}
                   </span>
 
-                  <span className="text-xs font-extrabold text-amber-600 dark:text-amber-400 font-mono">
-                    {ev.status.toUpperCase()}
-                  </span>
+                  {isPast ? (
+                    <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                      Selesai
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded">
+                      Mendatang
+                    </span>
+                  )}
                 </div>
 
-                <h3 className="font-extrabold text-slate-900 dark:text-white text-lg leading-snug">{ev.title}</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">{ev.description}</p>
+                <h3 className="text-base font-extrabold text-purple-950 dark:text-white leading-snug">
+                  {ev.title}
+                </h3>
 
-                <div className="pt-2 border-t border-purple-100 dark:border-purple-900/60 space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
-                  <div className="flex items-center gap-2 font-semibold">
-                    <Clock size={14} className="text-purple-600 dark:text-purple-400" />
-                    <span>{new Date(ev.event_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                  </div>
-                  <div className="flex items-center gap-2 font-semibold">
+                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                  {ev.description}
+                </p>
+
+                <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-300 pt-2 border-t border-purple-100 dark:border-purple-900/60">
+                  <p className="flex items-center gap-1.5 font-semibold">
+                    <CalendarDays size={14} className="text-purple-600" />
+                    {new Date(ev.event_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                  <p className="flex items-center gap-1.5 font-semibold">
                     <MapPin size={14} className="text-amber-500" />
-                    <span>{ev.location}</span>
-                  </div>
-                </div>
-
-                {/* Quota Progress Bar */}
-                <div className="space-y-1 pt-1">
-                  <div className="flex justify-between text-[11px] font-bold">
-                    <span className="text-slate-500">Kuota Terisi:</span>
-                    <span className="text-purple-700 dark:text-purple-300 font-mono">{regCount} / {quota} Umat ({percentage}%)</span>
-                  </div>
-                  <div className="w-full bg-purple-50 dark:bg-purple-950 h-2 rounded-full overflow-hidden">
-                    <div 
-                      className="gradient-mnsbdi h-full rounded-full transition-all duration-500"
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
+                    {ev.location}
+                  </p>
                 </div>
               </div>
 
-              {/* Action Button */}
-              <div className="pt-3 border-t border-purple-100 dark:border-purple-900/60">
+              <div className="space-y-3 pt-3 border-t border-purple-100 dark:border-purple-900/60">
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between font-extrabold">
+                    <span className="text-slate-500">Kuota Terisi</span>
+                    <span className="text-purple-700 dark:text-purple-300">{regCount} / {quota} Umat</span>
+                  </div>
+                  <div className="w-full bg-purple-100 dark:bg-purple-950 h-2 rounded-full overflow-hidden">
+                    <div className="gradient-mnsbdi h-full rounded-full" style={{ width: `${percentage}%` }} />
+                  </div>
+                </div>
+
                 <Link
                   href={`/events/${ev.id}`}
-                  className="w-full py-2.5 rounded-xl bg-purple-50 dark:bg-purple-950 hover:bg-purple-100 dark:hover:bg-purple-900 text-purple-900 dark:text-purple-200 font-extrabold text-xs transition flex items-center justify-center gap-2 border border-purple-200 dark:border-purple-800"
+                  className="w-full py-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900 text-purple-950 dark:text-purple-200 font-extrabold text-xs flex items-center justify-center gap-1 transition"
                 >
-                  <span>Detail & Kepanitiaan Event</span>
-                  <ArrowRight size={14} />
+                  <span>Buka Workspace & PDF Report</span>
+                  <ChevronRight size={14} />
                 </Link>
               </div>
             </div>

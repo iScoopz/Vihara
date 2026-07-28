@@ -92,7 +92,7 @@ export default function PublicEventCatalogPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {events.map((ev) => {
           const isRegistered = registeredEventIds.includes(ev.id);
-          const isPast = ev.status === 'completed';
+          const isPast = new Date(ev.event_date) < new Date();
 
           return (
             <div 

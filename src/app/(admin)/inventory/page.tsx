@@ -78,8 +78,7 @@ export default function InventoryPage() {
       category: category,
       stock_quantity: parseInt(stockQty, 10) || 0,
       price_per_unit: parseFloat(pricePerUnit) || 0,
-      unit: unit,
-      min_stock_alert: 15
+      unit: unit
     });
 
     setIsAddItemModalOpen(false);
@@ -129,7 +128,7 @@ export default function InventoryPage() {
     return matchesSearch && matchesCat;
   });
 
-  const lowStockCount = items.filter(i => i.stock_quantity <= i.min_stock_alert).length;
+  const lowStockCount = items.filter(i => i.stock_quantity <= 10).length;
 
   return (
     <div className="space-y-6">
@@ -257,7 +256,7 @@ export default function InventoryPage() {
                 </thead>
                 <tbody className="divide-y divide-purple-100 dark:divide-indigo-900/60 text-sm">
                   {filteredItems.map((item) => {
-                    const isLow = item.stock_quantity <= item.min_stock_alert;
+                    const isLow = item.stock_quantity <= 10;
                     return (
                       <tr key={item.id} className="hover:bg-purple-50/40 dark:hover:bg-indigo-900/40 transition">
                         <td className="py-4 px-6 font-bold text-slate-900 dark:text-white flex items-center gap-3">
@@ -269,7 +268,7 @@ export default function InventoryPage() {
                           </div>
                           <div>
                             <p className="font-extrabold text-slate-900 dark:text-slate-100">{item.item_name}</p>
-                            <p className="text-[11px] text-slate-400">Min. Alert: {item.min_stock_alert} {item.unit}</p>
+                            <p className="text-[11px] text-slate-400">Min. Alert: 10 {item.unit}</p>
                           </div>
                         </td>
 

@@ -1,29 +1,45 @@
 'use client'
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { 
   Users, 
-  Calendar, 
+  CalendarDays, 
   HeartHandshake, 
-  PackageX, 
+  Package, 
+  TrendingUp, 
+  ArrowRight, 
   Cake, 
-  Building2, 
-  MapPin
+  Gift, 
+  Phone, 
+  Building, 
+  CheckCircle2, 
+  MapPin, 
+  DollarSign, 
+  Eye, 
+  EyeOff 
 } from 'lucide-react';
-import { getUpcomingBirthdays, getProfiles, getEvents, getDonations, getInventory } from '@/lib/actions/vihara-actions';
+import { 
+  getUpcomingBirthdays, 
+  getProfiles, 
+  getEvents, 
+  getDonations, 
+  getInventory 
+} from '@/lib/actions/vihara-actions';
 import { Profile, ViharaEvent, Donation, InventoryItem } from '@/types/database';
 
-export default function DashboardPage() {
+export default function AdminDashboardPage() {
   const [birthdays, setBirthdays] = useState<Profile[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [events, setEvents] = useState<ViharaEvent[]>([]);
   const [donations, setDonations] = useState<Donation[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [showMockBirthdayToggle, setShowMockBirthdayToggle] = useState(true);
+  const [showMockBirthdayToggle, setShowMockBirthdayToggle] = useState<boolean>(true);
 
   useEffect(() => {
     async function loadData() {
-      const bdays = await getUpcomingBirthdays();
+      const currentMonth = new Date().getMonth() + 1;
+      const bdays = await getUpcomingBirthdays(currentMonth);
       const profs = await getProfiles();
       const evs = await getEvents();
       const dons = await getDonations();
@@ -39,9 +55,9 @@ export default function DashboardPage() {
   }, []);
 
   const totalUmat = profiles.length;
-  const activeEvents = events.filter(e => e.status === 'upcoming' || e.status === 'ongoing').length;
+  const activeEvents = events.filter(e => new Date(e.event_date) >= new Date()).length;
   const totalDonations = donations.reduce((sum, d) => sum + Number(d.amount), 0);
-  const lowStockItems = inventory.filter(i => i.stock_quantity <= i.min_stock_alert);
+  const lowStockItems = inventory.filter(i => i.stock_quantity <= 10);
 
   const hanCounts: Record<string, number> = {};
   profiles.forEach(p => {
@@ -59,195 +75,174 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Page Heading */}
+      {/* Header Overview */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-            <span>Dashboard</span>
+          <h1 className="text-3xl font-black text-purple-950 dark:text-white tracking-tight">
+            Dashboard Utama Vihara MNSBDI
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Ringkasan statistik data umat, event, donasi, dan inventaris</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Overview aktivitas kebaktian, keanggotaan umat, dan administrasi vihara</p>
         </div>
 
-        {/* Toggle Widget Ultah Simulator */}
-        <div className="flex items-center gap-3 bg-white dark:bg-[#160e29] p-2 rounded-xl border border-purple-100 dark:border-purple-900/60 shadow-sm">
-          <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Simulasi Widget Ultah:</span>
-          <button
-            onClick={() => setShowMockBirthdayToggle(!showMockBirthdayToggle)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition cursor-pointer ${
-              showMockBirthdayToggle
-                ? 'bg-purple-600 text-white shadow-md'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
-            }`}
+        <div className="flex items-center gap-3">
+          <Link
+            href="/events/new"
+            className="gradient-mnsbdi text-white font-extrabold px-4 py-2.5 rounded-xl text-xs shadow-lg shadow-purple-500/25 flex items-center gap-2 hover:opacity-95 transition"
           >
-            {showMockBirthdayToggle ? 'Tampilkan Widget' : 'Sembunyikan Widget'}
-          </button>
+            <span>+ Buat Event Baru</span>
+          </Link>
         </div>
       </div>
 
-      {/* 4 Summary Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm hover:shadow-md transition flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Umat</p>
-            <h3 className="text-3xl font-extrabold text-slate-900 dark:text-white mt-1">{totalUmat}</h3>
-            <span className="inline-block mt-2 text-[11px] font-extrabold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800">
-              Terdaftar
-            </span>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 flex items-center justify-center font-bold">
-            <Users size={24} />
-          </div>
-        </div>
-
-        <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm hover:shadow-md transition flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Event Aktif</p>
-            <h3 className="text-3xl font-extrabold text-slate-900 dark:text-white mt-1">{activeEvents}</h3>
-            <span className="inline-block mt-2 text-[11px] font-extrabold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
-              Mendatang
-            </span>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-300 flex items-center justify-center font-bold">
-            <Calendar size={24} />
-          </div>
-        </div>
-
-        <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm hover:shadow-md transition flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Donasi</p>
-            <h3 className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">
-              Rp {totalDonations.toLocaleString('id-ID')}
-            </h3>
-            <span className="inline-block mt-2 text-[11px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
-              Dana Paramita
-            </span>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-300 flex items-center justify-center font-bold">
-            <HeartHandshake size={24} />
-          </div>
-        </div>
-
-        <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm hover:shadow-md transition flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Stok Menipis</p>
-            <h3 className={`text-3xl font-extrabold mt-1 ${lowStockItems.length > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-300'}`}>
-              {lowStockItems.length}
-            </h3>
-            <span className="inline-block mt-2 text-[11px] font-extrabold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950 px-2 py-0.5 rounded border border-rose-200 dark:border-rose-800">
-              Perlu Restok
-            </span>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold">
-            <PackageX size={24} />
-          </div>
-        </div>
-      </div>
-
-      {/* OPTIONAL BIRTHDAY WIDGET */}
-      {activeBirthdays.length > 0 && (
-        <div className="p-6 rounded-2xl bg-gradient-to-r from-purple-700 via-purple-800 to-indigo-900 text-white shadow-xl relative overflow-hidden">
-          <div className="flex items-center justify-between mb-4 relative z-10">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 font-extrabold flex items-center justify-center shadow-lg">
-                <Cake size={20} />
-              </div>
-              <div>
-                <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
-                  <span>Pengingat Ulang Tahun Umat</span>
-                  <span className="text-xs bg-amber-400 text-slate-950 font-black px-2 py-0.5 rounded-full">
-                    Bulan Ini ({activeBirthdays.length} Umat)
-                  </span>
-                </h3>
-                <p className="text-xs text-purple-200">
-                  Daftar umat yang berulang tahun pada bulan ini.
-                </p>
-              </div>
+      {/* 4 Primary Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* Card 1: Total Umat */}
+        <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Total Umat</span>
+            <div className="p-2.5 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300">
+              <Users size={20} />
             </div>
           </div>
+          <div>
+            <p className="text-3xl font-black text-slate-900 dark:text-white">{totalUmat}</p>
+            <p className="text-xs text-purple-700 dark:text-purple-300 font-semibold mt-1">Terdaftar di berbagai HAN</p>
+          </div>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 relative z-10 pt-2">
-            {activeBirthdays.map((bday) => (
-              <div key={bday.id} className="p-4 rounded-xl bg-purple-950/70 border border-purple-400/30 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-amber-400 text-slate-950 font-black flex items-center justify-center text-sm shadow">
-                    {bday.full_name.substring(0, 2).toUpperCase()}
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-white">{bday.full_name}</h4>
-                    <p className="text-xs text-purple-200">{bday.han || 'Umat Vihara'} • {bday.cetya}</p>
-                  </div>
+        {/* Card 2: Active Events */}
+        <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Event Mendatang</span>
+            <div className="p-2.5 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400">
+              <CalendarDays size={20} />
+            </div>
+          </div>
+          <div>
+            <p className="text-3xl font-black text-slate-900 dark:text-white">{activeEvents}</p>
+            <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold mt-1">Kegiatan Gongyo & Kensyu</p>
+          </div>
+        </div>
+
+        {/* Card 3: Total Dana Paramita */}
+        <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Dana Paramita</span>
+            <div className="p-2.5 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
+              <HeartHandshake size={20} />
+            </div>
+          </div>
+          <div>
+            <p className="text-2xl font-black text-slate-900 dark:text-white">Rp {totalDonations.toLocaleString('id-ID')}</p>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-1">Tercatat di sistem</p>
+          </div>
+        </div>
+
+        {/* Card 4: Inventory Alert */}
+        <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Stok Inventaris</span>
+            <div className="p-2.5 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300">
+              <Package size={20} />
+            </div>
+          </div>
+          <div>
+            <p className="text-3xl font-black text-slate-900 dark:text-white">{inventory.length} Item</p>
+            <p className="text-xs text-slate-500 font-semibold mt-1">{lowStockItems.length} item stok menipis</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Birthday Widget */}
+      <div className="p-6 rounded-3xl bg-gradient-to-r from-purple-900 via-indigo-950 to-slate-900 text-white shadow-xl border border-purple-700/50 space-y-4">
+        <div className="flex items-center justify-between border-b border-purple-700/50 pb-3">
+          <div className="flex items-center gap-2">
+            <Cake className="text-amber-400" size={24} />
+            <h2 className="text-lg font-black tracking-tight">
+              Ulang Tahun Umat Bulan Ini ({new Date().toLocaleDateString('id-ID', { month: 'long' })})
+            </h2>
+          </div>
+
+          <button
+            onClick={() => setShowMockBirthdayToggle(!showMockBirthdayToggle)}
+            className="text-xs font-extrabold bg-purple-950/80 border border-purple-600/50 px-3 py-1.5 rounded-xl flex items-center gap-1.5 hover:bg-purple-900 transition cursor-pointer"
+          >
+            {showMockBirthdayToggle ? <EyeOff size={14} /> : <Eye size={14} />}
+            <span>{showMockBirthdayToggle ? 'Sembunyikan Widget' : 'Tampilkan Widget'}</span>
+          </button>
+        </div>
+
+        {activeBirthdays.length === 0 ? (
+          <p className="text-xs text-purple-200 py-2">Tidak ada data ulang tahun yang terinput untuk bulan ini.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {activeBirthdays.map(bday => (
+              <div key={bday.id} className="p-3.5 rounded-2xl bg-purple-950/60 border border-purple-600/40 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 font-black text-sm flex items-center justify-center shadow">
+                  🎁
                 </div>
+                <div className="text-xs space-y-0.5">
+                  <p className="font-black text-white">{bday.full_name}</p>
+                  <p className="text-amber-300 font-bold">
+                    Ultah: {bday.birth_date ? new Date(bday.birth_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long' }) : '-'}
+                  </p>
+                  <p className="text-[10px] text-purple-300 font-mono">{bday.han}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-                <span className="text-xs font-extrabold text-amber-300 bg-amber-500/20 px-2 py-1 rounded-md border border-amber-400/30">
-                  🎂 {bday.birth_date ? new Date(bday.birth_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : ''}
-                </span>
+      {/* Grid distribution */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Distribusi Umat per HAN */}
+        <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4">
+          <h3 className="text-base font-extrabold text-slate-900 dark:text-white border-b border-purple-100 dark:border-purple-900/60 pb-3 flex items-center gap-2">
+            <Building className="text-purple-600 dark:text-purple-400" size={18} />
+            <span>Distribusi Umat per Kelompok HAN</span>
+          </h3>
+
+          <div className="space-y-3">
+            {Object.entries(hanCounts).map(([hanName, count]) => (
+              <div key={hanName} className="space-y-1">
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-slate-700 dark:text-slate-300">{hanName}</span>
+                  <span className="text-purple-700 dark:text-purple-300 font-black">{count} Umat</span>
+                </div>
+                <div className="w-full bg-purple-100 dark:bg-purple-950 h-2.5 rounded-full overflow-hidden">
+                  <div 
+                    className="gradient-mnsbdi h-full rounded-full"
+                    style={{ width: `${Math.min(100, (count / totalUmat) * 100)}%` }}
+                  />
+                </div>
               </div>
             ))}
           </div>
         </div>
-      )}
 
-      {/* Charts & Distribution Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Sebaran HAN */}
+        {/* Cetya Distribution */}
         <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <MapPin className="text-purple-600 dark:text-purple-400" size={18} />
-              <span>Sebaran Wilayah HAN</span>
-            </h3>
-            <span className="text-xs text-slate-400">Demografi Umat</span>
-          </div>
+          <h3 className="text-base font-extrabold text-slate-900 dark:text-white border-b border-purple-100 dark:border-purple-900/60 pb-3 flex items-center gap-2">
+            <Building className="text-amber-500" size={18} />
+            <span>Distribusi Umat per Cetya Naungan</span>
+          </h3>
 
-          <div className="space-y-3 pt-2">
-            {Object.entries(hanCounts).map(([han, count]) => {
-              const percentage = Math.round((count / totalUmat) * 100) || 0;
-              return (
-                <div key={han} className="space-y-1">
-                  <div className="flex justify-between text-xs font-bold">
-                    <span className="text-slate-700 dark:text-slate-300">{han}</span>
-                    <span className="text-purple-700 dark:text-purple-300 font-extrabold">{count} Umat ({percentage}%)</span>
-                  </div>
-                  <div className="w-full bg-purple-50 dark:bg-purple-950 h-3 rounded-full overflow-hidden border border-purple-100 dark:border-purple-900">
-                    <div 
-                      className="gradient-purple h-full rounded-full transition-all duration-500"
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
+          <div className="space-y-3">
+            {Object.entries(cetyaCounts).map(([cetyaName, count]) => (
+              <div key={cetyaName} className="space-y-1">
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-slate-700 dark:text-slate-300">{cetyaName}</span>
+                  <span className="text-amber-600 dark:text-amber-400 font-black">{count} Umat</span>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Sebaran Cetya */}
-        <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Building2 className="text-amber-500" size={18} />
-              <span>Sebaran Cetya Bernaung</span>
-            </h3>
-            <span className="text-xs text-slate-400">Lokasi Kebaktian</span>
-          </div>
-
-          <div className="space-y-3 pt-2">
-            {Object.entries(cetyaCounts).map(([cetya, count]) => {
-              const percentage = Math.round((count / totalUmat) * 100) || 0;
-              return (
-                <div key={cetya} className="space-y-1">
-                  <div className="flex justify-between text-xs font-bold">
-                    <span className="text-slate-700 dark:text-slate-300">{cetya}</span>
-                    <span className="text-amber-600 dark:text-amber-400 font-extrabold">{count} Umat ({percentage}%)</span>
-                  </div>
-                  <div className="w-full bg-amber-50 dark:bg-amber-950 h-3 rounded-full overflow-hidden border border-amber-100 dark:border-amber-900">
-                    <div 
-                      className="gradient-gold h-full rounded-full transition-all duration-500"
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
+                <div className="w-full bg-amber-100 dark:bg-amber-950 h-2.5 rounded-full overflow-hidden">
+                  <div 
+                    className="gradient-gold h-full rounded-full"
+                    style={{ width: `${Math.min(100, (count / totalUmat) * 100)}%` }}
+                  />
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         </div>
       </div>
