@@ -3,6 +3,14 @@
 -- Copy dan paste seluruh isi script ini ke Supabase Dashboard -> SQL Editor -> Run
 -- =========================================================================
 
+-- SAFE ENUM TYPE CREATION (Mencegah ERROR 42710)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+        CREATE TYPE user_role AS ENUM ('umat', 'admin');
+    END IF;
+END $$;
+
 -- 1. TABEL PROFILES (DATA UMAT)
 CREATE TABLE IF NOT EXISTS public.profiles (
   id TEXT PRIMARY KEY,
