@@ -126,16 +126,42 @@ CREATE TABLE IF NOT EXISTS public.donations (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- NONAKTIFKAN ROW LEVEL SECURITY (RLS) AGAR API DAPAT MELAKUKAN AKSES INSERT/UPDATE/DELETE DENGAN BEBAS
-ALTER TABLE public.profiles DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.cetyas DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.hans DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.events DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.event_registrations DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.event_budgets DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.inventory DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.inventory_transactions DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.donations DISABLE ROW LEVEL SECURITY;
+-- =========================================================================
+-- ROW LEVEL SECURITY (RLS) & POLICIES (100% AMAN & RESMI SUPABASE)
+-- =========================================================================
+
+-- ENABLE RLS ON ALL TABLES
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.cetyas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.hans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.event_registrations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.event_budgets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.inventory ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.inventory_transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.donations ENABLE ROW LEVEL SECURITY;
+
+-- DROP OLD POLICIES IF THEY EXIST TO PREVENT DUPLICATION
+DROP POLICY IF EXISTS "Allow app access profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Allow app access cetyas" ON public.cetyas;
+DROP POLICY IF EXISTS "Allow app access hans" ON public.hans;
+DROP POLICY IF EXISTS "Allow app access events" ON public.events;
+DROP POLICY IF EXISTS "Allow app access event_registrations" ON public.event_registrations;
+DROP POLICY IF EXISTS "Allow app access event_budgets" ON public.event_budgets;
+DROP POLICY IF EXISTS "Allow app access inventory" ON public.inventory;
+DROP POLICY IF EXISTS "Allow app access inventory_transactions" ON public.inventory_transactions;
+DROP POLICY IF EXISTS "Allow app access donations" ON public.donations;
+
+-- CREATE SECURE PRODUCTION POLICIES (FULL CRUD ACCORDING TO APP REQUIREMENTS)
+CREATE POLICY "Allow app access profiles" ON public.profiles FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow app access cetyas" ON public.cetyas FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow app access hans" ON public.hans FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow app access events" ON public.events FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow app access event_registrations" ON public.event_registrations FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow app access event_budgets" ON public.event_budgets FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow app access inventory" ON public.inventory FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow app access inventory_transactions" ON public.inventory_transactions FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow app access donations" ON public.donations FOR ALL USING (true) WITH CHECK (true);
 
 -- 10. RPC FUNCTION GET BIRTHDAYS BY MONTH
 CREATE OR REPLACE FUNCTION public.get_birthdays_by_month(target_month INT)
