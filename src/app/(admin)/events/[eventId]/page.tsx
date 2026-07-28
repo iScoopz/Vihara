@@ -1155,13 +1155,31 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
 
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Bidang & PJ Pelaksana</label>
+                <select
+                  value={skExecutorBidangPj}
+                  onChange={(e) => setSkExecutorBidangPj(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-bold mb-1.5 cursor-pointer"
+                >
+                  <option value="">-- Pilih dari Struktur Panitia Event --</option>
+                  {org?.ketua_name && <option value={`Ketua Panitia - ${org.ketua_name}`}>Ketua Panitia - {org.ketua_name}</option>}
+                  {org?.sekretaris_name && <option value={`Sekretaris Panitia - ${org.sekretaris_name}`}>Sekretaris Panitia - {org.sekretaris_name}</option>}
+                  {org?.bendahara_name && <option value={`Bendahara Panitia - ${org.bendahara_name}`}>Bendahara Panitia - {org.bendahara_name}</option>}
+                  {org?.pj_acara_name && <option value={`PJ Acara Utama - ${org.pj_acara_name}`}>PJ Acara Utama - {org.pj_acara_name}</option>}
+                  {org?.pj_umum_name && <option value={`PJ Bidang Umum Utama - ${org.pj_umum_name}`}>PJ Bidang Umum Utama - {org.pj_umum_name}</option>}
+                  {org?.sub_acara?.map(s => (
+                    <option key={s.id} value={`${s.role_name} - ${s.pic_name}`}>{s.role_name} - {s.pic_name}</option>
+                  ))}
+                  {org?.sub_umum?.map(s => (
+                    <option key={s.id} value={`${s.role_name} - ${s.pic_name}`}>{s.role_name} - {s.pic_name}</option>
+                  ))}
+                </select>
                 <input
                   type="text"
                   required
-                  placeholder="misal: Bidang Acara - Suryani Dewi"
+                  placeholder="Atau ketik kustom..."
                   value={skExecutorBidangPj}
                   onChange={(e) => setSkExecutorBidangPj(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-bold"
+                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-bold"
                 />
               </div>
 
@@ -1179,13 +1197,31 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
 
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Interbid (Bidang & PJ Tujuan)</label>
+                <select
+                  value={skInterbidBidangPj}
+                  onChange={(e) => setSkInterbidBidangPj(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-sky-900 dark:text-sky-300 focus:outline-none focus:border-purple-600 font-bold mb-1.5 cursor-pointer"
+                >
+                  <option value="">-- Pilih dari Struktur Panitia Event --</option>
+                  {org?.ketua_name && <option value={`Ketua Panitia - ${org.ketua_name}`}>Ketua Panitia - {org.ketua_name}</option>}
+                  {org?.sekretaris_name && <option value={`Sekretaris Panitia - ${org.sekretaris_name}`}>Sekretaris Panitia - {org.sekretaris_name}</option>}
+                  {org?.bendahara_name && <option value={`Bendahara Panitia - ${org.bendahara_name}`}>Bendahara Panitia - {org.bendahara_name}</option>}
+                  {org?.pj_acara_name && <option value={`PJ Acara Utama - ${org.pj_acara_name}`}>PJ Acara Utama - {org.pj_acara_name}</option>}
+                  {org?.pj_umum_name && <option value={`PJ Bidang Umum Utama - ${org.pj_umum_name}`}>PJ Bidang Umum Utama - {org.pj_umum_name}</option>}
+                  {org?.sub_acara?.map(s => (
+                    <option key={s.id} value={`${s.role_name} - ${s.pic_name}`}>{s.role_name} - {s.pic_name}</option>
+                  ))}
+                  {org?.sub_umum?.map(s => (
+                    <option key={s.id} value={`${s.role_name} - ${s.pic_name}`}>{s.role_name} - {s.pic_name}</option>
+                  ))}
+                </select>
                 <input
                   type="text"
                   required
-                  placeholder="misal: Bidang Umum & Logistik - Budi Santoso"
+                  placeholder="Atau ketik kustom..."
                   value={skInterbidBidangPj}
                   onChange={(e) => setSkInterbidBidangPj(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-bold text-sky-800 dark:text-sky-300"
+                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-bold text-sky-800 dark:text-sky-300"
                 />
               </div>
 
