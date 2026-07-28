@@ -54,6 +54,26 @@ export interface EventOrgStructure {
   vip_list: string[];
 }
 
+export interface EventProposalRundown {
+  id: string;
+  event_id: string;
+  day_date: string;
+  time_slot: string;
+  activity: string;
+  notes?: string;
+}
+
+export interface EventSkenarioKerja {
+  id: string;
+  event_id: string;
+  day_phase: string; // e.g. "H-1 (Jumat, 31 Juli 2026)" or "Hari-H (Sabtu, 1 Agustus 2026)"
+  time_slot: string; // e.g. "08:00 - 09:30"
+  executor_bidang_pj: string; // e.g. "Bidang Acara - Suryani Dewi"
+  activity: string; // e.g. "Check Sound System & Set Up Altar"
+  interbid_bidang_pj: string; // e.g. "Bidang Umum & Logistik - Budi Santoso"
+  notes?: string; // e.g. "Pastikan 4 mic wireless terisi baterai"
+}
+
 export interface ViharaEvent {
   id: string;
   title: string;
@@ -70,6 +90,8 @@ export interface ViharaEvent {
   registrations_count?: number;
   budgets?: EventBudget[];
   committees?: EventCommittee[];
+  proposal_rundowns?: EventProposalRundown[];
+  skenario_kerja?: EventSkenarioKerja[];
 }
 
 export interface EventRegistration {

@@ -126,6 +126,28 @@ CREATE TABLE IF NOT EXISTS public.donations (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- 10. TABEL EVENT PROPOSAL RUNDOWNS (RUNDOWN KEUANGAN/PROPOSAL ACARA)
+CREATE TABLE IF NOT EXISTS public.event_proposal_rundowns (
+  id TEXT PRIMARY KEY,
+  event_id TEXT REFERENCES public.events(id) ON DELETE CASCADE,
+  day_date TEXT NOT NULL,
+  time_slot TEXT NOT NULL,
+  activity TEXT NOT NULL,
+  notes TEXT
+);
+
+-- 11. TABEL EVENT SKENARIO KERJA (SK OPERASIONAL LAPANGAN TIM)
+CREATE TABLE IF NOT EXISTS public.event_skenario_kerja (
+  id TEXT PRIMARY KEY,
+  event_id TEXT REFERENCES public.events(id) ON DELETE CASCADE,
+  day_phase TEXT NOT NULL,
+  time_slot TEXT NOT NULL,
+  executor_bidang_pj TEXT NOT NULL,
+  activity TEXT NOT NULL,
+  interbid_bidang_pj TEXT NOT NULL,
+  notes TEXT
+);
+
 -- =========================================================================
 -- ROW LEVEL SECURITY (RLS) & POLICIES (100% AMAN & RESMI SUPABASE)
 -- =========================================================================
@@ -140,6 +162,8 @@ ALTER TABLE public.event_budgets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.inventory ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.inventory_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.donations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.event_proposal_rundowns ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.event_skenario_kerja ENABLE ROW LEVEL SECURITY;
 
 -- DROP OLD POLICIES IF THEY EXIST TO PREVENT DUPLICATION
 DROP POLICY IF EXISTS "Allow app access profiles" ON public.profiles;
@@ -151,6 +175,8 @@ DROP POLICY IF EXISTS "Allow app access event_budgets" ON public.event_budgets;
 DROP POLICY IF EXISTS "Allow app access inventory" ON public.inventory;
 DROP POLICY IF EXISTS "Allow app access inventory_transactions" ON public.inventory_transactions;
 DROP POLICY IF EXISTS "Allow app access donations" ON public.donations;
+DROP POLICY IF EXISTS "Allow app access event_proposal_rundowns" ON public.event_proposal_rundowns;
+DROP POLICY IF EXISTS "Allow app access event_skenario_kerja" ON public.event_skenario_kerja;
 
 -- CREATE SECURE PRODUCTION POLICIES (FULL CRUD ACCORDING TO APP REQUIREMENTS)
 CREATE POLICY "Allow app access profiles" ON public.profiles FOR ALL USING (true) WITH CHECK (true);
@@ -162,8 +188,10 @@ CREATE POLICY "Allow app access event_budgets" ON public.event_budgets FOR ALL U
 CREATE POLICY "Allow app access inventory" ON public.inventory FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow app access inventory_transactions" ON public.inventory_transactions FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow app access donations" ON public.donations FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow app access event_proposal_rundowns" ON public.event_proposal_rundowns FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow app access event_skenario_kerja" ON public.event_skenario_kerja FOR ALL USING (true) WITH CHECK (true);
 
--- 10. RPC FUNCTION GET BIRTHDAYS BY MONTH
+-- RPC FUNCTION GET BIRTHDAYS BY MONTH
 CREATE OR REPLACE FUNCTION public.get_birthdays_by_month(target_month INT)
 RETURNS SETOF public.profiles AS $$
 BEGIN
@@ -195,7 +223,6 @@ INSERT INTO public.profiles (id, role, full_name, sentra, cetya, han, phone, bir
 ('p4', 'umat', 'Tan Sri Wijaya', 'Sentra Jakarta', 'Cetya Buddha Gaya Jakarta', 'HAN Jakarta 01', '087812345678', '1995-12-05', 'P', 'Jl. Pluit Kencana No. 45, Jakarta Utara', '087855556666', true)
 ON CONFLICT (id) DO NOTHING;
 
--- 4. SEED EVENTS (KEBAKTIAN, KENSYU, PERTEMUAN)
 INSERT INTO public.events (id, title, description, event_date, end_date, location, quota, category, is_complex, pic_name, org_structure) VALUES
 ('e1', 'Gongyo & Oteshiki Bulanan Umat MNSBDI', 'Upacara pembacaan Paritta Gongyo bersama dan peringatan Oteshiki untuk mempererat persaudaraan umat MNSBDI.', '2026-08-01 08:00:00+08', '2026-08-01 12:00:00+08', 'Cetya Avalokitesvara Makassar', 150, 'Gongyo', true, 'Upasaka Hendra Kurniawan', '{
   "ketua_name": "Upasaka Hendra Kurniawan",
@@ -212,60 +239,17 @@ INSERT INTO public.events (id, title, description, event_date, end_date, locatio
     { "id": "sub_u2", "role_name": "Seksi Sound System & Media Peliputan", "pic_name": "Hendra Kurniawan" }
   ],
   "vip_list": ["VIP Pengurus Wilayah Sentra Makassar", "Tamu Kehormatan Sangha"]
-}'::jsonb),
-('e2', 'Kensyu Penataran & Pelatihan Umat MNSBDI', 'Kensyu pendalaman ajaran Buddha Dharma Niren Shoshu bagi para pengurus HAN dan Cetya.', '2026-08-15 09:00:00+08', '2026-08-16 17:00:00+08', 'Sentra Makassar Center', 80, 'Kensyu', true, 'Suryani Dewi', '{
-  "ketua_name": "Suryani Dewi",
-  "sekretaris_name": "Tan Sri Wijaya",
-  "bendahara_name": "Budi Santoso",
-  "pj_acara_name": "Upasaka Hendra Kurniawan",
-  "pj_umum_name": "Budi Santoso",
-  "sub_acara": [
-    { "id": "sub_a1", "role_name": "Seksi Materi Kensyu & Pendampingan", "pic_name": "Upasaka Hendra Kurniawan" }
-  ],
-  "sub_umum": [
-    { "id": "sub_u1", "role_name": "Seksi Konsumsi & Perlengkapan Peserta", "pic_name": "Budi Santoso" }
-  ],
-  "vip_list": ["VIP Pengurus Wilayah Sentra Makassar"]
-}'::jsonb),
-('e3', 'Pertemuan Rutin Pengurus HAN & Cetya', 'Rapat koordinasi mingguan pengurus Cetya dan pimpinan HAN membahas kegiatan pelayanan umat.', '2026-08-20 19:00:00+08', NULL, 'Ruang Rapat Cetya Maitreya Makassar', 30, 'Pertemuan', false, 'Budi Santoso', NULL)
+}'::jsonb)
 ON CONFLICT (id) DO NOTHING;
 
--- 5. SEED EVENT REGISTRATIONS
-INSERT INTO public.event_registrations (id, event_id, profile_id, registration_method, registered_by, is_attended, attended_at) VALUES
-('r1', 'e1', 'p1', 'self', NULL, true, '2026-08-01 08:15:00+08'),
-('r2', 'e1', 'p2', 'admin', 'p1', true, '2026-08-01 08:20:00+08'),
-('r3', 'e2', 'p2', 'self', NULL, false, NULL)
+INSERT INTO public.event_proposal_rundowns (id, event_id, day_date, time_slot, activity, notes) VALUES
+('pr1', 'e1', 'Sabtu, 1 Agustus 2026', '08:00 - 08:30', 'Registrasi Umat & Sambutan Panitia', 'Pendaftaran di lobby utama'),
+('pr2', 'e1', 'Sabtu, 1 Agustus 2026', '08:30 - 10:30', 'Pembacaan Paritta Gongyo & Doa Bersama', 'Gongyo bersama di Altar Utama'),
+('pr3', 'e1', 'Sabtu, 1 Agustus 2026', '10:30 - 12:00', 'Dharma Desana & Ramah Tamah Oteshiki', 'Pesan Dharma & Makan Siang Bersama')
 ON CONFLICT (id) DO NOTHING;
 
--- 6. SEED EVENT BUDGETS (RAB & REALISASI KEUANGAN)
-INSERT INTO public.event_budgets (id, event_id, item_name, budget_type, amount, notes) VALUES
-('b1', 'e1', 'Konsumsi Umat & Sangha', 'rab', 3500000, 'Target 150 porsi'),
-('b2', 'e1', 'Dekorasi & Bunga Altar Utama', 'rab', 1500000, 'Bunga Segar'),
-('b3', 'e1', 'Sound System & Media Stream', 'rab', 2000000, 'Vendor Sound System'),
-('b4', 'e1', 'Konsumsi Umat & Sangha', 'realisasi', 3200000, 'Realisasi Hemat Rp 300rb'),
-('b5', 'e1', 'Dekorasi & Bunga Altar Utama', 'realisasi', 1500000, 'Sesuai Anggaran'),
-('b6', 'e1', 'Sound System & Media Stream', 'realisasi', 1800000, 'Diskon Sewa Vendor')
-ON CONFLICT (id) DO NOTHING;
-
--- 7. SEED INVENTORY (PERLENGKAPAN RITUAL & ALARM STOK)
-INSERT INTO public.inventory (id, item_name, category, stock_quantity, price_per_unit, unit, last_updated) VALUES
-('inv1', 'Buku Paritta Gongyo MNSBDI', 'Perlengkapan Ritual', 45, 35000, 'buku', '2026-07-01 00:00:00+08'),
-('inv2', 'Juzu (Tasbih Doa)', 'Perlengkapan Umat', 8, 75000, 'pcs', '2026-07-02 00:00:00+08'),
-('inv3', 'Lilin Altar Merah Big Size', 'Perlengkapan Altar', 60, 25000, 'pasang', '2026-07-03 00:00:00+08'),
-('inv4', 'Dupa Hio Cendana Super', 'Perlengkapan Altar', 100, 15000, 'pack', '2026-07-04 00:00:00+08'),
-('inv5', 'Taplak Altar Sutra Ungu MNSBDI', 'Perlengkapan Altar', 5, 120000, 'pcs', '2026-07-05 00:00:00+08')
-ON CONFLICT (id) DO NOTHING;
-
--- 8. SEED INVENTORY TRANSACTIONS
-INSERT INTO public.inventory_transactions (id, inventory_id, item_name, profile_id, buyer_name, quantity, unit_price, total_price, transaction_date, notes) VALUES
-('t1', 'inv1', 'Buku Paritta Gongyo MNSBDI', 'p2', 'Suryani Dewi', 2, 35000, 70000, '2026-07-20 10:00:00+08', 'Pembelian Buku Doa'),
-('t2', 'inv2', 'Juzu (Tasbih Doa)', 'p3', 'Budi Santoso', 1, 75000, 75000, '2026-07-22 14:30:00+08', 'Pembelian Juzu Personal')
-ON CONFLICT (id) DO NOTHING;
-
--- 9. SEED DONATIONS (DANA PARAMITA)
-INSERT INTO public.donations (id, profile_id, donor_name, amount, donation_type, purpose, payment_method, donation_date, notes) VALUES
-('d1', 'p2', 'Suryani Dewi', 500000, 'paramita', 'Dana Paramita Pelaksanaan Gongyo', 'Transfer Bank', '2026-07-20', 'Dana Paramita Kebaktian Oteshiki'),
-('d2', 'p3', 'Budi Santoso', 1000000, 'operasional', 'Dana Operasional Cetya Avalokitesvara', 'Tunai', '2026-07-22', 'Operasional Bulanan Cetya'),
-('d3', 'p1', 'Upasaka Hendra Kurniawan', 2500000, 'pembangunan', 'Dana Pembangunan & Renovasi Vihara', 'Transfer Bank', '2026-07-25', 'Dana Pembangunan Ruang Altar Utama'),
-('d4', 'p4', 'Tan Sri Wijaya', 750000, 'paramita', 'Dana Paramita Kensyu Pemuda', 'QRIS', '2026-07-26', 'Dukungan Kensyu Pemuda MNSBDI')
+INSERT INTO public.event_skenario_kerja (id, event_id, day_phase, time_slot, executor_bidang_pj, activity, interbid_bidang_pj, notes) VALUES
+('sk1', 'e1', 'H-1 (Jumat, 31 Juli 2026)', '14:00 - 17:00', 'Bidang Umum - Budi Santoso', 'Pemasangan Spanduk, Dekorasi Bunga & Set Up Altar Utama', 'Seksi Ritual - Suryani Dewi', 'Pastikan bunga segar terpasang rapi & lilin merah disiapkan'),
+('sk2', 'e1', 'H-1 (Jumat, 31 Juli 2026)', '19:00 - 21:00', 'Bidang Acara - Suryani Dewi', 'Gladi Clean Sound System, Mic Wireless & Protocol Sangha', 'Bidang Umum - Hendra Kurniawan', 'Cek 4 unit mic wireless & pastikan baterai cadangan penuh'),
+('sk3', 'e1', 'Hari-H (Sabtu, 1 Agustus 2026)', '07:00 - 08:00', 'Bidang Umum - Budi Santoso', 'Penerimaan Konsumsi & Penataan Ruang Makan Umat', 'Bidang Acara - Suryani Dewi', 'Konfirmasi 150 porsi konsumsi vegetarian telah tiba')
 ON CONFLICT (id) DO NOTHING;

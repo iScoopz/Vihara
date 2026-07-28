@@ -28,7 +28,9 @@ import {
   EventOrgStructure, 
   SubSectionRole,
   CetyaProfile,
-  HanProfile
+  HanProfile,
+  EventProposalRundown,
+  EventSkenarioKerja
 } from '@/types/database';
 
 let profilesStore = [...INITIAL_PROFILES];
@@ -553,6 +555,9 @@ export async function getEvents(): Promise<ViharaEvent[]> {
 }
 
 export async function getEventById(id: string): Promise<ViharaEvent | null> {
+  let proposalRundowns: EventProposalRundown[] = [];
+  let skenarioKerja: EventSkenarioKerja[] = [];
+
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
@@ -560,11 +565,15 @@ export async function getEventById(id: string): Promise<ViharaEvent | null> {
       if (error) {
         console.error('Supabase getEventById error:', error);
       } else if (data) {
+        const { data: prData } = await supabase.from('event_proposal_rundowns').select('*').eq('event_id', id);
+        const { data: skData } = await supabase.from('event_skenario_kerja').select('*').eq('event_id', id);
         return {
           ...data,
           registrations_count: registrationsStore.filter(r => r.event_id === id).length,
           budgets: budgetsStore.filter(b => b.event_id === id),
-          committees: committeesStore.filter(c => c.event_id === id)
+          committees: committeesStore.filter(c => c.event_id === id),
+          proposal_rundowns: prData && prData.length > 0 ? prData : (data.proposal_rundowns || []),
+          skenario_kerja: skData && skData.length > 0 ? skData : (data.skenario_kerja || [])
         };
       }
     } catch (e) {
@@ -580,7 +589,9 @@ export async function getEventById(id: string): Promise<ViharaEvent | null> {
     registrations_count: registrationsStore.filter(r => r.event_id === id).length,
     budgets: budgetsStore.filter(b => b.event_id === id),
     committees: committeesStore.filter(c => c.event_id === id),
-    org_structure: ev.org_structure || (ev.is_complex ? INITIAL_ORG_STRUCTURE : undefined)
+    org_structure: ev.org_structure || (ev.is_complex ? INITIAL_ORG_STRUCTURE : undefined),
+    proposal_rundowns: ev.proposal_rundowns || [],
+    skenario_kerja: ev.skenario_kerja || []
   };
 }
 
@@ -776,4 +787,146 @@ export async function toggleAttendance(registrationId: string) {
   }
   revalidatePath('/events');
   return { success: true, is_attended: reg?.is_attended };
+}
+
+// PROPOSAL RUNDOWN ACTIONS
+export async function addProposalRundown(eventId: string, item: Omit<EventProposalRundown, 'id' | 'event_id'>) {
+  const newItem: EventProposalRundown = {
+    ...item,
+    id: `pr_${Date.now()}`,
+    event_id: eventId
+  };
+
+  const ev = eventsStore.find(e => e.id === eventId);
+  if (ev) {
+    if (!ev.proposal_rundowns) ev.proposal_rundowns = [];
+    ev.proposal_rundowns.push(newItem);
+  }
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { error } = await supabase.from('event_proposal_rundowns').insert([newItem]);
+      if (error) console.error('Supabase addProposalRundown error:', error);
+    } catch (e) {
+      console.error('addProposalRundown exception:', e);
+    }
+  }
+
+  revalidatePath(`/events/${eventId}`);
+  return { success: true, item: newItem };
+}
+
+export async function updateProposalRundown(eventId: string, itemId: string, itemData: Partial<Omit<EventProposalRundown, 'id' | 'event_id'>>) {
+  const ev = eventsStore.find(e => e.id === eventId);
+  if (ev && ev.proposal_rundowns) {
+    const idx = ev.proposal_rundowns.findIndex(i => i.id === itemId);
+    if (idx !== -1) {
+      ev.proposal_rundowns[idx] = { ...ev.proposal_rundowns[idx], ...itemData };
+    }
+  }
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { error } = await supabase.from('event_proposal_rundowns').update(itemData).eq('id', itemId);
+      if (error) console.error('Supabase updateProposalRundown error:', error);
+    } catch (e) {
+      console.error('updateProposalRundown exception:', e);
+    }
+  }
+
+  revalidatePath(`/events/${eventId}`);
+  return { success: true };
+}
+
+export async function deleteProposalRundown(eventId: string, itemId: string) {
+  const ev = eventsStore.find(e => e.id === eventId);
+  if (ev && ev.proposal_rundowns) {
+    ev.proposal_rundowns = ev.proposal_rundowns.filter(i => i.id !== itemId);
+  }
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { error } = await supabase.from('event_proposal_rundowns').delete().eq('id', itemId);
+      if (error) console.error('Supabase deleteProposalRundown error:', error);
+    } catch (e) {
+      console.error('deleteProposalRundown exception:', e);
+    }
+  }
+
+  revalidatePath(`/events/${eventId}`);
+  return { success: true };
+}
+
+// SKENARIO KERJA ACTIONS
+export async function addSkenarioKerja(eventId: string, item: Omit<EventSkenarioKerja, 'id' | 'event_id'>) {
+  const newItem: EventSkenarioKerja = {
+    ...item,
+    id: `sk_${Date.now()}`,
+    event_id: eventId
+  };
+
+  const ev = eventsStore.find(e => e.id === eventId);
+  if (ev) {
+    if (!ev.skenario_kerja) ev.skenario_kerja = [];
+    ev.skenario_kerja.push(newItem);
+  }
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { error } = await supabase.from('event_skenario_kerja').insert([newItem]);
+      if (error) console.error('Supabase addSkenarioKerja error:', error);
+    } catch (e) {
+      console.error('addSkenarioKerja exception:', e);
+    }
+  }
+
+  revalidatePath(`/events/${eventId}`);
+  return { success: true, item: newItem };
+}
+
+export async function updateSkenarioKerja(eventId: string, itemId: string, itemData: Partial<Omit<EventSkenarioKerja, 'id' | 'event_id'>>) {
+  const ev = eventsStore.find(e => e.id === eventId);
+  if (ev && ev.skenario_kerja) {
+    const idx = ev.skenario_kerja.findIndex(i => i.id === itemId);
+    if (idx !== -1) {
+      ev.skenario_kerja[idx] = { ...ev.skenario_kerja[idx], ...itemData };
+    }
+  }
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { error } = await supabase.from('event_skenario_kerja').update(itemData).eq('id', itemId);
+      if (error) console.error('Supabase updateSkenarioKerja error:', error);
+    } catch (e) {
+      console.error('updateSkenarioKerja exception:', e);
+    }
+  }
+
+  revalidatePath(`/events/${eventId}`);
+  return { success: true };
+}
+
+export async function deleteSkenarioKerja(eventId: string, itemId: string) {
+  const ev = eventsStore.find(e => e.id === eventId);
+  if (ev && ev.skenario_kerja) {
+    ev.skenario_kerja = ev.skenario_kerja.filter(i => i.id !== itemId);
+  }
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { error } = await supabase.from('event_skenario_kerja').delete().eq('id', itemId);
+      if (error) console.error('Supabase deleteSkenarioKerja error:', error);
+    } catch (e) {
+      console.error('deleteSkenarioKerja exception:', e);
+    }
+  }
+
+  revalidatePath(`/events/${eventId}`);
+  return { success: true };
 }

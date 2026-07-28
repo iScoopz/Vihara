@@ -169,7 +169,44 @@ export const INITIAL_EVENTS: ViharaEvent[] = [
     is_complex: true,
     pic_name: 'Upasaka Hendra Kurniawan',
     org_structure: INITIAL_ORG_STRUCTURE,
-    created_at: '2024-01-10T00:00:00Z'
+    created_at: '2024-01-10T00:00:00Z',
+    proposal_rundowns: [
+      { id: 'pr1', event_id: 'e1', day_date: 'Sabtu, 1 Agustus 2026', time_slot: '08:00 - 08:30', activity: 'Registrasi Umat & Sambutan Panitia', notes: 'Pendaftaran di lobby utama' },
+      { id: 'pr2', event_id: 'e1', day_date: 'Sabtu, 1 Agustus 2026', time_slot: '08:30 - 10:30', activity: 'Pembacaan Paritta Gongyo & Doa Bersama', notes: 'Gongyo bersama di Altar Utama' },
+      { id: 'pr3', event_id: 'e1', day_date: 'Sabtu, 1 Agustus 2026', time_slot: '10:30 - 12:00', activity: 'Dharma Desana & Ramah Tamah Oteshiki', notes: 'Pesan Dharma & Makan Siang Bersama' }
+    ],
+    skenario_kerja: [
+      {
+        id: 'sk1',
+        event_id: 'e1',
+        day_phase: 'H-1 (Jumat, 31 Juli 2026)',
+        time_slot: '14:00 - 17:00',
+        executor_bidang_pj: 'Bidang Umum - Budi Santoso',
+        activity: 'Pemasangan Spanduk, Dekorasi Bunga & Set Up Altar Utama',
+        interbid_bidang_pj: 'Seksi Ritual - Suryani Dewi',
+        notes: 'Pastikan bunga segar terpasang rapi & lilin merah disiapkan'
+      },
+      {
+        id: 'sk2',
+        event_id: 'e1',
+        day_phase: 'H-1 (Jumat, 31 Juli 2026)',
+        time_slot: '19:00 - 21:00',
+        executor_bidang_pj: 'Bidang Acara - Suryani Dewi',
+        activity: 'Gladi Clean Sound System, Mic Wireless & Protocol Sangha',
+        interbid_bidang_pj: 'Bidang Umum - Hendra Kurniawan',
+        notes: 'Cek 4 unit mic wireless & pastikan baterai cadangan penuh'
+      },
+      {
+        id: 'sk3',
+        event_id: 'e1',
+        day_phase: 'Hari-H (Sabtu, 1 Agustus 2026)',
+        time_slot: '07:00 - 08:00',
+        executor_bidang_pj: 'Bidang Umum - Budi Santoso',
+        activity: 'Penerimaan Konsumsi & Penataan Ruang Makan Umat',
+        interbid_bidang_pj: 'Bidang Acara - Suryani Dewi',
+        notes: 'Konfirmasi 150 porsi konsumsi vegetarian telah tiba'
+      }
+    ]
   },
   {
     id: 'e2',
