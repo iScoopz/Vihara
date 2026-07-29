@@ -54,6 +54,7 @@ export default function UmatDirectoryPage() {
   const [selectedCetyaFilter, setSelectedCetyaFilter] = useState('all');
   const [selectedHanFilter, setSelectedHanFilter] = useState('all');
   const [selectedMonth, setSelectedMonth] = useState('all');
+  const [selectedBagianFilter, setSelectedBagianFilter] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
 
   // Modals for Umat
@@ -70,6 +71,7 @@ export default function UmatDirectoryPage() {
   const [phone, setPhone] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [gender, setGender] = useState<'L' | 'P'>('L');
+  const [bagian, setBagian] = useState<'Inspirasi Pria Wanita' | 'Pro-M 40s' | 'Pro-M Progresif' | 'GM' | 'Bintang' | ''>('');
   const [address, setAddress] = useState('');
   const [emergencyContact, setEmergencyContact] = useState('');
 
@@ -81,6 +83,7 @@ export default function UmatDirectoryPage() {
   const [editPhone, setEditPhone] = useState('');
   const [editBirthDate, setEditBirthDate] = useState('');
   const [editGender, setEditGender] = useState<'L' | 'P'>('L');
+  const [editBagian, setEditBagian] = useState<'Inspirasi Pria Wanita' | 'Pro-M 40s' | 'Pro-M Progresif' | 'GM' | 'Bintang' | ''>('');
   const [editAddress, setEditAddress] = useState('');
   const [editEmergencyContact, setEditEmergencyContact] = useState('');
   const [editRole, setEditRole] = useState<'umat' | 'admin'>('umat');
@@ -163,6 +166,7 @@ export default function UmatDirectoryPage() {
       cetya: cetya,
       han: han,
       phone: phone,
+      bagian: bagian || undefined,
       birth_date: birthDate,
       gender: gender,
       address: address,
@@ -173,6 +177,7 @@ export default function UmatDirectoryPage() {
     setIsAddUmatModalOpen(false);
     setFullName('');
     setPhone('');
+    setBagian('');
     setBirthDate('');
     setAddress('');
     setEmergencyContact('');
@@ -188,6 +193,7 @@ export default function UmatDirectoryPage() {
     setEditPhone(profile.phone || '');
     setEditBirthDate(profile.birth_date || '');
     setEditGender(profile.gender || 'L');
+    setEditBagian(profile.bagian || '');
     setEditAddress(profile.address || '');
     setEditEmergencyContact(profile.emergency_contact || '');
     setEditRole(profile.role || 'umat');
@@ -205,6 +211,7 @@ export default function UmatDirectoryPage() {
       cetya: editCetya,
       han: editHan,
       phone: editPhone,
+      bagian: editBagian || undefined,
       birth_date: editBirthDate,
       gender: editGender,
       address: editAddress,
@@ -345,6 +352,7 @@ export default function UmatDirectoryPage() {
     const matchSentra = selectedSentraFilter === 'all' || p.sentra === selectedSentraFilter;
     const matchCetya = selectedCetyaFilter === 'all' || p.cetya === selectedCetyaFilter;
     const matchHan = selectedHanFilter === 'all' || p.han === selectedHanFilter;
+    const matchBagian = selectedBagianFilter === 'all' || p.bagian === selectedBagianFilter;
     const matchStatus = selectedStatus === 'all' || 
                         (selectedStatus === 'active' ? p.is_active : !p.is_active);
     
@@ -354,7 +362,7 @@ export default function UmatDirectoryPage() {
       matchMonth = monthNum === parseInt(selectedMonth, 10);
     }
 
-    return matchSearch && matchSentra && matchCetya && matchHan && matchStatus && matchMonth;
+    return matchSearch && matchSentra && matchCetya && matchHan && matchBagian && matchStatus && matchMonth;
   });
 
   return (
@@ -475,7 +483,7 @@ export default function UmatDirectoryPage() {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
               {/* Search Bar */}
               <div className="relative col-span-1 sm:col-span-2">
                 <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
@@ -518,6 +526,20 @@ export default function UmatDirectoryPage() {
                 {hans.map(h => <option key={h.id} value={h.name}>{h.name}</option>)}
               </select>
 
+              {/* Filter Bagian */}
+              <select
+                value={selectedBagianFilter}
+                onChange={(e) => setSelectedBagianFilter(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
+              >
+                <option value="all">Semua Bagian</option>
+                <option value="Inspirasi Pria Wanita">Inspirasi Pria Wanita</option>
+                <option value="Pro-M 40s">Pro-M 40s</option>
+                <option value="Pro-M Progresif">Pro-M Progresif</option>
+                <option value="GM">GM</option>
+                <option value="Bintang">Bintang</option>
+              </select>
+
               {/* Filter Bulan Ultah */}
               <select
                 value={selectedMonth}
@@ -550,7 +572,7 @@ export default function UmatDirectoryPage() {
                     <th className="py-4 px-6">Nama Umat & Role</th>
                     <th className="py-4 px-6">Sentra Utama</th>
                     <th className="py-4 px-6">Cetya Bernaung</th>
-                    <th className="py-4 px-6">Kelompok HAN</th>
+                    <th className="py-4 px-6">Bagian & HAN</th>
                     <th className="py-4 px-6">Tanggal Lahir</th>
                     <th className="py-4 px-6">Status</th>
                     <th className="py-4 px-6 text-center">Aksi</th>
@@ -588,9 +610,16 @@ export default function UmatDirectoryPage() {
                       </td>
 
                       <td className="py-4 px-6">
-                        <span className="inline-flex items-center gap-1 text-xs font-mono font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-2.5 py-1 rounded border border-purple-200 dark:border-purple-800">
-                          <Home size={12} /> {umat.han || '-'}
-                        </span>
+                        <div className="flex flex-col gap-1.5">
+                          {umat.bagian && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2.5 py-1 rounded w-fit">
+                              {umat.bagian}
+                            </span>
+                          )}
+                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-2.5 py-1 rounded border border-purple-200 dark:border-purple-800 w-fit">
+                            <Home size={12} /> {umat.han || '-'}
+                          </span>
+                        </div>
                       </td>
 
                       <td className="py-4 px-6 text-slate-700 dark:text-slate-300 text-xs">
@@ -820,7 +849,7 @@ export default function UmatDirectoryPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-4 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">No. HP</label>
                   <input
@@ -829,6 +858,22 @@ export default function UmatDirectoryPage() {
                     onChange={(e) => setEditPhone(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Bagian</label>
+                  <select
+                    value={editBagian}
+                    onChange={(e: any) => setEditBagian(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
+                  >
+                    <option value="">-- Pilih --</option>
+                    <option value="Inspirasi Pria Wanita">Inspirasi Pria Wanita</option>
+                    <option value="Pro-M 40s">Pro-M 40s</option>
+                    <option value="Pro-M Progresif">Pro-M Progresif</option>
+                    <option value="GM">GM</option>
+                    <option value="Bintang">Bintang</option>
+                  </select>
                 </div>
 
                 <div>
@@ -966,7 +1011,7 @@ export default function UmatDirectoryPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-4 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">No. HP</label>
                   <input
@@ -976,6 +1021,22 @@ export default function UmatDirectoryPage() {
                     onChange={(e) => setPhone(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Bagian</label>
+                  <select
+                    value={bagian}
+                    onChange={(e: any) => setBagian(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
+                  >
+                    <option value="">-- Pilih --</option>
+                    <option value="Inspirasi Pria Wanita">Inspirasi Pria Wanita</option>
+                    <option value="Pro-M 40s">Pro-M 40s</option>
+                    <option value="Pro-M Progresif">Pro-M Progresif</option>
+                    <option value="GM">GM</option>
+                    <option value="Bintang">Bintang</option>
+                  </select>
                 </div>
 
                 <div>

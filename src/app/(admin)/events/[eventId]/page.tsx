@@ -50,7 +50,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
   const [event, setEvent] = useState<ViharaEvent | null>(null);
   const [registrations, setRegistrations] = useState<EventRegistration[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'bidang' | 'rundown' | 'skenario' | 'rab' | 'registrasi' | 'laporan'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'bidang' | 'rundown' | 'skenario' | 'rab' | 'realisasi' | 'registrasi' | 'laporan'>('overview');
 
   // Modals
   const [isRegModalOpen, setIsRegModalOpen] = useState(false);
@@ -454,7 +454,19 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
           }`}
         >
           <Receipt size={16} />
-          <span>RAB & Realisasi</span>
+          <span>Rencana Anggaran (RAB)</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('realisasi')}
+          className={`pb-3 px-3 font-extrabold text-xs transition flex items-center gap-2 border-b-2 whitespace-nowrap cursor-pointer ${
+            activeTab === 'realisasi'
+              ? 'border-purple-600 text-purple-700 dark:text-purple-300'
+              : 'border-transparent text-slate-400 hover:text-slate-700'
+          }`}
+        >
+          <Receipt size={16} />
+          <span>Realisasi Keuangan</span>
         </button>
 
         <button
@@ -925,45 +937,140 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
         </div>
       )}
 
-      {/* TAB 6: RAB & REALISASI */}
+      {/* TAB 6: RAB */}
       {activeTab === 'rab' && (
         <div className="space-y-6 print:hidden">
           <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-purple-100 dark:border-purple-900/60 pb-3">
               <div>
                 <h3 className="text-base font-black text-slate-900 dark:text-white">
-                  Rencana Anggaran Biaya (RAB) vs Realisasi
+                  Rencana Anggaran Biaya (RAB)
                 </h3>
-                <p className="text-xs text-slate-500">Kelola item pengeluaran RAB dan pencatatan realisasi dana event.</p>
+                <p className="text-xs text-slate-500">Kelola item pengeluaran rencana anggaran event.</p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
-                  onClick={() => exportRABToExcel(event.title, event.budgets || [])}
+                  onClick={() => exportRABToExcel(event.title, rabItems || [])}
                   className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1 shadow cursor-pointer"
                 >
                   <FileSpreadsheet size={14} />
-                  <span>Export RAB Excel</span>
+                  <span>Export Excel</span>
                 </button>
 
                 <button
-                  onClick={() => setIsBudgetModalOpen(true)}
+                  onClick={() => {
+                    setPdfMode('proposal');
+                    setIsPdfModalOpen(true);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs flex items-center gap-1 shadow cursor-pointer"
+                >
+                  <Printer size={14} />
+                  <span>Cetak PDF</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setBudgetType('rab');
+                    setIsBudgetModalOpen(true);
+                  }}
                   className="px-3 py-1.5 rounded-xl gradient-mnsbdi text-white font-extrabold text-xs flex items-center gap-1 shadow-md cursor-pointer"
                 >
                   <Plus size={14} />
-                  <span>Tambah Item Keuangan</span>
+                  <span>Tambah Item</span>
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div className="p-4 rounded-xl bg-purple-50 dark:bg-purple-950/50 border border-purple-100 dark:border-purple-900">
                 <span className="text-slate-500 font-bold block mb-1">Total Target RAB (Rencana):</span>
                 <strong className="text-lg font-black text-purple-950 dark:text-purple-200">
                   Rp {totalRAB.toLocaleString('id-ID')}
                 </strong>
               </div>
+            </div>
 
+            <div className="overflow-x-auto pt-2">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-purple-100 dark:border-purple-900/60 text-slate-400 font-extrabold">
+                    <th className="pb-3 w-10 text-center">No</th>
+                    <th className="pb-3">Nama Item Pengeluaran</th>
+                    <th className="pb-3 text-right">Jumlah (Rp)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-purple-50 dark:divide-purple-900/40">
+                  {rabItems.length > 0 ? (
+                    rabItems.map((b, i) => (
+                      <tr key={b.id} className="hover:bg-purple-50/50 dark:hover:bg-purple-950/40">
+                        <td className="py-3 text-center font-bold text-slate-500">{i + 1}</td>
+                        <td className="py-3 font-bold text-slate-900 dark:text-white">{b.item_name}</td>
+                        <td className="py-3 text-right font-black text-slate-900 dark:text-white">
+                          Rp {b.amount.toLocaleString('id-ID')}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={3} className="py-6 text-center text-slate-400 text-xs italic">
+                        Belum ada item RAB yang dimasukkan.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 7: REALISASI */}
+      {activeTab === 'realisasi' && (
+        <div className="space-y-6 print:hidden">
+          <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-purple-100 dark:border-purple-900/60 pb-3">
+              <div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white">
+                  Realisasi Keuangan
+                </h3>
+                <p className="text-xs text-slate-500">Pencatatan aktual realisasi dana event.</p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => exportRABToExcel(event.title, event.budgets || [])}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1 shadow cursor-pointer"
+                >
+                  <FileSpreadsheet size={14} />
+                  <span>Export Excel</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setPdfMode('lpj');
+                    setIsPdfModalOpen(true);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs flex items-center gap-1 shadow cursor-pointer"
+                >
+                  <Printer size={14} />
+                  <span>Cetak PDF</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setBudgetType('realisasi');
+                    setIsBudgetModalOpen(true);
+                  }}
+                  className="px-3 py-1.5 rounded-xl gradient-mnsbdi text-white font-extrabold text-xs flex items-center gap-1 shadow-md cursor-pointer"
+                >
+                  <Plus size={14} />
+                  <span>Tambah Item</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
               <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-100 dark:border-amber-900">
                 <span className="text-slate-500 font-bold block mb-1">Total Realisasi (Aktual):</span>
                 <strong className="text-lg font-black text-amber-950 dark:text-amber-200">
@@ -976,7 +1083,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                   ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 text-emerald-900 dark:text-emerald-300'
                   : 'bg-rose-50 dark:bg-rose-950/50 border-rose-200 text-rose-900 dark:text-rose-300'
               }`}>
-                <span className="font-bold block mb-1">Selisih Anggaran:</span>
+                <span className="font-bold block mb-1">Sisa / Defisit terhadap RAB:</span>
                 <strong className="text-lg font-black">
                   Rp {(totalRAB - totalRealisasi).toLocaleString('id-ID')}
                 </strong>
@@ -989,37 +1096,57 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                   <tr className="border-b border-purple-100 dark:border-purple-900/60 text-slate-400 font-extrabold">
                     <th className="pb-3 w-10 text-center">No</th>
                     <th className="pb-3">Nama Item Pengeluaran</th>
-                    <th className="pb-3 text-center">Jenis Record</th>
-                    <th className="pb-3 text-right">Jumlah (Rp)</th>
+                    <th className="pb-3 text-right">RAB (Rencana)</th>
+                    <th className="pb-3 text-right">Aktual (Realisasi)</th>
+                    <th className="pb-3 text-right">Sisa / Defisit</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-purple-50 dark:divide-purple-900/40">
-                  {event.budgets && event.budgets.length > 0 ? (
-                    event.budgets.map((b, i) => (
-                      <tr key={b.id} className="hover:bg-purple-50/50 dark:hover:bg-purple-950/40">
-                        <td className="py-3 text-center font-bold text-slate-500">{i + 1}</td>
-                        <td className="py-3 font-bold text-slate-900 dark:text-white">{b.item_name}</td>
-                        <td className="py-3 text-center">
-                          <span className={`px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase ${
-                            b.budget_type === 'rab'
-                              ? 'bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-300'
-                              : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300'
-                          }`}>
-                            {b.budget_type === 'rab' ? 'Anggaran RAB' : 'Realisasi'}
-                          </span>
-                        </td>
-                        <td className="py-3 text-right font-black text-slate-900 dark:text-white">
-                          Rp {b.amount.toLocaleString('id-ID')}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={4} className="py-6 text-center text-slate-400 text-xs italic">
-                        Belum ada item anggaran keuangan yang dimasukkan.
-                      </td>
-                    </tr>
-                  )}
+                  {(() => {
+                    const mergedItems: Record<string, { rab: number; realisasi: number }> = {};
+                    rabItems.forEach(b => {
+                      mergedItems[b.item_name] = { rab: b.amount, realisasi: 0 };
+                    });
+                    realisasiItems.forEach(b => {
+                      if (!mergedItems[b.item_name]) {
+                        mergedItems[b.item_name] = { rab: 0, realisasi: b.amount };
+                      } else {
+                        mergedItems[b.item_name].realisasi = b.amount;
+                      }
+                    });
+
+                    const entries = Object.entries(mergedItems);
+                    
+                    if (entries.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan={5} className="py-6 text-center text-slate-400 text-xs italic">
+                            Belum ada item RAB maupun Realisasi yang dimasukkan.
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    return entries.map(([itemName, data], i) => {
+                      const selisih = data.rab - data.realisasi;
+                      const isHemat = selisih >= 0;
+                      return (
+                        <tr key={itemName} className="hover:bg-purple-50/50 dark:hover:bg-purple-950/40">
+                          <td className="py-3 text-center font-bold text-slate-500">{i + 1}</td>
+                          <td className="py-3 font-bold text-slate-900 dark:text-white">{itemName}</td>
+                          <td className="py-3 text-right font-semibold text-slate-500">
+                            Rp {data.rab.toLocaleString('id-ID')}
+                          </td>
+                          <td className="py-3 text-right font-black text-amber-600 dark:text-amber-400">
+                            Rp {data.realisasi.toLocaleString('id-ID')}
+                          </td>
+                          <td className={`py-3 text-right font-black ${isHemat ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                            {isHemat ? '+' : '-'} Rp {Math.abs(selisih).toLocaleString('id-ID')}
+                          </td>
+                        </tr>
+                      );
+                    });
+                  })()}
                 </tbody>
               </table>
             </div>
@@ -1667,23 +1794,48 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                       </tr>
                     </thead>
                     <tbody>
-                      {rabItems.map((b, i) => {
-                        const realisasi = realisasiItems.find(r => r.item_name === b.item_name)?.amount || 0;
-                        const variance = b.amount - realisasi;
-                        return (
-                          <tr key={b.id} className={i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
-                            <td className="p-2 border border-slate-300 text-center">{i + 1}</td>
-                            <td className="p-2 border border-slate-300 font-bold">{b.item_name}</td>
-                            <td className="p-2 border border-slate-300 text-right font-semibold">Rp {b.amount.toLocaleString('id-ID')}</td>
-                            {pdfMode === 'lpj' && <td className="p-2 border border-slate-300 text-right font-semibold text-amber-900">Rp {realisasi.toLocaleString('id-ID')}</td>}
-                            {pdfMode === 'lpj' && (
-                              <td className={`p-2 border border-slate-300 text-right font-bold ${variance >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                                Rp {variance.toLocaleString('id-ID')}
+                      {(() => {
+                        const mergedItems: Record<string, { rab: number; realisasi: number }> = {};
+                        rabItems.forEach(b => {
+                          mergedItems[b.item_name] = { rab: b.amount, realisasi: 0 };
+                        });
+                        realisasiItems.forEach(b => {
+                          if (!mergedItems[b.item_name]) {
+                            mergedItems[b.item_name] = { rab: 0, realisasi: b.amount };
+                          } else {
+                            mergedItems[b.item_name].realisasi = b.amount;
+                          }
+                        });
+
+                        const entries = Object.entries(mergedItems);
+                        
+                        if (entries.length === 0) {
+                          return (
+                            <tr>
+                              <td colSpan={5} className="p-4 text-center text-slate-400 text-xs italic">
+                                Belum ada item RAB maupun Realisasi.
                               </td>
-                            )}
-                          </tr>
-                        );
-                      })}
+                            </tr>
+                          );
+                        }
+
+                        return entries.map(([itemName, data], i) => {
+                          const variance = data.rab - data.realisasi;
+                          return (
+                            <tr key={itemName} className={i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
+                              <td className="p-2 border border-slate-300 text-center">{i + 1}</td>
+                              <td className="p-2 border border-slate-300 font-bold">{itemName}</td>
+                              <td className="p-2 border border-slate-300 text-right font-semibold">Rp {data.rab.toLocaleString('id-ID')}</td>
+                              {pdfMode === 'lpj' && <td className="p-2 border border-slate-300 text-right font-semibold text-amber-900">Rp {data.realisasi.toLocaleString('id-ID')}</td>}
+                              {pdfMode === 'lpj' && (
+                                <td className={`p-2 border border-slate-300 text-right font-bold ${variance >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                                  Rp {variance.toLocaleString('id-ID')}
+                                </td>
+                              )}
+                            </tr>
+                          );
+                        });
+                      })()}
                     </tbody>
                     <tfoot>
                       <tr className="bg-purple-100 font-extrabold">

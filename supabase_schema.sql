@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   cetya TEXT,
   han TEXT,
   phone TEXT,
+  bagian TEXT,
   birth_date DATE,
   gender TEXT,
   address TEXT,

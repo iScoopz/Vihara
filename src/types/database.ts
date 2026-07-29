@@ -7,6 +7,7 @@ export interface Profile {
   han?: string;
   cetya?: string;
   sentra?: string;
+  bagian?: 'Inspirasi Pria Wanita' | 'Pro-M 40s' | 'Pro-M Progresif' | 'GM' | 'Bintang';
   phone?: string;
   birth_date?: string;
   gender?: 'L' | 'P';
