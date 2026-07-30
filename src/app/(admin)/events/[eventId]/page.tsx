@@ -12,7 +12,10 @@ import {
   UserCheck, 
   Layers,
   Printer,
-  ListTodo
+  ListTodo,
+  Globe,
+  Send,
+  FileEdit
 } from 'lucide-react';
 import { 
   getEventById, 
@@ -29,7 +32,8 @@ import {
   deleteProposalRundown,
   addSkenarioKerja,
   updateSkenarioKerja,
-  deleteSkenarioKerja
+  deleteSkenarioKerja,
+  togglePublishEvent
 } from '@/lib/actions/vihara-actions';
 import { ViharaEvent, Profile, EventRegistration, EventProposalRundown, EventSkenarioKerja } from '@/types/database';
 
@@ -315,7 +319,14 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
     loadData();
   };
 
+  const handleTogglePublish = async () => {
+    if (!event) return;
+    await togglePublishEvent(event.id);
+    loadData();
+  };
+
   const isPastEvent = new Date(event.event_date) < new Date();
+  const isPublished = event.is_published ?? false;
 
   return (
     <div className="space-y-6">
@@ -329,14 +340,21 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
             <ArrowLeft size={14} />
             <span>Kembali ke Daftar Event</span>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
               {event.title}
             </h1>
             <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
+              isPublished
+                ? 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800'
+                : 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800'
+            }`}>
+              {isPublished ? '✓ Diterbitkan (Publik)' : '📝 Draf / Perencanaan'}
+            </span>
+            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
               isPastEvent
                 ? 'bg-slate-100 text-slate-600 border-slate-300 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800'
-                : 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800'
+                : 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800'
             }`}>
               {isPastEvent ? 'Selesai' : 'Mendatang'}
             </span>
@@ -355,6 +373,18 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={handleTogglePublish}
+            className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-md ${
+              isPublished
+                ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 border border-slate-300 dark:border-slate-700'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/30'
+            }`}
+          >
+            {isPublished ? <FileEdit size={14} /> : <Globe size={14} />}
+            <span>{isPublished ? 'Kembalikan ke Draf' : 'Terbitkan Event ke Umat'}</span>
+          </button>
+
           <button
             onClick={() => {
               setPdfMode('proposal');

@@ -167,6 +167,7 @@ export const INITIAL_EVENTS: ViharaEvent[] = [
     quota: 150,
     category: 'Gongyo',
     is_complex: true,
+    is_published: true,
     pic_name: 'Upasaka Hendra Kurniawan',
     org_structure: INITIAL_ORG_STRUCTURE,
     created_at: '2024-01-10T00:00:00Z',

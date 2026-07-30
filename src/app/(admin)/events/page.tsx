@@ -112,16 +112,25 @@ export default function AdminEventsListPage() {
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-200">
-                    {ev.category || 'Gongyo'}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-200">
+                      {ev.category || 'Gongyo'}
+                    </span>
+                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded ${
+                      ev.is_published
+                        ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300'
+                        : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300'
+                    }`}>
+                      {ev.is_published ? '✓ Terbit' : '📝 Draf'}
+                    </span>
+                  </div>
 
                   {isPast ? (
                     <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
                       Selesai
                     </span>
                   ) : (
-                    <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded">
+                    <span className="text-[10px] font-extrabold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950 px-2 py-0.5 rounded">
                       Mendatang
                     </span>
                   )}

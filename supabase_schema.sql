@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS public.events (
   quota INT DEFAULT 100,
   category TEXT DEFAULT 'Gongyo',
   is_complex BOOLEAN DEFAULT true,
+  is_published BOOLEAN DEFAULT false,
   pic_name TEXT,
   org_structure JSONB,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

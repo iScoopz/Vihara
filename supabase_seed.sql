@@ -26,8 +26,8 @@ INSERT INTO public.profiles (id, role, full_name, sentra, cetya, han, phone, bir
 ON CONFLICT (id) DO NOTHING;
 
 -- 4. SEED EVENTS
-INSERT INTO public.events (id, title, description, event_date, end_date, location, quota, category, is_complex, pic_name, org_structure) VALUES
-('e1', 'Gongyo & Oteshiki Bulanan Umat MNSBDI', 'Upacara pembacaan Paritta Gongyo bersama dan peringatan Oteshiki untuk mempererat persaudaraan umat MNSBDI.', '2026-08-01 08:00:00+08', '2026-08-01 12:00:00+08', 'Cetya Avalokitesvara Makassar', 150, 'Gongyo', true, 'Upasaka Hendra Kurniawan', '{
+INSERT INTO public.events (id, title, description, event_date, end_date, location, quota, category, is_complex, is_published, pic_name, org_structure) VALUES
+('e1', 'Gongyo & Oteshiki Bulanan Umat MNSBDI', 'Upacara pembacaan Paritta Gongyo bersama dan peringatan Oteshiki untuk mempererat persaudaraan umat MNSBDI.', '2026-08-01 08:00:00+08', '2026-08-01 12:00:00+08', 'Cetya Avalokitesvara Makassar', 150, 'Gongyo', true, true, 'Upasaka Hendra Kurniawan', '{
   "ketua_name": "Upasaka Hendra Kurniawan",
   "sekretaris_name": "Suryani Dewi",
   "bendahara_name": "Budi Santoso",

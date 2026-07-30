@@ -94,6 +94,7 @@ export default function CreateNewEventPage() {
       location,
       category,
       is_complex: isComplex,
+      is_published: false, // Default Sebagai Draf / Perencanaan
       quota: parseInt(quota, 10) || 100,
       pic_name: ketuaName,
       org_structure: isComplex ? orgStructure : undefined

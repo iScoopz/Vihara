@@ -599,6 +599,7 @@ export async function createEvent(eventData: Omit<ViharaEvent, 'id' | 'created_a
   const newEvent: ViharaEvent = {
     ...eventData,
     id: `e_${Date.now()}`,
+    is_published: eventData.is_published ?? false,
     created_at: new Date().toISOString(),
     org_structure: eventData.org_structure || (eventData.is_complex ? INITIAL_ORG_STRUCTURE : undefined)
   };
@@ -617,6 +618,28 @@ export async function createEvent(eventData: Omit<ViharaEvent, 'id' | 'created_a
   revalidatePath('/events');
   revalidatePath('/kegiatan');
   return { success: true, event: newEvent };
+}
+
+export async function togglePublishEvent(eventId: string) {
+  const ev = eventsStore.find(e => e.id === eventId);
+  if (ev) {
+    ev.is_published = !ev.is_published;
+
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = await createClient();
+        const { error } = await supabase.from('events').update({ is_published: ev.is_published }).eq('id', eventId);
+        if (error) console.error('Supabase togglePublishEvent error:', error);
+      } catch (e) {
+        console.error('togglePublishEvent exception:', e);
+      }
+    }
+  }
+
+  revalidatePath('/events');
+  revalidatePath(`/events/${eventId}`);
+  revalidatePath('/kegiatan');
+  return { success: true, is_published: ev?.is_published };
 }
 
 export async function addSubSectionToOrg(eventId: string, sectionType: 'sub_acara' | 'sub_umum', roleName: string, picName: string) {

@@ -16,7 +16,8 @@ export default function PublicEventCatalogPage() {
 
   const loadCatalog = async () => {
     const data = await getEvents();
-    setEvents(data);
+    const publishedEvents = data.filter(ev => ev.is_published === true || ev.is_published === undefined);
+    setEvents(publishedEvents);
 
     const registeredIds: string[] = [];
     for (const ev of data) {

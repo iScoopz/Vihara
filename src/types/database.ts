@@ -85,6 +85,7 @@ export interface ViharaEvent {
   quota?: number;
   category?: EventCategory;
   is_complex?: boolean;
+  is_published?: boolean;
   pic_name?: string;
   org_structure?: EventOrgStructure;
   created_at?: string;
