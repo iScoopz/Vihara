@@ -7,20 +7,9 @@ import {
   CalendarDays, 
   HeartHandshake, 
   Package, 
-  TrendingUp, 
-  ArrowRight, 
-  Cake, 
-  Gift, 
-  Phone, 
-  Building, 
-  CheckCircle2, 
-  MapPin, 
-  DollarSign, 
-  Eye, 
-  EyeOff 
+  Building
 } from 'lucide-react';
 import { 
-  getUpcomingBirthdays, 
   getProfiles, 
   getEvents, 
   getDonations, 
@@ -29,25 +18,20 @@ import {
 import { Profile, ViharaEvent, Donation, InventoryItem } from '@/types/database';
 
 export default function AdminDashboardPage() {
-  const [birthdays, setBirthdays] = useState<Profile[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [events, setEvents] = useState<ViharaEvent[]>([]);
   const [donations, setDonations] = useState<Donation[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [showMockBirthdayToggle, setShowMockBirthdayToggle] = useState<boolean>(true);
 
   useEffect(() => {
     async function loadData() {
-      const currentMonth = new Date().getMonth() + 1;
-      const [bdays, profs, evs, dons, invs] = await Promise.all([
-        getUpcomingBirthdays(currentMonth),
+      const [profs, evs, dons, invs] = await Promise.all([
         getProfiles(),
         getEvents(),
         getDonations(),
         getInventory()
       ]);
 
-      setBirthdays(bdays);
       setProfiles(profs);
       setEvents(evs);
       setDonations(dons);
@@ -73,14 +57,12 @@ export default function AdminDashboardPage() {
     cetyaCounts[cetyaName] = (cetyaCounts[cetyaName] || 0) + 1;
   });
 
-  const activeBirthdays = showMockBirthdayToggle ? birthdays : [];
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-7xl mx-auto">
       {/* Header Overview */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-purple-950 dark:text-white tracking-tight">
+          <h1 className="text-2xl md:text-3xl font-black text-purple-950 dark:text-white tracking-tight">
             Dashboard Utama Vihara MNSBDI
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">Overview aktivitas kebaktian, keanggotaan umat, dan administrasi vihara</p>
@@ -108,7 +90,7 @@ export default function AdminDashboardPage() {
           </div>
           <div>
             <p className="text-3xl font-black text-slate-900 dark:text-white">{totalUmat}</p>
-            <p className="text-xs text-purple-700 dark:text-purple-300 font-semibold mt-1">Terdaftar di berbagai HAN</p>
+            <p className="text-xs text-purple-700 dark:text-purple-300 font-semibold mt-1">Terdaftar di Database</p>
           </div>
         </div>
 
@@ -155,47 +137,6 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Birthday Widget */}
-      <div className="p-6 rounded-3xl bg-gradient-to-r from-purple-900 via-indigo-950 to-slate-900 text-white shadow-xl border border-purple-700/50 space-y-4">
-        <div className="flex items-center justify-between border-b border-purple-700/50 pb-3">
-          <div className="flex items-center gap-2">
-            <Cake className="text-amber-400" size={24} />
-            <h2 className="text-lg font-black tracking-tight">
-              Ulang Tahun Umat Bulan Ini ({new Date().toLocaleDateString('id-ID', { month: 'long' })})
-            </h2>
-          </div>
-
-          <button
-            onClick={() => setShowMockBirthdayToggle(!showMockBirthdayToggle)}
-            className="text-xs font-extrabold bg-purple-950/80 border border-purple-600/50 px-3 py-1.5 rounded-xl flex items-center gap-1.5 hover:bg-purple-900 transition cursor-pointer"
-          >
-            {showMockBirthdayToggle ? <EyeOff size={14} /> : <Eye size={14} />}
-            <span>{showMockBirthdayToggle ? 'Sembunyikan Widget' : 'Tampilkan Widget'}</span>
-          </button>
-        </div>
-
-        {activeBirthdays.length === 0 ? (
-          <p className="text-xs text-purple-200 py-2">Tidak ada data ulang tahun yang terinput untuk bulan ini.</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {activeBirthdays.map(bday => (
-              <div key={bday.id} className="p-3.5 rounded-2xl bg-purple-950/60 border border-purple-600/40 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 font-black text-sm flex items-center justify-center shadow">
-                  🎁
-                </div>
-                <div className="text-xs space-y-0.5">
-                  <p className="font-black text-white">{bday.full_name}</p>
-                  <p className="text-amber-300 font-bold">
-                    Ultah: {bday.birth_date ? new Date(bday.birth_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long' }) : '-'}
-                  </p>
-                  <p className="text-[10px] text-purple-300 font-mono">{bday.han}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
       {/* Grid distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Distribusi Umat per HAN */}
@@ -206,20 +147,24 @@ export default function AdminDashboardPage() {
           </h3>
 
           <div className="space-y-3">
-            {Object.entries(hanCounts).map(([hanName, count]) => (
-              <div key={hanName} className="space-y-1">
-                <div className="flex justify-between text-xs font-bold">
-                  <span className="text-slate-700 dark:text-slate-300">{hanName}</span>
-                  <span className="text-purple-700 dark:text-purple-300 font-black">{count} Umat</span>
+            {Object.keys(hanCounts).length > 0 ? (
+              Object.entries(hanCounts).map(([hanName, count]) => (
+                <div key={hanName} className="space-y-1">
+                  <div className="flex justify-between text-xs font-bold">
+                    <span className="text-slate-700 dark:text-slate-300">{hanName}</span>
+                    <span className="text-purple-700 dark:text-purple-300 font-black">{count} Umat</span>
+                  </div>
+                  <div className="w-full bg-purple-100 dark:bg-purple-950 h-2.5 rounded-full overflow-hidden">
+                    <div 
+                      className="gradient-mnsbdi h-full rounded-full"
+                      style={{ width: `${Math.min(100, (count / (totalUmat || 1)) * 100)}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="w-full bg-purple-100 dark:bg-purple-950 h-2.5 rounded-full overflow-hidden">
-                  <div 
-                    className="gradient-mnsbdi h-full rounded-full"
-                    style={{ width: `${Math.min(100, (count / totalUmat) * 100)}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-xs text-slate-400 italic">Belum ada data distribusi HAN.</p>
+            )}
           </div>
         </div>
 
@@ -231,20 +176,24 @@ export default function AdminDashboardPage() {
           </h3>
 
           <div className="space-y-3">
-            {Object.entries(cetyaCounts).map(([cetyaName, count]) => (
-              <div key={cetyaName} className="space-y-1">
-                <div className="flex justify-between text-xs font-bold">
-                  <span className="text-slate-700 dark:text-slate-300">{cetyaName}</span>
-                  <span className="text-amber-600 dark:text-amber-400 font-black">{count} Umat</span>
+            {Object.keys(cetyaCounts).length > 0 ? (
+              Object.entries(cetyaCounts).map(([cetyaName, count]) => (
+                <div key={cetyaName} className="space-y-1">
+                  <div className="flex justify-between text-xs font-bold">
+                    <span className="text-slate-700 dark:text-slate-300">{cetyaName}</span>
+                    <span className="text-amber-600 dark:text-amber-400 font-black">{count} Umat</span>
+                  </div>
+                  <div className="w-full bg-amber-100 dark:bg-amber-950 h-2.5 rounded-full overflow-hidden">
+                    <div 
+                      className="gradient-gold h-full rounded-full"
+                      style={{ width: `${Math.min(100, (count / (totalUmat || 1)) * 100)}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="w-full bg-amber-100 dark:bg-amber-950 h-2.5 rounded-full overflow-hidden">
-                  <div 
-                    className="gradient-gold h-full rounded-full"
-                    style={{ width: `${Math.min(100, (count / totalUmat) * 100)}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-xs text-slate-400 italic">Belum ada data distribusi Cetya.</p>
+            )}
           </div>
         </div>
       </div>

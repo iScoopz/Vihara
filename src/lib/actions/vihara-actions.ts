@@ -64,7 +64,7 @@ export async function getCetyas(): Promise<CetyaProfile[]> {
       const { data, error } = await supabase.from('cetyas').select('*').order('created_at', { ascending: false });
       if (error) {
         console.error('Supabase getCetyas error:', error);
-      } else if (data && data.length > 0) {
+      } else if (data) {
         return data;
       }
     } catch (e) {
@@ -138,7 +138,7 @@ export async function getHans(): Promise<HanProfile[]> {
       const { data, error } = await supabase.from('hans').select('*').order('created_at', { ascending: false });
       if (error) {
         console.error('Supabase getHans error:', error);
-      } else if (data && data.length > 0) {
+      } else if (data) {
         return data;
       }
     } catch (e) {
@@ -214,7 +214,7 @@ export async function getUpcomingBirthdays(targetMonth?: number): Promise<Profil
       const { data, error } = await supabase.rpc('get_birthdays_by_month', { target_month: currentMonth });
       if (error) {
         console.error('Supabase getUpcomingBirthdays rpc error:', error);
-      } else if (data && data.length > 0) {
+      } else if (data) {
         return data;
       }
     } catch (e) {
@@ -289,7 +289,7 @@ export async function getInventory(): Promise<InventoryItem[]> {
       const { data, error } = await supabase.from('inventory').select('*').order('last_updated', { ascending: false });
       if (error) {
         console.error('Supabase getInventory error:', error);
-      } else if (data && data.length > 0) {
+      } else if (data) {
         return data;
       }
     } catch (e) {
@@ -353,7 +353,7 @@ export async function getInventoryTransactions(): Promise<InventoryTransaction[]
       const { data, error } = await supabase.from('inventory_transactions').select('*').order('transaction_date', { ascending: false });
       if (error) {
         console.error('Supabase getInventoryTransactions error:', error);
-      } else if (data && data.length > 0) {
+      } else if (data) {
         return data;
       }
     } catch (e) {
@@ -411,7 +411,7 @@ export async function getDonations(): Promise<Donation[]> {
       const { data, error } = await supabase.from('donations').select('*').order('created_at', { ascending: false });
       if (error) {
         console.error('Supabase getDonations error:', error);
-      } else if (data && data.length > 0) {
+      } else if (data) {
         return data;
       }
     } catch (e) {
@@ -450,7 +450,7 @@ export async function getProfiles(): Promise<Profile[]> {
       const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
       if (error) {
         console.error('Supabase getProfiles error:', error);
-      } else if (data && data.length > 0) {
+      } else if (data) {
         return data;
       }
     } catch (e) {
@@ -532,7 +532,7 @@ export async function getEvents(): Promise<ViharaEvent[]> {
       const { data, error } = await supabase.from('events').select('*').order('event_date', { ascending: true });
       if (error) {
         console.error('Supabase getEvents error:', error);
-      } else if (data && data.length > 0) {
+      } else if (data) {
         return data.map(ev => ({
           ...ev,
           registrations_count: registrationsStore.filter(r => r.event_id === ev.id).length,
