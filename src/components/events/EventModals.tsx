@@ -6,6 +6,7 @@ import { SearchableUmatSelect } from '@/components/ui/SearchableUmatSelect';
 interface EventModalsProps {
   event: ViharaEvent;
   profiles: Profile[];
+  registeredProfileIds?: string[];
   
   // Proposal Rundown Modal State
   isProposalRundownModalOpen: boolean;
@@ -87,6 +88,7 @@ interface EventModalsProps {
 export const EventModals: React.FC<EventModalsProps> = ({
   event,
   profiles,
+  registeredProfileIds = [],
   isProposalRundownModalOpen,
   editingProposalRundown,
   prDate,
@@ -475,6 +477,7 @@ export const EventModals: React.FC<EventModalsProps> = ({
                   required
                   profiles={profiles}
                   value={selectedUmatId}
+                  disabledIds={registeredProfileIds}
                   onChange={(id) => setSelectedUmatId(id)}
                   placeholder="-- Ketik / Cari Nama Umat --"
                 />

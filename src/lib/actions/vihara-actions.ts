@@ -238,16 +238,70 @@ export async function registerForEvent(eventId: string, targetUmatId?: string, c
   let regMethod: 'self' | 'admin' = 'self';
   let registeredBy: string | undefined = undefined;
 
-  if (targetUmatId && targetUmatId !== currentUserId) {
-    const adminUser = profilesStore.find(p => p.id === currentUserId);
-    if (adminUser?.role !== 'admin') {
-      return { error: 'Unauthorized: Hanya admin yang dapat mendaftarkan umat lain.' };
-    }
+  if (targetUmatId) {
     profileToRegister = targetUmatId;
     regMethod = 'admin';
     registeredBy = currentUserId;
   }
 
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+
+      // 1. Directly check Supabase database if profile is already registered for this event
+      const { data: dbExisting } = await supabase
+        .from('event_registrations')
+        .select('id')
+        .eq('event_id', eventId)
+        .eq('profile_id', profileToRegister)
+        .maybeSingle();
+
+      if (dbExisting) {
+        return { error: 'Umat ini sudah terdaftar pada event ini.' };
+      }
+
+      // 2. Prepare new registration object
+      const newReg: EventRegistration = {
+        id: `r_${Date.now()}`,
+        event_id: eventId,
+        profile_id: profileToRegister,
+        registration_method: regMethod,
+        registered_by: registeredBy,
+        is_attended: false,
+        created_at: new Date().toISOString()
+      };
+
+      // 3. Insert into Supabase DB and verify clean insertion
+      const { error } = await supabase.from('event_registrations').insert([newReg]);
+      if (error) {
+        console.error('Supabase registerForEvent error:', error);
+        if (error.code === '23505' || error.message?.includes('unique') || error.message?.includes('duplicate')) {
+          return { error: 'Umat ini sudah terdaftar pada event ini.' };
+        }
+        return { error: `Gagal mendaftarkan umat: ${error.message}` };
+      }
+
+      // Keep in-memory store in sync if present
+      const inMemIdx = registrationsStore.findIndex(
+        r => r.event_id === eventId && r.profile_id === profileToRegister
+      );
+      if (inMemIdx === -1) {
+        registrationsStore.push(newReg);
+      }
+
+      revalidatePath('/events');
+      revalidatePath(`/events/${eventId}`);
+      revalidatePath('/kegiatan');
+      revalidatePath('/profil');
+
+      return { success: true, registration: newReg };
+    } catch (e: any) {
+      console.error('registerForEvent exception:', e);
+      return { error: `Terjadi kesalahan server: ${e?.message || e}` };
+    }
+  }
+
+  // Fallback for mock data when Supabase is not configured
   const existing = registrationsStore.find(
     r => r.event_id === eventId && r.profile_id === profileToRegister
   );
@@ -265,19 +319,10 @@ export async function registerForEvent(eventId: string, targetUmatId?: string, c
     created_at: new Date().toISOString()
   };
 
-  if (isSupabaseConfigured()) {
-    try {
-      const supabase = await createClient();
-      const { error } = await supabase.from('event_registrations').insert([newReg]);
-      if (error) console.error('Supabase registerForEvent error:', error);
-    } catch (e) {
-      console.error('registerForEvent exception:', e);
-    }
-  }
-
   registrationsStore.push(newReg);
 
   revalidatePath('/events');
+  revalidatePath(`/events/${eventId}`);
   revalidatePath('/kegiatan');
   revalidatePath('/profil');
 

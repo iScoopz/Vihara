@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, X, Check, User, ChevronDown } from 'lucide-react';
+import { Search, X, Check, User, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { Profile } from '@/types/database';
 
 export interface SearchableUmatSelectProps {
   profiles: Profile[];
   value: string;
   onChange: (selectedId: string, profile?: Profile) => void;
+  disabledIds?: string[];
   placeholder?: string;
   className?: string;
   required?: boolean;
@@ -19,6 +20,7 @@ export const SearchableUmatSelect: React.FC<SearchableUmatSelectProps> = ({
   profiles,
   value,
   onChange,
+  disabledIds = [],
   placeholder = '-- Cari & Pilih Nama Umat --',
   className = '',
   required = false,
@@ -63,6 +65,7 @@ export const SearchableUmatSelect: React.FC<SearchableUmatSelectProps> = ({
   });
 
   const handleSelect = (profile: Profile) => {
+    if (disabledIds.includes(profile.id)) return;
     onChange(profile.id, profile);
     setIsOpen(false);
     setSearchQuery('');
@@ -164,23 +167,34 @@ export const SearchableUmatSelect: React.FC<SearchableUmatSelectProps> = ({
             {filteredProfiles.length > 0 ? (
               filteredProfiles.map((profile) => {
                 const isSelected = profile.id === value || profile.full_name === value;
+                const isDisabled = disabledIds.includes(profile.id);
+
                 return (
                   <div
                     key={profile.id}
                     onClick={() => handleSelect(profile)}
-                    className={`px-3 py-2 rounded-xl flex items-center justify-between text-xs cursor-pointer transition-colors ${
-                      isSelected
-                        ? 'bg-purple-100 dark:bg-purple-900/70 text-purple-950 dark:text-purple-100 font-bold'
-                        : 'hover:bg-purple-50 dark:hover:bg-purple-950/60 text-slate-800 dark:text-slate-200'
+                    className={`px-3 py-2 rounded-xl flex items-center justify-between text-xs transition-colors ${
+                      isDisabled
+                        ? 'opacity-50 bg-slate-50 dark:bg-slate-900/40 cursor-not-allowed text-slate-400'
+                        : isSelected
+                        ? 'bg-purple-100 dark:bg-purple-900/70 text-purple-950 dark:text-purple-100 font-bold cursor-pointer'
+                        : 'hover:bg-purple-50 dark:hover:bg-purple-950/60 text-slate-800 dark:text-slate-200 cursor-pointer'
                     }`}
                   >
                     <div className="flex items-center gap-2.5 truncate">
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm">
+                      <div className={`w-7 h-7 rounded-full text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm ${
+                        isDisabled ? 'bg-slate-400' : 'bg-gradient-to-tr from-purple-600 to-indigo-600'
+                      }`}>
                         {profile.full_name[0] || 'U'}
                       </div>
                       <div className="truncate">
-                        <p className="font-extrabold text-slate-900 dark:text-white truncate">
-                          {profile.full_name}
+                        <p className="font-extrabold text-slate-900 dark:text-white truncate flex items-center gap-1.5">
+                          <span>{profile.full_name}</span>
+                          {isDisabled && (
+                            <span className="px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-bold text-[9px] flex items-center gap-1">
+                              <CheckCircle2 size={10} /> Sudah Terdaftar
+                            </span>
+                          )}
                         </p>
                         <p className="text-[10px] text-slate-400 dark:text-slate-400 truncate flex items-center gap-1.5">
                           <span className="px-1.5 py-0.2 rounded bg-purple-100/70 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 font-bold text-[9px]">
@@ -192,7 +206,7 @@ export const SearchableUmatSelect: React.FC<SearchableUmatSelectProps> = ({
                       </div>
                     </div>
 
-                    {isSelected && <Check size={14} className="text-purple-600 shrink-0 ml-2" />}
+                    {isSelected && !isDisabled && <Check size={14} className="text-purple-600 shrink-0 ml-2" />}
                   </div>
                 );
               })

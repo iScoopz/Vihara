@@ -716,6 +716,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
         isRegModalOpen={isRegModalOpen}
         selectedUmatId={selectedUmatId}
         setSelectedUmatId={setSelectedUmatId}
+        registeredProfileIds={registrations.map(r => r.profile_id)}
         regMsg={regMsg}
         onAdminRegister={handleAdminRegister}
         onCloseRegModal={() => setIsRegModalOpen(false)}
