@@ -2,7 +2,7 @@
 
 import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache';
 import { 
   INITIAL_PROFILES, 
   INITIAL_EVENTS, 
@@ -445,21 +445,27 @@ export async function addDonation(donation: Omit<Donation, 'id' | 'created_at'>)
   return { success: true, donation: newDonation };
 }
 
-export async function getProfiles(): Promise<Profile[]> {
-  if (isSupabaseConfigured()) {
-    try {
-      const supabase = await createClient();
-      const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-      if (error) {
-        console.error('Supabase getProfiles error:', error);
-      } else if (data) {
-        return data;
+const getProfilesInternal = unstable_cache(
+  async (): Promise<Profile[]> => {
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = await createClient();
+        const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+        if (!error && data) {
+          return data;
+        }
+      } catch (e) {
+        console.error('getProfiles exception:', e);
       }
-    } catch (e) {
-      console.error('getProfiles exception:', e);
     }
-  }
-  return [...profilesStore];
+    return [...profilesStore];
+  },
+  ['profiles-cache'],
+  { revalidate: 60, tags: ['profiles'] }
+);
+
+export async function getProfiles(): Promise<Profile[]> {
+  return getProfilesInternal();
 }
 
 export async function addProfile(profile: Omit<Profile, 'id' | 'created_at'>) {
@@ -481,6 +487,7 @@ export async function addProfile(profile: Omit<Profile, 'id' | 'created_at'>) {
 
   profilesStore.push(newProfile);
   revalidatePath('/umat');
+  revalidatePath('/dashboard');
   return { success: true, profile: newProfile };
 }
 
@@ -524,43 +531,52 @@ export async function deleteProfile(id: string) {
 
   profilesStore = profilesStore.filter(p => p.id !== id);
   revalidatePath('/umat');
+  revalidatePath('/dashboard');
   return { success: true };
 }
 
-export async function getEvents(): Promise<ViharaEvent[]> {
-  if (isSupabaseConfigured()) {
-    try {
-      const supabase = await createClient();
-      const [eventsRes, regsRes] = await Promise.all([
-        supabase.from('events').select('*').order('event_date', { ascending: true }),
-        supabase.from('event_registrations').select('event_id')
-      ]);
+const getEventsInternal = unstable_cache(
+  async (): Promise<ViharaEvent[]> => {
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = await createClient();
+        const [eventsRes, regsRes] = await Promise.all([
+          supabase.from('events').select('*').order('event_date', { ascending: true }),
+          supabase.from('event_registrations').select('event_id')
+        ]);
 
-      if (eventsRes.data) {
-        const dbRegs = regsRes.data || [];
-        return eventsRes.data.map(ev => {
-          const dbCount = dbRegs.filter(r => r.event_id === ev.id).length;
-          const mockCount = registrationsStore.filter(r => r.event_id === ev.id).length;
-          return {
-            ...ev,
-            registrations_count: Math.max(dbCount, mockCount),
-            budgets: budgetsStore.filter(b => b.event_id === ev.id),
-            committees: committeesStore.filter(c => c.event_id === ev.id)
-          };
-        });
+        if (eventsRes.data) {
+          const dbRegs = regsRes.data || [];
+          return eventsRes.data.map(ev => {
+            const dbCount = dbRegs.filter(r => r.event_id === ev.id).length;
+            const mockCount = registrationsStore.filter(r => r.event_id === ev.id).length;
+            return {
+              ...ev,
+              registrations_count: Math.max(dbCount, mockCount),
+              budgets: budgetsStore.filter(b => b.event_id === ev.id),
+              committees: committeesStore.filter(c => c.event_id === ev.id)
+            };
+          });
+        }
+      } catch (e) {
+        console.error('getEvents exception:', e);
       }
-    } catch (e) {
-      console.error('getEvents exception:', e);
     }
-  }
 
-  return eventsStore.map(ev => ({
-    ...ev,
-    registrations_count: registrationsStore.filter(r => r.event_id === ev.id).length,
-    budgets: budgetsStore.filter(b => b.event_id === ev.id),
-    committees: committeesStore.filter(c => c.event_id === ev.id),
-    org_structure: ev.org_structure || (ev.is_complex ? INITIAL_ORG_STRUCTURE : undefined)
-  }));
+    return eventsStore.map(ev => ({
+      ...ev,
+      registrations_count: registrationsStore.filter(r => r.event_id === ev.id).length,
+      budgets: budgetsStore.filter(b => b.event_id === ev.id),
+      committees: committeesStore.filter(c => c.event_id === ev.id),
+      org_structure: ev.org_structure || (ev.is_complex ? INITIAL_ORG_STRUCTURE : undefined)
+    }));
+  },
+  ['events-list-cache'],
+  { revalidate: 60 }
+);
+
+export async function getEvents(): Promise<ViharaEvent[]> {
+  return getEventsInternal();
 }
 
 export async function getEventById(id: string): Promise<ViharaEvent | null> {
@@ -627,6 +643,7 @@ export async function createEvent(eventData: Omit<ViharaEvent, 'id' | 'created_a
 
   eventsStore.unshift(newEvent);
   revalidatePath('/events');
+  revalidatePath('/dashboard');
   revalidatePath('/kegiatan');
   return { success: true, event: newEvent };
 }
@@ -649,6 +666,7 @@ export async function togglePublishEvent(eventId: string) {
 
       revalidatePath('/events');
       revalidatePath(`/events/${eventId}`);
+      revalidatePath('/dashboard');
       revalidatePath('/kegiatan');
       return { success: true, is_published: newStatus };
     } catch (e) {
@@ -662,6 +680,7 @@ export async function togglePublishEvent(eventId: string) {
 
   revalidatePath('/events');
   revalidatePath(`/events/${eventId}`);
+  revalidatePath('/dashboard');
   revalidatePath('/kegiatan');
   return { success: true, is_published: ev?.is_published };
 }
@@ -684,6 +703,7 @@ export async function toggleCompleteEvent(eventId: string) {
 
       revalidatePath('/events');
       revalidatePath(`/events/${eventId}`);
+      revalidatePath('/dashboard');
       revalidatePath('/kegiatan');
       return { success: true, is_completed: newStatus };
     } catch (e) {
@@ -697,6 +717,7 @@ export async function toggleCompleteEvent(eventId: string) {
 
   revalidatePath('/events');
   revalidatePath(`/events/${eventId}`);
+  revalidatePath('/dashboard');
   revalidatePath('/kegiatan');
   return { success: true, is_completed: ev?.is_completed };
 }
