@@ -9,7 +9,7 @@ interface EventPdfModalProps {
   onClose: () => void;
 }
 
-const BAGIAN_ORDER: UmatBagian[] = ['Bintang', 'GM', 'Pro-M 40s', 'Pro-M Progresif', 'Pria', 'Wanita', 'Inspirasi'];
+const BAGIAN_LPJ_ORDER: UmatBagian[] = ['Inspirasi', 'Pria', 'Wanita', 'Pro-M 40s', 'Pro-M Progresif', 'GM', 'Bintang'];
 
 export const EventPdfModal: React.FC<EventPdfModalProps> = ({
   event,
@@ -25,6 +25,20 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
 
   // Stable sort by Umat's Name for Participant List
   const sortedRegistrations = [...registrations].sort((a, b) => {
+    const nameA = a.profile?.full_name || '';
+    const nameB = b.profile?.full_name || '';
+    return nameA.localeCompare(nameB);
+  });
+
+  // Sort registrations for LPJ starting with Inspirasi, Pria, Wanita, Pro-M 40s, Pro-M Progresif, GM, Bintang
+  const lpjSortedRegistrations = [...registrations].sort((a, b) => {
+    const bgA = a.profile?.bagian || 'Inspirasi';
+    const bgB = b.profile?.bagian || 'Inspirasi';
+    const idxA = BAGIAN_LPJ_ORDER.indexOf(bgA as UmatBagian);
+    const idxB = BAGIAN_LPJ_ORDER.indexOf(bgB as UmatBagian);
+    if (idxA !== idxB) {
+      return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+    }
     const nameA = a.profile?.full_name || '';
     const nameB = b.profile?.full_name || '';
     return nameA.localeCompare(nameB);
@@ -235,54 +249,45 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                 </div>
               )}
 
-              {/* SECTION 3 (SPECIAL FOR LPJ): REKAPITULASI PENDAFTARAN UMAT TERDAFTAR (GROUPED BY BAGIAN UMAT) */}
+              {/* SECTION 3 (FOR LPJ): UNIFIED PARTICIPANT TABLE SORTED BY BAGIAN ORDER */}
               {pdfMode === 'lpj' && (
-                <div className="space-y-4 print-avoid-break">
+                <div className="space-y-3 print-avoid-break">
                   <h4 className="text-xs font-black uppercase text-purple-950 border-b border-purple-200 pb-1">
-                    III. Rekapitulasi Peserta Umat Terdaftar (Disusun Rapi per Bagian Umat)
+                    III. Daftar Umat Terdaftar
                   </h4>
 
-                  <div className="space-y-4">
-                    {BAGIAN_ORDER.map((bagian) => {
-                      const bagianRegs = sortedRegistrations.filter(r => (r.profile?.bagian || 'Inspirasi') === bagian);
-                      if (bagianRegs.length === 0) return null;
-
-                      return (
-                        <div key={bagian} className="space-y-1.5">
-                          <div className="flex items-center justify-between bg-purple-100 p-2 rounded-lg text-purple-950 border border-purple-200 font-extrabold text-[11px]">
-                            <span>BAGIAN {bagian.toUpperCase()} ({bagianRegs.length} Umat)</span>
-                          </div>
-
-                          <table className="w-full text-left text-xs border-collapse border border-slate-300">
-                            <thead>
-                              <tr className="bg-slate-800 text-white font-bold text-[10px]">
-                                <th className="p-1.5 border border-slate-300 text-center w-8">No</th>
-                                <th className="p-1.5 border border-slate-300">Nama Lengkap Umat</th>
-                                <th className="p-1.5 border border-slate-300">Cetya & HAN</th>
-                                <th className="p-1.5 border border-slate-300 text-center">Status Presensi</th>
-                                <th className="p-1.5 border border-slate-300 text-center">Status Pelunasan</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {bagianRegs.map((reg, idx) => (
-                                <tr key={reg.id} className={idx % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
-                                  <td className="p-1.5 border border-slate-300 text-center font-bold">{idx + 1}</td>
-                                  <td className="p-1.5 border border-slate-300 font-extrabold text-slate-900">{reg.profile?.full_name}</td>
-                                  <td className="p-1.5 border border-slate-300 text-slate-600">{reg.profile?.cetya || '-'} / {reg.profile?.han || '-'}</td>
-                                  <td className="p-1.5 border border-slate-300 text-center font-bold">
-                                    {reg.is_attended ? <span className="text-emerald-700">✓ Hadir</span> : <span className="text-slate-400">Absen</span>}
-                                  </td>
-                                  <td className="p-1.5 border border-slate-300 text-center font-bold">
-                                    {reg.is_paid ? <span className="text-emerald-700">✓ Lunas</span> : <span className="text-rose-600">Belum Lunas</span>}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <table className="w-full text-left text-xs border-collapse border border-slate-300">
+                    <thead>
+                      <tr className="bg-slate-800 text-white font-bold text-[11px]">
+                        <th className="p-2 border border-slate-300 text-center w-8">No</th>
+                        <th className="p-2 border border-slate-300">Nama Lengkap Umat</th>
+                        <th className="p-2 border border-slate-300 text-center">Bagian</th>
+                        <th className="p-2 border border-slate-300">Cetya & HAN Naungan</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {lpjSortedRegistrations.length > 0 ? (
+                        lpjSortedRegistrations.map((reg, idx) => (
+                          <tr key={reg.id} className={idx % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
+                            <td className="p-2 border border-slate-300 text-center font-bold text-slate-500">{idx + 1}</td>
+                            <td className="p-2 border border-slate-300 font-extrabold text-slate-900">{reg.profile?.full_name || 'Umat Vihara'}</td>
+                            <td className="p-2 border border-slate-300 text-center font-bold text-purple-900">
+                              {reg.profile?.bagian || 'Inspirasi'}
+                            </td>
+                            <td className="p-2 border border-slate-300 text-slate-600">
+                              {reg.profile?.cetya || '-'} / {reg.profile?.han || '-'}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={4} className="p-4 text-center text-slate-400 italic">
+                            Belum ada pendaftar pada event ini.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               )}
 

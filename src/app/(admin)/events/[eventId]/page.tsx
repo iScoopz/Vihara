@@ -81,21 +81,16 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
     let waText = `*DAFTAR PESERTA EVENT: ${event.title.toUpperCase()}*\n`;
     waText += `📅 Tanggal: ${dateStr}\n`;
     waText += `📍 Lokasi: ${event.location}\n`;
-    waText += `👥 Total Pendaftar: ${registrations.length} Umat\n\n`;
+    waText += `👥 Total: ${registrations.length} Umat\n\n`;
 
-    const BAGIAN_LIST = ['Bintang', 'GM', 'Pro-M 40s', 'Pro-M Progresif', 'Pria', 'Wanita', 'Inspirasi'];
-    let globalIndex = 1;
+    const sortedRegs = [...registrations].sort((a, b) => {
+      const nameA = a.profile?.full_name || '';
+      const nameB = b.profile?.full_name || '';
+      return nameA.localeCompare(nameB);
+    });
 
-    BAGIAN_LIST.forEach((bagian) => {
-      const subset = registrations.filter(r => (r.profile?.bagian || 'Inspirasi') === bagian);
-      if (subset.length > 0) {
-        waText += `*[BAGIAN ${bagian.toUpperCase()}]*\n`;
-        subset.forEach((r) => {
-          waText += `${globalIndex}. ${r.profile?.full_name || 'Umat Vihara'}\n`;
-          globalIndex += 1;
-        });
-        waText += `\n`;
-      }
+    sortedRegs.forEach((r, idx) => {
+      waText += `${idx + 1}. ${r.profile?.full_name || 'Umat Vihara'}\n`;
     });
 
     if (navigator.clipboard) {
