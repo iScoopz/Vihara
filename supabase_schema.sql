@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS public.events (
   is_published BOOLEAN DEFAULT false,
   pic_name TEXT,
   org_structure JSONB,
+  pricing_per_bagian JSONB,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -76,6 +77,9 @@ CREATE TABLE IF NOT EXISTS public.event_registrations (
   registered_by TEXT,
   is_attended BOOLEAN DEFAULT false,
   attended_at TIMESTAMP WITH TIME ZONE,
+  is_paid BOOLEAN DEFAULT false,
+  paid_at TIMESTAMP WITH TIME ZONE,
+  amount_paid NUMERIC DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

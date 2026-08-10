@@ -36,7 +36,7 @@ import {
   updateHan,
   deleteHan
 } from '@/lib/actions/vihara-actions';
-import { Profile, CetyaProfile, HanProfile } from '@/types/database';
+import { Profile, CetyaProfile, HanProfile, UmatBagian } from '@/types/database';
 import ConfirmModal from '@/components/ui/confirm-modal';
 
 export default function UmatDirectoryPage() {
@@ -71,7 +71,7 @@ export default function UmatDirectoryPage() {
   const [phone, setPhone] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [gender, setGender] = useState<'L' | 'P'>('L');
-  const [bagian, setBagian] = useState<'Inspirasi Pria Wanita' | 'Pro-M 40s' | 'Pro-M Progresif' | 'GM' | 'Bintang' | ''>('');
+  const [bagian, setBagian] = useState<UmatBagian | ''>('');
   const [address, setAddress] = useState('');
   const [emergencyContact, setEmergencyContact] = useState('');
 
@@ -83,7 +83,7 @@ export default function UmatDirectoryPage() {
   const [editPhone, setEditPhone] = useState('');
   const [editBirthDate, setEditBirthDate] = useState('');
   const [editGender, setEditGender] = useState<'L' | 'P'>('L');
-  const [editBagian, setEditBagian] = useState<'Inspirasi Pria Wanita' | 'Pro-M 40s' | 'Pro-M Progresif' | 'GM' | 'Bintang' | ''>('');
+  const [editBagian, setEditBagian] = useState<UmatBagian | ''>('');
   const [editAddress, setEditAddress] = useState('');
   const [editEmergencyContact, setEditEmergencyContact] = useState('');
   const [editRole, setEditRole] = useState<'umat' | 'admin'>('umat');
@@ -533,7 +533,9 @@ export default function UmatDirectoryPage() {
                 className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
               >
                 <option value="all">Semua Bagian</option>
-                <option value="Inspirasi Pria Wanita">Inspirasi Pria Wanita</option>
+                <option value="Pria">Pria</option>
+                <option value="Wanita">Wanita</option>
+                <option value="Inspirasi">Inspirasi</option>
                 <option value="Pro-M 40s">Pro-M 40s</option>
                 <option value="Pro-M Progresif">Pro-M Progresif</option>
                 <option value="GM">GM</option>
@@ -868,7 +870,9 @@ export default function UmatDirectoryPage() {
                     className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
                   >
                     <option value="">-- Pilih --</option>
-                    <option value="Inspirasi Pria Wanita">Inspirasi Pria Wanita</option>
+                    <option value="Pria">Pria</option>
+                    <option value="Wanita">Wanita</option>
+                    <option value="Inspirasi">Inspirasi</option>
                     <option value="Pro-M 40s">Pro-M 40s</option>
                     <option value="Pro-M Progresif">Pro-M Progresif</option>
                     <option value="GM">GM</option>
@@ -1031,7 +1035,9 @@ export default function UmatDirectoryPage() {
                     className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
                   >
                     <option value="">-- Pilih --</option>
-                    <option value="Inspirasi Pria Wanita">Inspirasi Pria Wanita</option>
+                    <option value="Pria">Pria</option>
+                    <option value="Wanita">Wanita</option>
+                    <option value="Inspirasi">Inspirasi</option>
                     <option value="Pro-M 40s">Pro-M 40s</option>
                     <option value="Pro-M Progresif">Pro-M Progresif</option>
                     <option value="GM">GM</option>

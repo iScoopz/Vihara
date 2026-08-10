@@ -812,6 +812,36 @@ export async function toggleAttendance(registrationId: string) {
   return { success: true, is_attended: reg?.is_attended };
 }
 
+export async function toggleRegistrationPayment(registrationId: string, amount?: number) {
+  const reg = registrationsStore.find(r => r.id === registrationId);
+  if (reg) {
+    reg.is_paid = !reg.is_paid;
+    reg.paid_at = reg.is_paid ? new Date().toISOString() : undefined;
+    if (amount !== undefined) {
+      reg.amount_paid = reg.is_paid ? amount : 0;
+    }
+
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = await createClient();
+        const { error } = await supabase
+          .from('event_registrations')
+          .update({ 
+            is_paid: reg.is_paid, 
+            paid_at: reg.paid_at,
+            amount_paid: reg.amount_paid
+          })
+          .eq('id', registrationId);
+        if (error) console.error('Supabase toggleRegistrationPayment error:', error);
+      } catch (e) {
+        console.error('toggleRegistrationPayment exception:', e);
+      }
+    }
+  }
+  revalidatePath('/events');
+  return { success: true, is_paid: reg?.is_paid };
+}
+
 // PROPOSAL RUNDOWN ACTIONS
 export async function addProposalRundown(eventId: string, item: Omit<EventProposalRundown, 'id' | 'event_id'>) {
   const newItem: EventProposalRundown = {

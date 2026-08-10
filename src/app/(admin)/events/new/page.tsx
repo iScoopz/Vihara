@@ -15,7 +15,10 @@ import {
   Crown
 } from 'lucide-react';
 import { createEvent } from '@/lib/actions/vihara-actions';
-import { EventCategory, EventOrgStructure } from '@/types/database';
+import { EventCategory, EventOrgStructure, UmatBagian } from '@/types/database';
+import { Receipt } from 'lucide-react';
+
+const BAGIAN_LIST: UmatBagian[] = ['Bintang', 'GM', 'Pro-M 40s', 'Pro-M Progresif', 'Pria', 'Wanita', 'Inspirasi'];
 
 export default function CreateNewEventPage() {
   const router = useRouter();
@@ -29,6 +32,17 @@ export default function CreateNewEventPage() {
   const [location, setLocation] = useState('Cetya Avalokitesvara Makassar');
   const [quota, setQuota] = useState('100');
   const [category, setCategory] = categoryState();
+
+  // Tiered Pricing per Bagian State
+  const [pricingPerBagian, setPricingPerBagian] = useState<Record<string, string>>({
+    'Bintang': '0',
+    'GM': '0',
+    'Pro-M 40s': '0',
+    'Pro-M Progresif': '0',
+    'Pria': '0',
+    'Wanita': '0',
+    'Inspirasi': '0'
+  });
 
   function categoryState(): [EventCategory, (c: EventCategory) => void] {
     return useState<EventCategory>('Gongyo');
@@ -86,6 +100,11 @@ export default function CreateNewEventPage() {
       }
     }
 
+    const formattedPricing: Record<string, number> = {};
+    Object.entries(pricingPerBagian).forEach(([bagianKey, valStr]) => {
+      formattedPricing[bagianKey] = parseFloat(valStr) || 0;
+    });
+
     await createEvent({
       title,
       description,
@@ -97,6 +116,7 @@ export default function CreateNewEventPage() {
       is_published: false, // Default Sebagai Draf / Perencanaan
       quota: parseInt(quota, 10) || 100,
       pic_name: ketuaName,
+      pricing_per_bagian: formattedPricing,
       org_structure: isComplex ? orgStructure : undefined
     });
 
@@ -222,12 +242,44 @@ export default function CreateNewEventPage() {
           </div>
         </div>
 
-        {/* SECTION 2: HIERARKI KEPANITIAAN UTAMA */}
+        {/* SECTION 2: BIAYA EVENT PER BAGIAN UMAT */}
+        <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4 text-xs">
+          <div className="border-b border-purple-100 dark:border-purple-900/60 pb-3">
+            <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+              <Receipt className="text-emerald-500" size={18} />
+              <span>2. Pengaturan Biaya Pendaftaran Event per Bagian Umat</span>
+            </h3>
+            <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
+              Tentukan nominal biaya (Rp) untuk masing-masing Bagian Umat. Masukkan 0 jika Gratis.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            {BAGIAN_LIST.map((bg) => (
+              <div key={bg} className="p-3.5 rounded-xl bg-slate-50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-900/60 space-y-1.5">
+                <label className="block font-black text-purple-950 dark:text-purple-200 text-xs">{bg}</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2 text-[11px] font-bold text-slate-400">Rp</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="5000"
+                    value={pricingPerBagian[bg] || '0'}
+                    onChange={(e) => setPricingPerBagian({ ...pricingPerBagian, [bg]: e.target.value })}
+                    className="w-full bg-white dark:bg-purple-900/60 border border-purple-200 dark:border-purple-800 rounded-lg pl-9 pr-3 py-1.5 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* SECTION 3: HIERARKI KEPANITIAAN UTAMA */}
         <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4 text-xs">
           <div className="flex justify-between items-center border-b border-purple-100 dark:border-purple-900/60 pb-3">
             <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
               <Crown className="text-amber-500" size={18} />
-              <span>2. Struktur Panitia Inti Vihara</span>
+              <span>3. Struktur Panitia Inti Vihara</span>
             </h3>
 
             <label className="inline-flex items-center gap-2 cursor-pointer">

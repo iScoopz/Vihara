@@ -1,5 +1,7 @@
 export type UserRole = 'umat' | 'admin';
 
+export type UmatBagian = 'Pria' | 'Wanita' | 'Inspirasi' | 'Pro-M 40s' | 'Pro-M Progresif' | 'GM' | 'Bintang';
+
 export interface Profile {
   id: string;
   role: UserRole;
@@ -7,7 +9,7 @@ export interface Profile {
   han?: string;
   cetya?: string;
   sentra?: string;
-  bagian?: 'Inspirasi Pria Wanita' | 'Pro-M 40s' | 'Pro-M Progresif' | 'GM' | 'Bintang';
+  bagian?: UmatBagian;
   phone?: string;
   birth_date?: string;
   gender?: 'L' | 'P';
@@ -88,6 +90,7 @@ export interface ViharaEvent {
   is_published?: boolean;
   pic_name?: string;
   org_structure?: EventOrgStructure;
+  pricing_per_bagian?: Record<string, number>;
   created_at?: string;
   registrations_count?: number;
   budgets?: EventBudget[];
@@ -104,6 +107,9 @@ export interface EventRegistration {
   registered_by?: string;
   is_attended: boolean;
   attended_at?: string;
+  is_paid?: boolean;
+  paid_at?: string;
+  amount_paid?: number;
   created_at?: string;
   profile?: Profile;
 }
