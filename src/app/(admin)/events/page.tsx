@@ -15,9 +15,12 @@ import {
   CheckCircle2,
   Archive,
   Clock,
-  FileText
+  FileText,
+  Flower2,
+  Building2,
+  RotateCcw
 } from 'lucide-react';
-import { getEvents } from '@/lib/actions/vihara-actions';
+import { getEvents, toggleCompleteEvent } from '@/lib/actions/vihara-actions';
 import { ViharaEvent, EventCategory } from '@/types/database';
 
 export default function AdminEventsListPage() {
@@ -26,13 +29,21 @@ export default function AdminEventsListPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
+  async function loadData() {
+    const data = await getEvents();
+    setEvents(data);
+  }
+
   useEffect(() => {
-    async function loadData() {
-      const data = await getEvents();
-      setEvents(data);
-    }
     loadData();
   }, []);
+
+  const handleToggleCompleteCard = async (eventId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    await toggleCompleteEvent(eventId);
+    await loadData();
+  };
 
   const categories: ('all' | EventCategory)[] = ['all', 'Gongyo', 'Kensyu', 'Pertemuan'];
 
@@ -143,6 +154,7 @@ export default function AdminEventsListPage() {
             const regCount = ev.registrations_count || 0;
             const quota = ev.quota || 100;
             const percentage = Math.min(100, Math.round((regCount / quota) * 100));
+            const isComplex = ev.is_complex ?? true;
 
             return (
               <div
@@ -151,10 +163,21 @@ export default function AdminEventsListPage() {
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-200">
                         {ev.category || 'Gongyo'}
                       </span>
+
+                      {/* Event Scale Badge */}
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded flex items-center gap-1 ${
+                        isComplex
+                          ? 'bg-indigo-100 text-indigo-900 dark:bg-indigo-950 dark:text-indigo-300'
+                          : 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300'
+                      }`}>
+                        {isComplex ? <Building2 size={10} /> : <Flower2 size={10} />}
+                        <span>{isComplex ? 'Event Kompleks' : 'Ibadah Rutin (Simpel)'}</span>
+                      </span>
+
                       <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded ${
                         ev.is_published
                           ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300'
@@ -211,17 +234,34 @@ export default function AdminEventsListPage() {
                     </div>
                   </div>
 
-                  <Link
-                    href={`/events/${ev.id}`}
-                    className={`w-full py-2.5 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1 transition ${
-                      activeTab === 'history'
-                        ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700'
-                        : 'bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900 text-purple-950 dark:text-purple-200'
-                    }`}
-                  >
-                    <span>{activeTab === 'history' ? 'Lihat Workspace & LPJ' : 'Buka Workspace & PDF Report'}</span>
-                    <ChevronRight size={14} />
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/events/${ev.id}`}
+                      className={`flex-1 py-2.5 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1 transition ${
+                        activeTab === 'history'
+                          ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700'
+                          : 'bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900 text-purple-950 dark:text-purple-200'
+                      }`}
+                    >
+                      <span>{activeTab === 'history' ? 'Workspace' : 'Buka Workspace'}</span>
+                      <ChevronRight size={14} />
+                    </Link>
+
+                    {/* Quick Complete / Undo Complete Action Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleToggleCompleteCard(ev.id, e)}
+                      className={`px-3 py-2.5 rounded-xl text-xs font-black flex items-center gap-1 transition cursor-pointer border ${
+                        ev.is_completed
+                          ? 'bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-800'
+                          : 'bg-slate-800 hover:bg-slate-900 text-white dark:bg-slate-700 dark:hover:bg-slate-600'
+                      }`}
+                      title={ev.is_completed ? "Kembalikan event ke daftar event aktif" : "Tandai event ini telah selesai dan pindahkan ke Riwayat Event"}
+                    >
+                      {ev.is_completed ? <RotateCcw size={14} /> : <CheckCircle2 size={14} />}
+                      <span>{ev.is_completed ? 'Aktifkan' : 'Selesai'}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -235,7 +275,7 @@ export default function AdminEventsListPage() {
           </h3>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
             {activeTab === 'history'
-              ? 'Tandai event yang telah terlaksana sebagai "Selesai" di dalam Workspace Event agar tersimpan rapi di tab ini.'
+              ? 'Tandai event yang telah terlaksana sebagai "Selesai" (menggunakan tombol Selesai di kartu event atau di Workspace) agar tersimpan rapi di tab ini.'
               : 'Coba ubah kata kunci pencarian atau filter kategori di atas.'}
           </p>
         </div>
