@@ -34,7 +34,8 @@ import {
   updateSkenarioKerja,
   deleteSkenarioKerja,
   togglePublishEvent,
-  toggleRegistrationPayment
+  toggleRegistrationPayment,
+  updateRegistrationExtraFees
 } from '@/lib/actions/vihara-actions';
 import { ViharaEvent, Profile, EventRegistration, EventProposalRundown, EventSkenarioKerja } from '@/types/database';
 
@@ -151,6 +152,11 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
 
   const handleTogglePayment = async (regId: string, amount?: number) => {
     await toggleRegistrationPayment(regId, amount);
+    loadData();
+  };
+
+  const handleToggleExtraFeeForReg = async (regId: string, feeId: string, newSelectedIds: string[], newTotalAmount: number) => {
+    await updateRegistrationExtraFees(regId, newSelectedIds, newTotalAmount);
     loadData();
   };
 
@@ -541,6 +547,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
           onOpenRegModal={() => setIsRegModalOpen(true)}
           onToggleAttendance={handleToggleAttendance}
           onTogglePayment={handleTogglePayment}
+          onToggleExtraFeeForReg={handleToggleExtraFeeForReg}
           onOpenPricingModal={() => setIsPricingModalOpen(true)}
         />
       )}

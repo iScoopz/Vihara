@@ -875,6 +875,35 @@ export async function toggleRegistrationPayment(registrationId: string, amount?:
   return { success: true, is_paid: reg?.is_paid };
 }
 
+export async function updateRegistrationExtraFees(registrationId: string, feeIds: string[], calculatedTotalAmount?: number) {
+  const reg = registrationsStore.find(r => r.id === registrationId);
+  if (reg) {
+    reg.selected_extra_fee_ids = feeIds;
+    if (reg.is_paid && calculatedTotalAmount !== undefined) {
+      reg.amount_paid = calculatedTotalAmount;
+    }
+
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = await createClient();
+        const { error } = await supabase
+          .from('event_registrations')
+          .update({ 
+            selected_extra_fee_ids: feeIds,
+            amount_paid: reg.amount_paid
+          })
+          .eq('id', registrationId);
+        if (error) console.error('Supabase updateRegistrationExtraFees error:', error);
+      } catch (e) {
+        console.error('updateRegistrationExtraFees exception:', e);
+      }
+    }
+  }
+
+  revalidatePath('/events');
+  return { success: true, selected_extra_fee_ids: reg?.selected_extra_fee_ids };
+}
+
 // PROPOSAL RUNDOWN ACTIONS
 export async function addProposalRundown(eventId: string, item: Omit<EventProposalRundown, 'id' | 'event_id'>) {
   const newItem: EventProposalRundown = {

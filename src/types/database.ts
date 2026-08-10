@@ -117,6 +117,7 @@ export interface EventRegistration {
   is_paid?: boolean;
   paid_at?: string;
   amount_paid?: number;
+  selected_extra_fee_ids?: string[];
   created_at?: string;
   profile?: Profile;
 }

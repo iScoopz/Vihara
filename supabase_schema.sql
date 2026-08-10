@@ -81,6 +81,7 @@ CREATE TABLE IF NOT EXISTS public.event_registrations (
   is_paid BOOLEAN DEFAULT false,
   paid_at TIMESTAMP WITH TIME ZONE,
   amount_paid NUMERIC DEFAULT 0,
+  selected_extra_fee_ids JSONB,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

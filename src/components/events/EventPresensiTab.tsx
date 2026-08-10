@@ -1,5 +1,5 @@
 import React from 'react';
-import { PlusCircle, CheckCircle2, DollarSign, Wallet, AlertCircle, CheckSquare, Receipt } from 'lucide-react';
+import { PlusCircle, CheckCircle2, DollarSign, Wallet, AlertCircle, CheckSquare, Receipt, Check } from 'lucide-react';
 import { ViharaEvent, EventRegistration } from '@/types/database';
 
 interface EventPresensiTabProps {
@@ -8,6 +8,7 @@ interface EventPresensiTabProps {
   onOpenRegModal: () => void;
   onToggleAttendance: (regId: string) => void;
   onTogglePayment: (regId: string, amount?: number) => void;
+  onToggleExtraFeeForReg?: (regId: string, feeId: string, newSelectedIds: string[], newTotalAmount: number) => void;
   onOpenPricingModal?: () => void;
 }
 
@@ -17,11 +18,11 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
   onOpenRegModal,
   onToggleAttendance,
   onTogglePayment,
+  onToggleExtraFeeForReg,
   onOpenPricingModal
 }) => {
   const pricing = event.pricing_per_bagian || {};
   const extraFees = event.extra_fees || [];
-  const extraFeesTotal = extraFees.reduce((sum, f) => sum + f.amount, 0);
 
   // Financial & Settlement Calculations
   let totalTargetAmount = 0;
@@ -31,7 +32,12 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
   registrations.forEach((reg) => {
     const bagian = reg.profile?.bagian || 'Inspirasi';
     const baseFee = pricing[bagian] || 0;
-    const totalFee = baseFee + extraFeesTotal;
+    const selectedFeeIds = reg.selected_extra_fee_ids || [];
+    const umatExtraTotal = extraFees
+      .filter((f) => selectedFeeIds.includes(f.id))
+      .reduce((sum, f) => sum + f.amount, 0);
+
+    const totalFee = baseFee + umatExtraTotal;
     totalTargetAmount += totalFee;
 
     if (reg.is_paid) {
@@ -44,12 +50,12 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
 
   return (
     <div className="space-y-6 print:hidden">
-      {/* Extra Fees Banner (if any) */}
+      {/* Extra Fees Info Banner */}
       {extraFees.length > 0 && (
         <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-0.5">
             <span className="font-extrabold uppercase tracking-wide text-[10px] text-amber-600 dark:text-amber-400">
-              📌 Komponen Biaya Tambahan Insidental Aktif:
+              📌 Komponen Biaya Tambahan Insidental (Opsional Per Umat):
             </span>
             <div className="flex flex-wrap gap-2 pt-1">
               {extraFees.map((fee) => (
@@ -65,7 +71,7 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
               className="px-3 py-1.5 rounded-xl bg-amber-200 dark:bg-amber-900 hover:bg-amber-300 font-extrabold text-xs text-amber-950 dark:text-amber-100 flex items-center gap-1.5 w-fit transition cursor-pointer"
             >
               <Receipt size={14} />
-              <span>Edit Biaya</span>
+              <span>Kelola Tarif</span>
             </button>
           )}
         </div>
@@ -154,7 +160,7 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
               Daftar Presensi Umat & Pencatatan Pelunasan Event
             </h3>
             <p className="text-xs text-slate-500">
-              Tandai kehadiran dan pelunasan biaya event untuk setiap umat terdaftar.
+              Pilih komponen biaya tambahan per umat (opsional), serta tandai kehadiran & pelunasan pendaftaran.
             </p>
           </div>
 
@@ -186,7 +192,8 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
                 <th className="pb-3 w-10 text-center">No</th>
                 <th className="pb-3">Nama Lengkap Umat</th>
                 <th className="pb-3">Bagian & HAN</th>
-                <th className="pb-3 text-right">Total Biaya Pendaftaran</th>
+                <th className="pb-3">Biaya Tambahan Opsional Umat</th>
+                <th className="pb-3 text-right">Total Biaya</th>
                 <th className="pb-3 text-center">Status Pelunasan</th>
                 <th className="pb-3 text-center">Status Presensi</th>
                 <th className="pb-3 text-right">Aksi Pelunasan & Presensi</th>
@@ -197,8 +204,30 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
                 registrations.map((reg, index) => {
                   const bagian = reg.profile?.bagian || 'Inspirasi';
                   const baseFee = pricing[bagian] || 0;
-                  const totalFee = baseFee + extraFeesTotal;
+                  const selectedFeeIds = reg.selected_extra_fee_ids || [];
+                  const umatExtraTotal = extraFees
+                    .filter((f) => selectedFeeIds.includes(f.id))
+                    .reduce((sum, f) => sum + f.amount, 0);
+
+                  const totalFee = baseFee + umatExtraTotal;
                   const isPaid = Boolean(reg.is_paid);
+
+                  const handleFeeToggle = (feeId: string) => {
+                    if (!onToggleExtraFeeForReg) return;
+                    let newSelected: string[];
+                    if (selectedFeeIds.includes(feeId)) {
+                      newSelected = selectedFeeIds.filter((id) => id !== feeId);
+                    } else {
+                      newSelected = [...selectedFeeIds, feeId];
+                    }
+
+                    const newExtraTotal = extraFees
+                      .filter((f) => newSelected.includes(f.id))
+                      .reduce((sum, f) => sum + f.amount, 0);
+                    const newTotal = baseFee + newExtraTotal;
+
+                    onToggleExtraFeeForReg(reg.id, feeId, newSelected, newTotal);
+                  };
 
                   return (
                     <tr key={reg.id} className="hover:bg-purple-50/50 dark:hover:bg-purple-950/40">
@@ -212,15 +241,44 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
                         </span>
                         <span>{reg.profile?.han || '-'}</span>
                       </td>
+
+                      {/* Optional Extra Fees Checkboxes */}
+                      <td className="py-3">
+                        {extraFees.length > 0 ? (
+                          <div className="flex flex-wrap gap-1.5">
+                            {extraFees.map((fee) => {
+                              const isChecked = selectedFeeIds.includes(fee.id);
+                              return (
+                                <button
+                                  type="button"
+                                  key={fee.id}
+                                  onClick={() => handleFeeToggle(fee.id)}
+                                  className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold border flex items-center gap-1 transition cursor-pointer ${
+                                    isChecked
+                                      ? 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800'
+                                      : 'bg-slate-100 text-slate-400 border-slate-200 dark:bg-slate-900 dark:border-slate-800 hover:text-slate-700'
+                                  }`}
+                                  title={`Klik untuk ${isChecked ? 'membatalkan' : 'menambahkan'} ${fee.fee_name}`}
+                                >
+                                  {isChecked && <Check size={10} />}
+                                  <span>{fee.fee_name} (+Rp {fee.amount.toLocaleString('id-ID')})</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-slate-400 italic">Tidak ada biaya ekstra</span>
+                        )}
+                      </td>
+
                       <td className="py-3 text-right font-extrabold text-slate-900 dark:text-white">
                         <div>
                           {totalFee > 0 ? `Rp ${totalFee.toLocaleString('id-ID')}` : 'Gratis'}
                         </div>
-                        {extraFeesTotal > 0 && (
-                          <div className="text-[10px] text-slate-400 font-normal">
-                            Pokok Rp {baseFee.toLocaleString('id-ID')} + Extra Rp {extraFeesTotal.toLocaleString('id-ID')}
-                          </div>
-                        )}
+                        <div className="text-[10px] text-slate-400 font-normal">
+                          Pokok: Rp {baseFee.toLocaleString('id-ID')}
+                          {umatExtraTotal > 0 && ` + Extra: Rp ${umatExtraTotal.toLocaleString('id-ID')}`}
+                        </div>
                       </td>
                       <td className="py-3 text-center">
                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold inline-flex items-center gap-1 ${
@@ -271,7 +329,7 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
                 })
               ) : (
                 <tr>
-                  <td colSpan={7} className="py-6 text-center text-slate-400 text-xs italic">
+                  <td colSpan={8} className="py-6 text-center text-slate-400 text-xs italic">
                     Belum ada umat yang mendaftar pada event ini.
                   </td>
                 </tr>
