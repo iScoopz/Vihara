@@ -622,19 +622,32 @@ export async function createEvent(eventData: Omit<ViharaEvent, 'id' | 'created_a
 }
 
 export async function togglePublishEvent(eventId: string) {
-  const ev = eventsStore.find(e => e.id === eventId);
+  let ev = eventsStore.find(e => e.id === eventId);
+  let currentPublishStatus = ev?.is_published ?? false;
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { data: dbEv } = await supabase.from('events').select('is_published').eq('id', eventId).single();
+      if (dbEv) {
+        currentPublishStatus = dbEv.is_published ?? false;
+      }
+      const newStatus = !currentPublishStatus;
+      const { error } = await supabase.from('events').update({ is_published: newStatus }).eq('id', eventId);
+      if (error) console.error('Supabase togglePublishEvent error:', error);
+      if (ev) ev.is_published = newStatus;
+
+      revalidatePath('/events');
+      revalidatePath(`/events/${eventId}`);
+      revalidatePath('/kegiatan');
+      return { success: true, is_published: newStatus };
+    } catch (e) {
+      console.error('togglePublishEvent exception:', e);
+    }
+  }
+
   if (ev) {
     ev.is_published = !ev.is_published;
-
-    if (isSupabaseConfigured()) {
-      try {
-        const supabase = await createClient();
-        const { error } = await supabase.from('events').update({ is_published: ev.is_published }).eq('id', eventId);
-        if (error) console.error('Supabase togglePublishEvent error:', error);
-      } catch (e) {
-        console.error('togglePublishEvent exception:', e);
-      }
-    }
   }
 
   revalidatePath('/events');
@@ -644,19 +657,32 @@ export async function togglePublishEvent(eventId: string) {
 }
 
 export async function toggleCompleteEvent(eventId: string) {
-  const ev = eventsStore.find(e => e.id === eventId);
+  let ev = eventsStore.find(e => e.id === eventId);
+  let currentCompleteStatus = ev?.is_completed ?? false;
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { data: dbEv } = await supabase.from('events').select('is_completed').eq('id', eventId).single();
+      if (dbEv) {
+        currentCompleteStatus = dbEv.is_completed ?? false;
+      }
+      const newStatus = !currentCompleteStatus;
+      const { error } = await supabase.from('events').update({ is_completed: newStatus }).eq('id', eventId);
+      if (error) console.error('Supabase toggleCompleteEvent error:', error);
+      if (ev) ev.is_completed = newStatus;
+
+      revalidatePath('/events');
+      revalidatePath(`/events/${eventId}`);
+      revalidatePath('/kegiatan');
+      return { success: true, is_completed: newStatus };
+    } catch (e) {
+      console.error('toggleCompleteEvent exception:', e);
+    }
+  }
+
   if (ev) {
     ev.is_completed = !ev.is_completed;
-
-    if (isSupabaseConfigured()) {
-      try {
-        const supabase = await createClient();
-        const { error } = await supabase.from('events').update({ is_completed: ev.is_completed }).eq('id', eventId);
-        if (error) console.error('Supabase toggleCompleteEvent error:', error);
-      } catch (e) {
-        console.error('toggleCompleteEvent exception:', e);
-      }
-    }
   }
 
   revalidatePath('/events');
