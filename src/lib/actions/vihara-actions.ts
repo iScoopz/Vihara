@@ -803,7 +803,11 @@ export async function getRegistrationsForEvent(eventId: string) {
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      const { data, error } = await supabase.from('event_registrations').select('*').eq('event_id', eventId);
+      const { data, error } = await supabase
+        .from('event_registrations')
+        .select('*')
+        .eq('event_id', eventId)
+        .order('created_at', { ascending: true });
       if (error) {
         console.error('Supabase getRegistrationsForEvent error:', error);
       } else if (data && data.length > 0) {
@@ -819,6 +823,7 @@ export async function getRegistrationsForEvent(eventId: string) {
 
   return registrationsStore
     .filter(r => r.event_id === eventId)
+    .sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''))
     .map(r => ({
       ...r,
       profile: profilesStore.find(p => p.id === r.profile_id)

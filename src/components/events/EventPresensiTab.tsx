@@ -1,5 +1,5 @@
-import React from 'react';
-import { PlusCircle, CheckCircle2, DollarSign, Wallet, AlertCircle, CheckSquare, Receipt, Check } from 'lucide-react';
+import React, { useState } from 'react';
+import { PlusCircle, CheckCircle2, DollarSign, Wallet, AlertCircle, CheckSquare, Receipt, Check, Search, Filter } from 'lucide-react';
 import { ViharaEvent, EventRegistration } from '@/types/database';
 
 interface EventPresensiTabProps {
@@ -24,6 +24,11 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
   const pricing = event.pricing_per_bagian || {};
   const extraFees = event.extra_fees || [];
 
+  // Search & Filter State (Only applied when user explicitly interacts with controls)
+  const [searchTerm, setSearchTerm] = useState('');
+  const [attendanceFilter, setAttendanceFilter] = useState<'all' | 'attended' | 'absent'>('all');
+  const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
+
   // Financial & Settlement Calculations
   let totalTargetAmount = 0;
   let totalPaidAmount = 0;
@@ -47,6 +52,36 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
   });
 
   const totalRemainingAmount = Math.max(0, totalTargetAmount - totalPaidAmount);
+
+  // STABLE SORTING: Always sort alphabetically by Umat's Name to prevent row position jumping on toggle
+  const sortedRegistrations = [...registrations].sort((a, b) => {
+    const nameA = a.profile?.full_name || '';
+    const nameB = b.profile?.full_name || '';
+    return nameA.localeCompare(nameB);
+  });
+
+  // Filter ONLY when search term or filter dropdowns are explicitly active
+  const filteredRegistrations = sortedRegistrations.filter((reg) => {
+    const name = reg.profile?.full_name || '';
+    const han = reg.profile?.han || '';
+    const cetya = reg.profile?.cetya || '';
+    const matchesSearch =
+      name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      han.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cetya.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesAttendance =
+      attendanceFilter === 'all' ||
+      (attendanceFilter === 'attended' && reg.is_attended) ||
+      (attendanceFilter === 'absent' && !reg.is_attended);
+
+    const matchesPayment =
+      paymentFilter === 'all' ||
+      (paymentFilter === 'paid' && reg.is_paid) ||
+      (paymentFilter === 'unpaid' && !reg.is_paid);
+
+    return matchesSearch && matchesAttendance && matchesPayment;
+  });
 
   return (
     <div className="space-y-6 print:hidden">
@@ -160,7 +195,7 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
               Daftar Presensi Umat & Pencatatan Pelunasan Event
             </h3>
             <p className="text-xs text-slate-500">
-              Pilih komponen biaya tambahan per umat (opsional), serta tandai kehadiran & pelunasan pendaftaran.
+              Posisi baris nama umat dijamin stabil. Tandai kehadiran & pelunasan pendaftaran tanpa mengubah urutan baris.
             </p>
           </div>
 
@@ -185,6 +220,42 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
           </div>
         </div>
 
+        {/* Filter Controls Toolbar */}
+        <div className="flex flex-col sm:flex-row gap-3 pt-1 pb-2 text-xs">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-2.5 text-slate-400" size={14} />
+            <input
+              type="text"
+              placeholder="Cari Nama Umat / HAN / Cetya..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl pl-8 pr-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <select
+              value={attendanceFilter}
+              onChange={(e: any) => setAttendanceFilter(e.target.value)}
+              className="bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-purple-600"
+            >
+              <option value="all">Semua Presensi</option>
+              <option value="attended">Hadir Presensi</option>
+              <option value="absent">Absen Presensi</option>
+            </select>
+
+            <select
+              value={paymentFilter}
+              onChange={(e: any) => setPaymentFilter(e.target.value)}
+              className="bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-purple-600"
+            >
+              <option value="all">Semua Pelunasan</option>
+              <option value="paid">Sudah Lunas</option>
+              <option value="unpaid">Belum Lunas</option>
+            </select>
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
@@ -200,8 +271,8 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-purple-50 dark:divide-purple-900/40">
-              {registrations.length > 0 ? (
-                registrations.map((reg, index) => {
+              {filteredRegistrations.length > 0 ? (
+                filteredRegistrations.map((reg, index) => {
                   const bagian = reg.profile?.bagian || 'Inspirasi';
                   const baseFee = pricing[bagian] || 0;
                   const selectedFeeIds = reg.selected_extra_fee_ids || [];
@@ -330,7 +401,9 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
               ) : (
                 <tr>
                   <td colSpan={8} className="py-6 text-center text-slate-400 text-xs italic">
-                    Belum ada umat yang mendaftar pada event ini.
+                    {searchTerm || attendanceFilter !== 'all' || paymentFilter !== 'all'
+                      ? 'Tidak ada data umat yang sesuai dengan filter pencarian.'
+                      : 'Belum ada umat yang mendaftar pada event ini.'}
                   </td>
                 </tr>
               )}
