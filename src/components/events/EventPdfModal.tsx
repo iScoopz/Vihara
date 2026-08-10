@@ -1,6 +1,6 @@
 import React from 'react';
-import { Printer, X, Users, CheckCircle2 } from 'lucide-react';
-import { ViharaEvent, EventRegistration } from '@/types/database';
+import { Printer, X } from 'lucide-react';
+import { ViharaEvent, EventRegistration, UmatBagian } from '@/types/database';
 
 interface EventPdfModalProps {
   event: ViharaEvent;
@@ -8,6 +8,8 @@ interface EventPdfModalProps {
   pdfMode: 'proposal' | 'lpj' | 'peserta';
   onClose: () => void;
 }
+
+const BAGIAN_ORDER: UmatBagian[] = ['Bintang', 'GM', 'Pro-M 40s', 'Pro-M Progresif', 'Pria', 'Wanita', 'Inspirasi'];
 
 export const EventPdfModal: React.FC<EventPdfModalProps> = ({
   event,
@@ -230,6 +232,57 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                       ))}
                     </tbody>
                   </table>
+                </div>
+              )}
+
+              {/* SECTION 3 (SPECIAL FOR LPJ): REKAPITULASI PENDAFTARAN UMAT TERDAFTAR (GROUPED BY BAGIAN UMAT) */}
+              {pdfMode === 'lpj' && (
+                <div className="space-y-4 print-avoid-break">
+                  <h4 className="text-xs font-black uppercase text-purple-950 border-b border-purple-200 pb-1">
+                    III. Rekapitulasi Peserta Umat Terdaftar (Disusun Rapi per Bagian Umat)
+                  </h4>
+
+                  <div className="space-y-4">
+                    {BAGIAN_ORDER.map((bagian) => {
+                      const bagianRegs = sortedRegistrations.filter(r => (r.profile?.bagian || 'Inspirasi') === bagian);
+                      if (bagianRegs.length === 0) return null;
+
+                      return (
+                        <div key={bagian} className="space-y-1.5">
+                          <div className="flex items-center justify-between bg-purple-100 p-2 rounded-lg text-purple-950 border border-purple-200 font-extrabold text-[11px]">
+                            <span>BAGIAN {bagian.toUpperCase()} ({bagianRegs.length} Umat)</span>
+                          </div>
+
+                          <table className="w-full text-left text-xs border-collapse border border-slate-300">
+                            <thead>
+                              <tr className="bg-slate-800 text-white font-bold text-[10px]">
+                                <th className="p-1.5 border border-slate-300 text-center w-8">No</th>
+                                <th className="p-1.5 border border-slate-300">Nama Lengkap Umat</th>
+                                <th className="p-1.5 border border-slate-300">Cetya & HAN</th>
+                                <th className="p-1.5 border border-slate-300 text-center">Status Presensi</th>
+                                <th className="p-1.5 border border-slate-300 text-center">Status Pelunasan</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {bagianRegs.map((reg, idx) => (
+                                <tr key={reg.id} className={idx % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
+                                  <td className="p-1.5 border border-slate-300 text-center font-bold">{idx + 1}</td>
+                                  <td className="p-1.5 border border-slate-300 font-extrabold text-slate-900">{reg.profile?.full_name}</td>
+                                  <td className="p-1.5 border border-slate-300 text-slate-600">{reg.profile?.cetya || '-'} / {reg.profile?.han || '-'}</td>
+                                  <td className="p-1.5 border border-slate-300 text-center font-bold">
+                                    {reg.is_attended ? <span className="text-emerald-700">✓ Hadir</span> : <span className="text-slate-400">Absen</span>}
+                                  </td>
+                                  <td className="p-1.5 border border-slate-300 text-center font-bold">
+                                    {reg.is_paid ? <span className="text-emerald-700">✓ Lunas</span> : <span className="text-rose-600">Belum Lunas</span>}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 

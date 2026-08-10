@@ -16,7 +16,9 @@ import {
   Globe,
   Send,
   FileEdit,
-  Users
+  Users,
+  Copy,
+  Check
 } from 'lucide-react';
 import { 
   getEventById, 
@@ -65,6 +67,43 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [isAddSubModalOpen, setIsAddSubModalOpen] = useState(false);
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
+  const [copiedWa, setCopiedWa] = useState(false);
+
+  const handleCopyWaList = () => {
+    if (!event) return;
+    const dateStr = new Date(event.event_date).toLocaleDateString('id-ID', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+
+    let waText = `*DAFTAR PESERTA EVENT: ${event.title.toUpperCase()}*\n`;
+    waText += `📅 Tanggal: ${dateStr}\n`;
+    waText += `📍 Lokasi: ${event.location}\n`;
+    waText += `👥 Total Pendaftar: ${registrations.length} Umat\n\n`;
+
+    const BAGIAN_LIST = ['Bintang', 'GM', 'Pro-M 40s', 'Pro-M Progresif', 'Pria', 'Wanita', 'Inspirasi'];
+    let globalIndex = 1;
+
+    BAGIAN_LIST.forEach((bagian) => {
+      const subset = registrations.filter(r => (r.profile?.bagian || 'Inspirasi') === bagian);
+      if (subset.length > 0) {
+        waText += `*[BAGIAN ${bagian.toUpperCase()}]*\n`;
+        subset.forEach((r) => {
+          waText += `${globalIndex}. ${r.profile?.full_name || 'Umat Vihara'}\n`;
+          globalIndex += 1;
+        });
+        waText += `\n`;
+      }
+    });
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(waText.trim());
+      setCopiedWa(true);
+      setTimeout(() => setCopiedWa(false), 3000);
+    }
+  };
 
   // Proposal Rundown Modal State
   const [isProposalRundownModalOpen, setIsProposalRundownModalOpen] = useState(false);
@@ -388,6 +427,20 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={handleCopyWaList}
+            className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-md border ${
+              copiedWa
+                ? 'bg-emerald-600 text-white border-emerald-600'
+                : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 hover:bg-emerald-200 border-emerald-200 dark:border-emerald-800'
+            }`}
+            title="Salin daftar pendaftar event berbentuk teks siap kirim ke WhatsApp"
+          >
+            {copiedWa ? <Check size={14} /> : <Copy size={14} />}
+            <span>{copiedWa ? '✓ Copied List WA!' : 'Salin List WA'}</span>
+          </button>
+
           <button
             onClick={handleTogglePublish}
             className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-md ${

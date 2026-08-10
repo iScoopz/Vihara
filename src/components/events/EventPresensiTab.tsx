@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { PlusCircle, CheckCircle2, DollarSign, Wallet, AlertCircle, CheckSquare, Receipt, Check, Search, Filter } from 'lucide-react';
-import { ViharaEvent, EventRegistration } from '@/types/database';
+import { PlusCircle, CheckCircle2, DollarSign, Wallet, AlertCircle, CheckSquare, Receipt, Check, Search, Filter, Share2, Copy } from 'lucide-react';
+import { ViharaEvent, EventRegistration, UmatBagian } from '@/types/database';
 
 interface EventPresensiTabProps {
   event: ViharaEvent;
@@ -24,10 +24,46 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
   const pricing = event.pricing_per_bagian || {};
   const extraFees = event.extra_fees || [];
 
-  // Search & Filter State (Only applied when user explicitly interacts with controls)
+  // Search & Filter State
   const [searchTerm, setSearchTerm] = useState('');
   const [attendanceFilter, setAttendanceFilter] = useState<'all' | 'attended' | 'absent'>('all');
   const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
+  const [copiedWa, setCopiedWa] = useState(false);
+
+  const handleCopyWaList = () => {
+    const dateStr = new Date(event.event_date).toLocaleDateString('id-ID', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+
+    let waText = `*DAFTAR PESERTA EVENT: ${event.title.toUpperCase()}*\n`;
+    waText += `📅 Tanggal: ${dateStr}\n`;
+    waText += `📍 Lokasi: ${event.location}\n`;
+    waText += `👥 Total Pendaftar: ${registrations.length} Umat\n\n`;
+
+    const BAGIAN_LIST: UmatBagian[] = ['Bintang', 'GM', 'Pro-M 40s', 'Pro-M Progresif', 'Pria', 'Wanita', 'Inspirasi'];
+    let globalIndex = 1;
+
+    BAGIAN_LIST.forEach((bagian) => {
+      const subset = registrations.filter(r => (r.profile?.bagian || 'Inspirasi') === bagian);
+      if (subset.length > 0) {
+        waText += `*[BAGIAN ${bagian.toUpperCase()}]*\n`;
+        subset.forEach((r) => {
+          waText += `${globalIndex}. ${r.profile?.full_name || 'Umat Vihara'}\n`;
+          globalIndex += 1;
+        });
+        waText += `\n`;
+      }
+    });
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(waText.trim());
+      setCopiedWa(true);
+      setTimeout(() => setCopiedWa(false), 3000);
+    }
+  };
 
   // Financial & Settlement Calculations
   let totalTargetAmount = 0;
@@ -200,6 +236,20 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleCopyWaList}
+              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer border shadow-sm ${
+                copiedWa
+                  ? 'bg-emerald-600 text-white border-emerald-600'
+                  : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 hover:bg-emerald-200 border-emerald-200 dark:border-emerald-800'
+              }`}
+              title="Salin daftar pendaftar event berbentuk teks siap kirim ke WhatsApp"
+            >
+              {copiedWa ? <Check size={14} /> : <Copy size={14} />}
+              <span>{copiedWa ? '✓ Copied List WA!' : 'Salin List WA'}</span>
+            </button>
+
             {onOpenPricingModal && (
               <button
                 onClick={onOpenPricingModal}
