@@ -1,5 +1,6 @@
 'use server'
 
+import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { 
@@ -444,7 +445,7 @@ export async function addDonation(donation: Omit<Donation, 'id' | 'created_at'>)
   return { success: true, donation: newDonation };
 }
 
-export async function getProfiles(): Promise<Profile[]> {
+export const getProfiles = cache(async (): Promise<Profile[]> => {
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
@@ -459,7 +460,7 @@ export async function getProfiles(): Promise<Profile[]> {
     }
   }
   return [...profilesStore];
-}
+});
 
 export async function addProfile(profile: Omit<Profile, 'id' | 'created_at'>) {
   const newProfile: Profile = {
@@ -526,20 +527,27 @@ export async function deleteProfile(id: string) {
   return { success: true };
 }
 
-export async function getEvents(): Promise<ViharaEvent[]> {
+export const getEvents = cache(async (): Promise<ViharaEvent[]> => {
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      const { data, error } = await supabase.from('events').select('*').order('event_date', { ascending: true });
-      if (error) {
-        console.error('Supabase getEvents error:', error);
-      } else if (data) {
-        return data.map(ev => ({
-          ...ev,
-          registrations_count: registrationsStore.filter(r => r.event_id === ev.id).length,
-          budgets: budgetsStore.filter(b => b.event_id === ev.id),
-          committees: committeesStore.filter(c => c.event_id === ev.id)
-        }));
+      const [eventsRes, regsRes] = await Promise.all([
+        supabase.from('events').select('*').order('event_date', { ascending: true }),
+        supabase.from('event_registrations').select('event_id')
+      ]);
+
+      if (eventsRes.data) {
+        const dbRegs = regsRes.data || [];
+        return eventsRes.data.map(ev => {
+          const dbCount = dbRegs.filter(r => r.event_id === ev.id).length;
+          const mockCount = registrationsStore.filter(r => r.event_id === ev.id).length;
+          return {
+            ...ev,
+            registrations_count: Math.max(dbCount, mockCount),
+            budgets: budgetsStore.filter(b => b.event_id === ev.id),
+            committees: committeesStore.filter(c => c.event_id === ev.id)
+          };
+        });
       }
     } catch (e) {
       console.error('getEvents exception:', e);
@@ -553,28 +561,30 @@ export async function getEvents(): Promise<ViharaEvent[]> {
     committees: committeesStore.filter(c => c.event_id === ev.id),
     org_structure: ev.org_structure || (ev.is_complex ? INITIAL_ORG_STRUCTURE : undefined)
   }));
-}
+});
 
-export async function getEventById(id: string): Promise<ViharaEvent | null> {
-  let proposalRundowns: EventProposalRundown[] = [];
-  let skenarioKerja: EventSkenarioKerja[] = [];
-
+export const getEventById = cache(async (id: string): Promise<ViharaEvent | null> => {
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      const { data, error } = await supabase.from('events').select('*').eq('id', id).single();
-      if (error) {
-        console.error('Supabase getEventById error:', error);
-      } else if (data) {
-        const { data: prData } = await supabase.from('event_proposal_rundowns').select('*').eq('event_id', id);
-        const { data: skData } = await supabase.from('event_skenario_kerja').select('*').eq('event_id', id);
+      const [eventRes, prRes, skRes, regRes] = await Promise.all([
+        supabase.from('events').select('*').eq('id', id).single(),
+        supabase.from('event_proposal_rundowns').select('*').eq('event_id', id),
+        supabase.from('event_skenario_kerja').select('*').eq('event_id', id),
+        supabase.from('event_registrations').select('id', { count: 'exact', head: true }).eq('event_id', id)
+      ]);
+
+      if (eventRes.data) {
+        const evData = eventRes.data;
+        const dbCount = regRes.count || 0;
+        const mockCount = registrationsStore.filter(r => r.event_id === id).length;
         return {
-          ...data,
-          registrations_count: registrationsStore.filter(r => r.event_id === id).length,
+          ...evData,
+          registrations_count: Math.max(dbCount, mockCount),
           budgets: budgetsStore.filter(b => b.event_id === id),
           committees: committeesStore.filter(c => c.event_id === id),
-          proposal_rundowns: prData && prData.length > 0 ? prData : (data.proposal_rundowns || []),
-          skenario_kerja: skData && skData.length > 0 ? skData : (data.skenario_kerja || [])
+          proposal_rundowns: prRes.data && prRes.data.length > 0 ? prRes.data : (evData.proposal_rundowns || []),
+          skenario_kerja: skRes.data && skRes.data.length > 0 ? skRes.data : (evData.skenario_kerja || [])
         };
       }
     } catch (e) {
@@ -594,7 +604,7 @@ export async function getEventById(id: string): Promise<ViharaEvent | null> {
     proposal_rundowns: ev.proposal_rundowns || [],
     skenario_kerja: ev.skenario_kerja || []
   };
-}
+});
 
 export async function createEvent(eventData: Omit<ViharaEvent, 'id' | 'created_at'>) {
   const newEvent: ViharaEvent = {
@@ -847,22 +857,28 @@ export async function addBudgetItem(budget: Omit<EventBudget, 'id'>) {
   return { success: true, budget: newBudget };
 }
 
-export async function getRegistrationsForEvent(eventId: string) {
+export const getRegistrationsForEvent = cache(async (eventId: string) => {
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      const { data, error } = await supabase
-        .from('event_registrations')
-        .select('*')
-        .eq('event_id', eventId)
-        .order('created_at', { ascending: true });
-      if (error) {
-        console.error('Supabase getRegistrationsForEvent error:', error);
-      } else if (data && data.length > 0) {
-        return data.map(r => ({
-          ...r,
-          profile: profilesStore.find(p => p.id === r.profile_id)
-        }));
+      const [regsRes, profilesRes] = await Promise.all([
+        supabase
+          .from('event_registrations')
+          .select('*')
+          .eq('event_id', eventId)
+          .order('created_at', { ascending: true }),
+        supabase.from('profiles').select('*')
+      ]);
+
+      if (regsRes.data && regsRes.data.length > 0) {
+        const dbProfiles = profilesRes.data || [];
+        return regsRes.data.map(r => {
+          const foundProfile = dbProfiles.find(p => p.id === r.profile_id) || profilesStore.find(p => p.id === r.profile_id);
+          return {
+            ...r,
+            profile: foundProfile
+          };
+        });
       }
     } catch (e) {
       console.error('getRegistrationsForEvent exception:', e);
@@ -876,52 +892,81 @@ export async function getRegistrationsForEvent(eventId: string) {
       ...r,
       profile: profilesStore.find(p => p.id === r.profile_id)
     }));
-}
+});
 
 export async function toggleAttendance(registrationId: string) {
-  const reg = registrationsStore.find(r => r.id === registrationId);
+  let reg = registrationsStore.find(r => r.id === registrationId);
+  let currentAttended = reg?.is_attended ?? false;
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { data: dbReg } = await supabase.from('event_registrations').select('is_attended').eq('id', registrationId).single();
+      if (dbReg) {
+        currentAttended = dbReg.is_attended ?? false;
+      }
+      const newAttended = !currentAttended;
+      const attendedAt = newAttended ? new Date().toISOString() : null;
+      const { error } = await supabase.from('event_registrations').update({ is_attended: newAttended, attended_at: attendedAt }).eq('id', registrationId);
+      if (error) console.error('Supabase toggleAttendance error:', error);
+      if (reg) {
+        reg.is_attended = newAttended;
+        reg.attended_at = attendedAt || undefined;
+      }
+      revalidatePath('/events');
+      return { success: true, is_attended: newAttended };
+    } catch (e) {
+      console.error('toggleAttendance exception:', e);
+    }
+  }
+
   if (reg) {
     reg.is_attended = !reg.is_attended;
     reg.attended_at = reg.is_attended ? new Date().toISOString() : undefined;
-
-    if (isSupabaseConfigured()) {
-      try {
-        const supabase = await createClient();
-        const { error } = await supabase.from('event_registrations').update({ is_attended: reg.is_attended, attended_at: reg.attended_at }).eq('id', registrationId);
-        if (error) console.error('Supabase toggleAttendance error:', error);
-      } catch (e) {
-        console.error('toggleAttendance exception:', e);
-      }
-    }
   }
   revalidatePath('/events');
   return { success: true, is_attended: reg?.is_attended };
 }
 
 export async function toggleRegistrationPayment(registrationId: string, amount?: number) {
-  const reg = registrationsStore.find(r => r.id === registrationId);
+  let reg = registrationsStore.find(r => r.id === registrationId);
+  let currentPaid = reg?.is_paid ?? false;
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { data: dbReg } = await supabase.from('event_registrations').select('is_paid').eq('id', registrationId).single();
+      if (dbReg) {
+        currentPaid = dbReg.is_paid ?? false;
+      }
+      const newPaid = !currentPaid;
+      const paidAt = newPaid ? new Date().toISOString() : null;
+      const amountPaid = newPaid ? (amount !== undefined ? amount : (reg?.amount_paid || 0)) : 0;
+
+      const { error } = await supabase.from('event_registrations').update({ 
+        is_paid: newPaid, 
+        paid_at: paidAt,
+        amount_paid: amountPaid
+      }).eq('id', registrationId);
+
+      if (error) console.error('Supabase toggleRegistrationPayment error:', error);
+      if (reg) {
+        reg.is_paid = newPaid;
+        reg.paid_at = paidAt || undefined;
+        reg.amount_paid = amountPaid;
+      }
+      revalidatePath('/events');
+      return { success: true, is_paid: newPaid };
+    } catch (e) {
+      console.error('toggleRegistrationPayment exception:', e);
+    }
+  }
+
   if (reg) {
     reg.is_paid = !reg.is_paid;
     reg.paid_at = reg.is_paid ? new Date().toISOString() : undefined;
     if (amount !== undefined) {
       reg.amount_paid = reg.is_paid ? amount : 0;
-    }
-
-    if (isSupabaseConfigured()) {
-      try {
-        const supabase = await createClient();
-        const { error } = await supabase
-          .from('event_registrations')
-          .update({ 
-            is_paid: reg.is_paid, 
-            paid_at: reg.paid_at,
-            amount_paid: reg.amount_paid
-          })
-          .eq('id', registrationId);
-        if (error) console.error('Supabase toggleRegistrationPayment error:', error);
-      } catch (e) {
-        console.error('toggleRegistrationPayment exception:', e);
-      }
     }
   }
   revalidatePath('/events');
@@ -929,27 +974,38 @@ export async function toggleRegistrationPayment(registrationId: string, amount?:
 }
 
 export async function updateRegistrationExtraFees(registrationId: string, feeIds: string[], calculatedTotalAmount?: number) {
-  const reg = registrationsStore.find(r => r.id === registrationId);
+  let reg = registrationsStore.find(r => r.id === registrationId);
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const newAmount = calculatedTotalAmount !== undefined ? calculatedTotalAmount : (reg?.amount_paid || 0);
+      const { error } = await supabase
+        .from('event_registrations')
+        .update({ 
+          selected_extra_fee_ids: feeIds,
+          amount_paid: newAmount
+        })
+        .eq('id', registrationId);
+
+      if (error) console.error('Supabase updateRegistrationExtraFees error:', error);
+      if (reg) {
+        reg.selected_extra_fee_ids = feeIds;
+        if (reg.is_paid && calculatedTotalAmount !== undefined) {
+          reg.amount_paid = calculatedTotalAmount;
+        }
+      }
+      revalidatePath('/events');
+      return { success: true, selected_extra_fee_ids: feeIds };
+    } catch (e) {
+      console.error('updateRegistrationExtraFees exception:', e);
+    }
+  }
+
   if (reg) {
     reg.selected_extra_fee_ids = feeIds;
     if (reg.is_paid && calculatedTotalAmount !== undefined) {
       reg.amount_paid = calculatedTotalAmount;
-    }
-
-    if (isSupabaseConfigured()) {
-      try {
-        const supabase = await createClient();
-        const { error } = await supabase
-          .from('event_registrations')
-          .update({ 
-            selected_extra_fee_ids: feeIds,
-            amount_paid: reg.amount_paid
-          })
-          .eq('id', registrationId);
-        if (error) console.error('Supabase updateRegistrationExtraFees error:', error);
-      } catch (e) {
-        console.error('updateRegistrationExtraFees exception:', e);
-      }
     }
   }
 
