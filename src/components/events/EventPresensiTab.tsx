@@ -10,6 +10,7 @@ interface EventPresensiTabProps {
   onTogglePayment: (regId: string, amount?: number) => void;
   onToggleExtraFeeForReg?: (regId: string, feeId: string, newSelectedIds: string[], newTotalAmount: number) => void;
   onOpenPricingModal?: () => void;
+  onCancelRegistration?: (regId: string) => void;
 }
 
 export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
@@ -19,7 +20,8 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
   onToggleAttendance,
   onTogglePayment,
   onToggleExtraFeeForReg,
-  onOpenPricingModal
+  onOpenPricingModal,
+  onCancelRegistration
 }) => {
   const isComplex = event.is_complex ?? true;
   const pricing = event.pricing_per_bagian || {};
@@ -479,6 +481,22 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
                         >
                           {reg.is_attended ? 'Batalkan Presensi' : 'Tandai Hadir'}
                         </button>
+
+                        {/* Cancel Registration Button */}
+                        {onCancelRegistration && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (confirm(`Apakah Anda yakin ingin membatalkan pendaftaran umat "${reg.profile?.full_name || 'Umat'}" dari event ini?`)) {
+                                onCancelRegistration(reg.id);
+                              }
+                            }}
+                            className="px-2.5 py-1 rounded-lg font-extrabold text-[10px] cursor-pointer transition bg-slate-100 text-rose-600 hover:bg-rose-100 dark:bg-slate-900 dark:text-rose-400 border border-slate-200 dark:border-slate-800"
+                            title="Hapus / Batalkan Pendaftaran Umat"
+                          >
+                            Batal Daftar
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );

@@ -24,10 +24,11 @@ import {
 import { 
   getEventById, 
   getRegistrationsForEvent, 
+  getProfiles,
   registerForEvent, 
+  cancelRegistration,
   toggleAttendance, 
   addBudgetItem, 
-  getProfiles,
   addSubSectionToOrg,
   updateSubSectionInOrg,
   deleteSubSectionFromOrg,
@@ -180,6 +181,11 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
       setIsRegModalOpen(false);
       loadData();
     }
+  };
+
+  const handleCancelRegistration = async (regId: string) => {
+    await cancelRegistration(regId);
+    loadData();
   };
 
   const handleToggleAttendance = async (regId: string) => {
@@ -635,6 +641,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
           onTogglePayment={handleTogglePayment}
           onToggleExtraFeeForReg={handleToggleExtraFeeForReg}
           onOpenPricingModal={() => setIsPricingModalOpen(true)}
+          onCancelRegistration={handleCancelRegistration}
         />
       )}
 

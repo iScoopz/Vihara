@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { CalendarDays, MapPin, Clock, CheckCircle2, UserCheck, Sparkles, Calendar as CalendarIcon } from 'lucide-react';
-import { getEvents, registerForEvent, getRegistrationsForEvent } from '@/lib/actions/vihara-actions';
+import { CalendarDays, MapPin, Clock, CheckCircle2, UserCheck, Sparkles, Calendar as CalendarIcon, XCircle } from 'lucide-react';
+import { getEvents, registerForEvent, cancelRegistration, getRegistrationsForEvent } from '@/lib/actions/vihara-actions';
 import { ViharaEvent } from '@/types/database';
 
 export default function PublicEventCatalogPage() {
@@ -49,6 +49,20 @@ export default function PublicEventCatalogPage() {
       });
       loadCatalog();
     }
+  };
+
+  const handleSelfCancel = async (eventId: string) => {
+    if (!confirm('Apakah Anda yakin ingin membatalkan pendaftaran event ini?')) return;
+    setLoadingId(eventId);
+    setMessage(null);
+    const regs = await getRegistrationsForEvent(eventId);
+    const myReg = regs.find(r => r.profile_id === currentUmatId);
+    if (myReg) {
+      await cancelRegistration(myReg.id);
+      setMessage({ text: '✓ Pendaftaran event berhasil dibatalkan.', type: 'success' });
+      loadCatalog();
+    }
+    setLoadingId(null);
   };
 
   return (
@@ -141,13 +155,19 @@ export default function PublicEventCatalogPage() {
                 {isPast ? (
                   <span className="text-xs text-slate-400 font-bold">Event Selesai</span>
                 ) : isRegistered ? (
-                  <button
-                    disabled
-                    className="px-4 py-2 rounded-xl bg-purple-50 dark:bg-purple-950 text-emerald-700 dark:text-emerald-300 text-xs font-bold border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5 cursor-not-allowed"
-                  >
-                    <UserCheck size={14} />
-                    <span>Sudah Terdaftar</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs font-extrabold border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5">
+                      <UserCheck size={14} />
+                      <span>Terdaftar</span>
+                    </span>
+                    <button
+                      onClick={() => handleSelfCancel(ev.id)}
+                      disabled={loadingId === ev.id}
+                      className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/80 text-rose-700 dark:text-rose-300 text-xs font-bold border border-rose-200 dark:border-rose-800 cursor-pointer transition"
+                    >
+                      {loadingId === ev.id ? 'Memproses...' : 'Batal Daftar'}
+                    </button>
+                  </div>
                 ) : (
                   <button
                     onClick={() => handleSelfRegister(ev.id)}

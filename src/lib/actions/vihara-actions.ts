@@ -946,6 +946,34 @@ export async function getRegistrationsForEvent(eventId: string) {
     }));
 }
 
+export async function cancelRegistration(registrationId: string) {
+  let eventId = '';
+  const reg = registrationsStore.find(r => r.id === registrationId);
+  if (reg) eventId = reg.event_id;
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      if (!eventId) {
+        const { data: dbReg } = await supabase.from('event_registrations').select('event_id').eq('id', registrationId).single();
+        if (dbReg) eventId = dbReg.event_id;
+      }
+      const { error } = await supabase.from('event_registrations').delete().eq('id', registrationId);
+      if (error) console.error('Supabase cancelRegistration error:', error);
+    } catch (e) {
+      console.error('cancelRegistration exception:', e);
+    }
+  }
+
+  registrationsStore = registrationsStore.filter(r => r.id !== registrationId);
+
+  revalidatePath('/events');
+  if (eventId) revalidatePath(`/events/${eventId}`);
+  revalidatePath('/kegiatan');
+  revalidatePath('/profil');
+  return { success: true };
+}
+
 export async function toggleAttendance(registrationId: string) {
   let reg = registrationsStore.find(r => r.id === registrationId);
   let currentAttended = reg?.is_attended ?? false;
