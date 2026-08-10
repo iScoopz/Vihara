@@ -256,11 +256,11 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
             <button
               type="button"
               onClick={handleCopyWaList}
-              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer border shadow-sm ${
+              className={`px-3.5 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition cursor-pointer border shadow-sm ${
                 copiedWa
                   ? 'bg-emerald-600 text-white border-emerald-600'
                   : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 hover:bg-emerald-200 border-emerald-200 dark:border-emerald-800'
@@ -274,16 +274,16 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
             {isComplex && onOpenPricingModal && (
               <button
                 onClick={onOpenPricingModal}
-                className="px-3.5 py-2 rounded-xl bg-purple-100 dark:bg-purple-950 hover:bg-purple-200 text-purple-900 dark:text-purple-200 font-extrabold text-xs flex items-center gap-1.5 transition cursor-pointer border border-purple-200 dark:border-purple-800"
+                className="px-3.5 py-2.5 rounded-xl bg-purple-100 dark:bg-purple-950 hover:bg-purple-200 text-purple-900 dark:text-purple-200 font-extrabold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer border border-purple-200 dark:border-purple-800"
               >
                 <Receipt size={14} />
-                <span>Kelola Tarif & Biaya Tambahan</span>
+                <span>Kelola Tarif</span>
               </button>
             )}
 
             <button
               onClick={onOpenRegModal}
-              className="px-3.5 py-2 rounded-xl gradient-mnsbdi text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer whitespace-nowrap"
+              className="px-3.5 py-2.5 rounded-xl gradient-mnsbdi text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer whitespace-nowrap"
             >
               <PlusCircle size={14} />
               <span>Daftarkan Umat (Admin)</span>
@@ -300,50 +300,53 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
               placeholder="Cari Nama Umat / HAN / Cetya..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl pl-8 pr-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
+              className="w-full bg-slate-50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-900/60 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-500"
             />
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto">
             <select
               value={attendanceFilter}
-              onChange={(e: any) => setAttendanceFilter(e.target.value)}
-              className="bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-purple-600"
+              onChange={(e) => setAttendanceFilter(e.target.value as any)}
+              className="flex-1 sm:flex-initial bg-slate-50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-900/60 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none"
             >
               <option value="all">Semua Presensi</option>
-              <option value="attended">Hadir Presensi</option>
-              <option value="absent">Absen Presensi</option>
+              <option value="attended">Sudah Hadir</option>
+              <option value="absent">Belum Hadir</option>
             </select>
 
             {isComplex && (
               <select
                 value={paymentFilter}
-                onChange={(e: any) => setPaymentFilter(e.target.value)}
-                className="bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-purple-600"
+                onChange={(e) => setPaymentFilter(e.target.value as any)}
+                className="flex-1 sm:flex-initial bg-slate-50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-900/60 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none"
               >
-                <option value="all">Semua Pelunasan</option>
-                <option value="paid">Sudah Lunas</option>
+                <option value="all">Semua Status Pelunasan</option>
+                <option value="paid">✓ Lunas</option>
                 <option value="unpaid">Belum Lunas</option>
               </select>
             )}
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Presensi Table Wrapper (Responsive Scrollable Container) */}
+        <div className="overflow-x-auto scrollbar-none rounded-xl border border-purple-100 dark:border-purple-900/60">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-purple-100 dark:border-purple-900/60 text-slate-400 font-extrabold">
-                <th className="pb-3 w-10 text-center">No</th>
-                <th className="pb-3">Nama Lengkap Umat</th>
-                <th className="pb-3">Bagian & HAN</th>
-                {isComplex && <th className="pb-3">Biaya Tambahan Opsional Umat</th>}
-                {isComplex && <th className="pb-3 text-right">Total Biaya</th>}
-                {isComplex && <th className="pb-3 text-center">Status Pelunasan</th>}
-                <th className="pb-3 text-center">Status Presensi</th>
-                <th className="pb-3 text-right">{isComplex ? 'Aksi Pelunasan & Presensi' : 'Aksi Presensi'}</th>
+              <tr className="bg-purple-900 text-white font-extrabold border-b border-purple-800">
+                <th className="py-3 px-2 text-center w-10">No</th>
+                <th className="py-3 px-3">Nama Lengkap Umat</th>
+                <th className="py-3 px-3">Bagian & HAN</th>
+
+                {/* Optional Extra Fees Column (Only Complex) */}
+                {isComplex && <th className="py-3 px-3">Biaya Ekstra Insidental</th>}
+                {isComplex && <th className="py-3 px-3 text-right">Total Biaya</th>}
+                {isComplex && <th className="py-3 px-3 text-center">Pelunasan</th>}
+                <th className="py-3 px-3 text-center">Presensi</th>
+                <th className="py-3 px-3 text-right">Tindakan Admin</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-purple-50 dark:divide-purple-900/40">
+            <tbody className="divide-y divide-purple-50 dark:divide-purple-950/40">
               {filteredRegistrations.length > 0 ? (
                 filteredRegistrations.map((reg, index) => {
                   const bagian = reg.profile?.bagian || 'Inspirasi';
@@ -375,11 +378,11 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
 
                   return (
                     <tr key={reg.id} className="hover:bg-purple-50/50 dark:hover:bg-purple-950/40">
-                      <td className="py-3 text-center font-bold text-slate-500">{index + 1}</td>
-                      <td className="py-3 font-bold text-slate-900 dark:text-white">
+                      <td className="py-3 px-2 text-center font-bold text-slate-500">{index + 1}</td>
+                      <td className="py-3 px-3 font-bold text-slate-900 dark:text-white whitespace-nowrap">
                         {reg.profile?.full_name || 'Umat Vihara'}
                       </td>
-                      <td className="py-3 text-slate-500">
+                      <td className="py-3 px-3 text-slate-500 whitespace-nowrap">
                         <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-200 mr-1.5">
                           {bagian}
                         </span>
@@ -388,7 +391,7 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
 
                       {/* Optional Extra Fees (Only Complex) */}
                       {isComplex && (
-                        <td className="py-3">
+                        <td className="py-3 px-3">
                           {extraFees.length > 0 ? (
                             <div className="flex flex-wrap gap-1.5">
                               {extraFees.map((fee) => {
@@ -398,7 +401,7 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
                                     type="button"
                                     key={fee.id}
                                     onClick={() => handleFeeToggle(fee.id)}
-                                    className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold border flex items-center gap-1 transition cursor-pointer ${
+                                    className={`px-2 py-1 rounded-lg text-[10px] font-extrabold border flex items-center gap-1 transition cursor-pointer ${
                                       isChecked
                                         ? 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800'
                                         : 'bg-slate-100 text-slate-400 border-slate-200 dark:bg-slate-900 dark:border-slate-800 hover:text-slate-700'
@@ -419,7 +422,7 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
 
                       {/* Total Biaya & Status Pelunasan (Only Complex) */}
                       {isComplex && (
-                        <td className="py-3 text-right font-extrabold text-slate-900 dark:text-white">
+                        <td className="py-3 px-3 text-right font-extrabold text-slate-900 dark:text-white whitespace-nowrap">
                           <div>
                             {totalFee > 0 ? `Rp ${totalFee.toLocaleString('id-ID')}` : 'Gratis'}
                           </div>
@@ -431,8 +434,8 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
                       )}
 
                       {isComplex && (
-                        <td className="py-3 text-center">
-                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold inline-flex items-center gap-1 ${
+                        <td className="py-3 px-3 text-center whitespace-nowrap">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold inline-flex items-center gap-1 ${
                             isPaid
                               ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800'
                               : 'bg-rose-100 text-rose-800 border border-rose-300 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800'
@@ -443,7 +446,7 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
                       )}
 
                       {/* Presensi Status */}
-                      <td className="py-3 text-center">
+                      <td className="py-3 px-3 text-center whitespace-nowrap">
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold flex items-center justify-center gap-1 w-fit mx-auto ${
                           reg.is_attended
                             ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800'
@@ -455,48 +458,50 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
                       </td>
 
                       {/* Actions */}
-                      <td className="py-3 text-right space-x-1.5">
-                        {/* Toggle Payment Button (Only Complex) */}
-                        {isComplex && (
+                      <td className="py-3 px-3 text-right">
+                        <div className="flex flex-wrap items-center justify-end gap-1.5 min-w-[210px]">
+                          {/* Toggle Payment Button (Only Complex) */}
+                          {isComplex && (
+                            <button
+                              onClick={() => onTogglePayment(reg.id, totalFee)}
+                              className={`px-3 py-1.5 rounded-xl font-extrabold text-[11px] cursor-pointer transition shadow-sm ${
+                                isPaid
+                                  ? 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+                                  : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                              }`}
+                            >
+                              {isPaid ? 'Batalkan Lunas' : 'Tandai Lunas'}
+                            </button>
+                          )}
+
+                          {/* Toggle Attendance Button */}
                           <button
-                            onClick={() => onTogglePayment(reg.id, totalFee)}
-                            className={`px-2.5 py-1 rounded-lg font-extrabold text-[10px] cursor-pointer transition ${
-                              isPaid
-                                ? 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
-                                : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'
+                            onClick={() => onToggleAttendance(reg.id)}
+                            className={`px-3 py-1.5 rounded-xl font-extrabold text-[11px] cursor-pointer transition shadow-sm ${
+                              reg.is_attended
+                                ? 'bg-amber-100 text-amber-900 hover:bg-amber-200 dark:bg-amber-950 dark:text-amber-300'
+                                : 'bg-purple-600 text-white hover:bg-purple-700'
                             }`}
                           >
-                            {isPaid ? 'Batalkan Lunas' : 'Tandai Lunas'}
+                            {reg.is_attended ? 'Batalkan Presensi' : 'Tandai Hadir'}
                           </button>
-                        )}
 
-                        {/* Toggle Attendance Button */}
-                        <button
-                          onClick={() => onToggleAttendance(reg.id)}
-                          className={`px-2.5 py-1 rounded-lg font-extrabold text-[10px] cursor-pointer transition ${
-                            reg.is_attended
-                              ? 'bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-950 dark:text-rose-300'
-                              : 'bg-purple-600 text-white hover:bg-purple-700 shadow-sm'
-                          }`}
-                        >
-                          {reg.is_attended ? 'Batalkan Presensi' : 'Tandai Hadir'}
-                        </button>
-
-                        {/* Cancel Registration Button */}
-                        {onCancelRegistration && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (confirm(`Apakah Anda yakin ingin membatalkan pendaftaran umat "${reg.profile?.full_name || 'Umat'}" dari event ini?`)) {
-                                onCancelRegistration(reg.id);
-                              }
-                            }}
-                            className="px-2.5 py-1 rounded-lg font-extrabold text-[10px] cursor-pointer transition bg-slate-100 text-rose-600 hover:bg-rose-100 dark:bg-slate-900 dark:text-rose-400 border border-slate-200 dark:border-slate-800"
-                            title="Hapus / Batalkan Pendaftaran Umat"
-                          >
-                            Batal Daftar
-                          </button>
-                        )}
+                          {/* Cancel Registration Button */}
+                          {onCancelRegistration && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm(`Apakah Anda yakin ingin membatalkan pendaftaran umat "${reg.profile?.full_name || 'Umat'}" dari event ini?`)) {
+                                  onCancelRegistration(reg.id);
+                                }
+                              }}
+                              className="px-3 py-1.5 rounded-xl font-extrabold text-[11px] cursor-pointer transition bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800 shadow-sm"
+                              title="Hapus / Batalkan Pendaftaran Umat"
+                            >
+                              Batal Daftar
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

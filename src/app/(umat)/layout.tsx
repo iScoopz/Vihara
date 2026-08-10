@@ -69,11 +69,11 @@ export default function UmatLayout({ children }: { children: React.ReactNode }) 
             <ThemeToggle />
 
             <Link
-              href="/dashboard"
-              className="text-xs font-extrabold bg-purple-900 hover:bg-purple-800 text-amber-300 px-3 py-2 rounded-xl transition flex items-center gap-1.5 shadow"
+              href="/login"
+              className="text-xs font-extrabold bg-purple-900/60 hover:bg-purple-800 text-amber-300 px-3 py-2 rounded-xl transition flex items-center gap-1.5 shadow border border-purple-700/50"
             >
               <Shield size={14} />
-              <span className="hidden sm:inline">Portal Admin</span>
+              <span className="hidden sm:inline">Login Pengurus</span>
             </Link>
           </div>
         </div>

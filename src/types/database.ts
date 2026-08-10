@@ -6,6 +6,7 @@ export interface Profile {
   id: string;
   role: UserRole;
   full_name: string;
+  email?: string;
   han?: string;
   cetya?: string;
   sentra?: string;

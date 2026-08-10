@@ -64,6 +64,8 @@ export default function UmatDirectoryPage() {
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
 
   // Umat Form State (Sentra -> Cetya -> HAN sequence)
+  const [role, setRole] = useState<'umat' | 'admin'>('umat');
+  const [email, setEmail] = useState('');
   const [sentra, setSentra] = useState('Sentra Makassar');
   const [cetya, setCetya] = useState('');
   const [han, setHan] = useState('');
@@ -76,6 +78,8 @@ export default function UmatDirectoryPage() {
   const [emergencyContact, setEmergencyContact] = useState('');
 
   // Umat Edit Form State
+  const [editRole, setEditRole] = useState<'umat' | 'admin'>('umat');
+  const [editEmail, setEditEmail] = useState('');
   const [editSentra, setEditSentra] = useState('');
   const [editCetya, setEditCetya] = useState('');
   const [editHan, setEditHan] = useState('');
@@ -86,7 +90,6 @@ export default function UmatDirectoryPage() {
   const [editBagian, setEditBagian] = useState<UmatBagian | ''>('');
   const [editAddress, setEditAddress] = useState('');
   const [editEmergencyContact, setEditEmergencyContact] = useState('');
-  const [editRole, setEditRole] = useState<'umat' | 'admin'>('umat');
   const [editIsActive, setEditIsActive] = useState<boolean>(true);
 
   // Modals & State for Cetya Management
@@ -160,8 +163,9 @@ export default function UmatDirectoryPage() {
   const handleAddUmat = async (e: React.FormEvent) => {
     e.preventDefault();
     await addProfile({
-      role: 'umat',
+      role: role,
       full_name: fullName,
+      email: email.trim() || undefined,
       sentra: sentra,
       cetya: cetya,
       han: han,
@@ -175,6 +179,8 @@ export default function UmatDirectoryPage() {
     });
 
     setIsAddUmatModalOpen(false);
+    setRole('umat');
+    setEmail('');
     setFullName('');
     setPhone('');
     setBagian('');
@@ -190,6 +196,7 @@ export default function UmatDirectoryPage() {
     setEditCetya(profile.cetya || cetyas[0]?.name || '');
     setEditHan(profile.han || hans[0]?.name || '');
     setEditFullName(profile.full_name || '');
+    setEditEmail(profile.email || '');
     setEditPhone(profile.phone || '');
     setEditBirthDate(profile.birth_date || '');
     setEditGender(profile.gender || 'L');
@@ -206,7 +213,9 @@ export default function UmatDirectoryPage() {
     if (!editingProfile) return;
 
     await updateProfile(editingProfile.id, {
+      role: editRole,
       full_name: editFullName,
+      email: editEmail.trim() || undefined,
       sentra: editSentra,
       cetya: editCetya,
       han: editHan,
@@ -216,7 +225,6 @@ export default function UmatDirectoryPage() {
       gender: editGender,
       address: editAddress,
       emergency_contact: editEmergencyContact,
-      role: editRole,
       is_active: editIsActive
     });
 
@@ -804,15 +812,28 @@ export default function UmatDirectoryPage() {
             </div>
             
             <form onSubmit={handleUpdateUmat} className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Lengkap Umat</label>
-                <input
-                  type="text"
-                  required
-                  value={editFullName}
-                  onChange={(e) => setEditFullName(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Lengkap Umat / Pengurus</label>
+                  <input
+                    type="text"
+                    required
+                    value={editFullName}
+                    onChange={(e) => setEditFullName(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Email Login Terdaftar</label>
+                  <input
+                    type="email"
+                    placeholder="contoh: hendra@vihara.or.id"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-semibold"
+                  />
+                </div>
               </div>
 
               {/* HIERARKI URUTAN LOKASI: SENTRA -> CETYA -> HAN */}
@@ -967,15 +988,40 @@ export default function UmatDirectoryPage() {
             <h3 className="text-lg font-extrabold text-purple-950 dark:text-white border-b border-purple-100 dark:border-purple-900/60 pb-3">Input Data Umat Baru</h3>
             
             <form onSubmit={handleAddUmat} className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Role Hak Akses System</label>
+                  <select
+                    value={role}
+                    onChange={(e: any) => setRole(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs font-extrabold text-amber-600 dark:text-amber-300 focus:outline-none focus:border-purple-600"
+                  >
+                    <option value="umat">Umat Biasa (Portal Umat)</option>
+                    <option value="admin">⭐ Pengurus Admin (Akses Kelola Vihara)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Email Login Terdaftar</label>
+                  <input
+                    type="email"
+                    placeholder="contoh: admin.baru@vihara.or.id"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-semibold"
+                  />
+                </div>
+              </div>
+
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Lengkap Umat</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Lengkap Umat / Pengurus</label>
                 <input
                   type="text"
                   required
-                  placeholder="Contoh: Upasika Tan Sri Wijaya"
+                  placeholder="Contoh: Upasaka Hendra Kurniawan"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
+                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-bold"
                 />
               </div>
 

@@ -469,54 +469,57 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
             <span>{isCompleted ? 'Buka Kembali Event' : 'Tandai Event Selesai'}</span>
           </button>
 
-          <button
-            onClick={handleTogglePublish}
-            className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-md ${
-              isPublished
-                ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 border border-slate-300 dark:border-slate-700'
-                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/30'
-            }`}
-          >
-            {isPublished ? <FileEdit size={14} /> : <Globe size={14} />}
-            <span>{isPublished ? 'Kembalikan ke Draf' : 'Terbitkan Event ke Umat'}</span>
-          </button>
+          {/* Top Actions Buttons (Scrollable on Mobile) */}
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 overflow-x-auto scrollbar-none pb-1 w-full sm:w-auto">
+            <button
+              onClick={handleTogglePublish}
+              className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer border shrink-0 ${
+                isPublished
+                  ? 'bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300 border-slate-300 dark:border-slate-800'
+                  : 'bg-emerald-600 text-white hover:bg-emerald-700 border-emerald-700 shadow'
+              }`}
+            >
+              {isPublished ? <FileEdit size={14} /> : <Globe size={14} />}
+              <span>{isPublished ? 'Kembalikan ke Draf' : 'Terbitkan Event ke Umat'}</span>
+            </button>
 
-          <button
-            onClick={() => {
-              setPdfMode('peserta');
-              setIsPdfModalOpen(true);
-            }}
-            className="px-3 py-2 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 hover:bg-emerald-200 text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer border border-emerald-200 dark:border-emerald-800"
-          >
-            <Users size={14} />
-            <span>Cetak List Peserta</span>
-          </button>
+            <button
+              onClick={() => {
+                setPdfMode('peserta');
+                setIsPdfModalOpen(true);
+              }}
+              className="px-3 py-2 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 hover:bg-emerald-200 text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer border border-emerald-200 dark:border-emerald-800 shrink-0"
+            >
+              <Users size={14} />
+              <span>Cetak List Peserta</span>
+            </button>
 
-          {(event.is_complex ?? true) && (
-            <>
-              <button
-                onClick={() => {
-                  setPdfMode('proposal');
-                  setIsPdfModalOpen(true);
-                }}
-                className="px-3 py-2 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-200 hover:bg-purple-200 text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer border border-purple-200 dark:border-purple-800"
-              >
-                <Printer size={14} />
-                <span>Cetak Proposal Event</span>
-              </button>
+            {(event.is_complex ?? true) && (
+              <>
+                <button
+                  onClick={() => {
+                    setPdfMode('proposal');
+                    setIsPdfModalOpen(true);
+                  }}
+                  className="px-3 py-2 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-200 hover:bg-purple-200 text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer border border-purple-200 dark:border-purple-800 shrink-0"
+                >
+                  <Printer size={14} />
+                  <span>Cetak Proposal Event</span>
+                </button>
 
-              <button
-                onClick={() => {
-                  setPdfMode('lpj');
-                  setIsPdfModalOpen(true);
-                }}
-                className="px-3 py-2 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 hover:bg-amber-200 text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer border border-amber-200 dark:border-amber-800"
-              >
-                <FileText size={14} />
-                <span>Cetak LPJ Event</span>
-              </button>
-            </>
-          )}
+                <button
+                  onClick={() => {
+                    setPdfMode('lpj');
+                    setIsPdfModalOpen(true);
+                  }}
+                  className="px-3 py-2 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 hover:bg-amber-200 text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer border border-amber-200 dark:border-amber-800 shrink-0"
+                >
+                  <FileText size={14} />
+                  <span>Cetak LPJ Event</span>
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
