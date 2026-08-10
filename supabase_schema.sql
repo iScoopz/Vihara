@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS public.events (
   category TEXT DEFAULT 'Gongyo',
   is_complex BOOLEAN DEFAULT true,
   is_published BOOLEAN DEFAULT false,
+  is_completed BOOLEAN DEFAULT false,
   pic_name TEXT,
   org_structure JSONB,
   pricing_per_bagian JSONB,

@@ -94,6 +94,7 @@ export interface ViharaEvent {
   category?: EventCategory;
   is_complex?: boolean;
   is_published?: boolean;
+  is_completed?: boolean;
   pic_name?: string;
   org_structure?: EventOrgStructure;
   pricing_per_bagian?: Record<string, number>;

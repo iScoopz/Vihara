@@ -643,6 +643,28 @@ export async function togglePublishEvent(eventId: string) {
   return { success: true, is_published: ev?.is_published };
 }
 
+export async function toggleCompleteEvent(eventId: string) {
+  const ev = eventsStore.find(e => e.id === eventId);
+  if (ev) {
+    ev.is_completed = !ev.is_completed;
+
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = await createClient();
+        const { error } = await supabase.from('events').update({ is_completed: ev.is_completed }).eq('id', eventId);
+        if (error) console.error('Supabase toggleCompleteEvent error:', error);
+      } catch (e) {
+        console.error('toggleCompleteEvent exception:', e);
+      }
+    }
+  }
+
+  revalidatePath('/events');
+  revalidatePath(`/events/${eventId}`);
+  revalidatePath('/kegiatan');
+  return { success: true, is_completed: ev?.is_completed };
+}
+
 export async function updateEventPricing(
   eventId: string,
   pricingPerBagian: Record<string, number>,

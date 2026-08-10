@@ -18,7 +18,8 @@ import {
   FileEdit,
   Users,
   Copy,
-  Check
+  Check,
+  CheckCircle2
 } from 'lucide-react';
 import { 
   getEventById, 
@@ -38,7 +39,8 @@ import {
   deleteSkenarioKerja,
   togglePublishEvent,
   toggleRegistrationPayment,
-  updateRegistrationExtraFees
+  updateRegistrationExtraFees,
+  toggleCompleteEvent
 } from '@/lib/actions/vihara-actions';
 import { ViharaEvent, Profile, EventRegistration, EventProposalRundown, EventSkenarioKerja } from '@/types/database';
 
@@ -374,8 +376,15 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
     loadData();
   };
 
+  const handleToggleComplete = async () => {
+    if (!event) return;
+    await toggleCompleteEvent(event.id);
+    loadData();
+  };
+
   const isPastEvent = new Date(event.event_date) < new Date();
   const isPublished = event.is_published ?? false;
+  const isCompleted = event.is_completed ?? false;
 
   return (
     <div className="space-y-6">
@@ -394,18 +403,13 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
               {event.title}
             </h1>
             <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
-              isPublished
-                ? 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800'
-                : 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800'
+              isCompleted
+                ? 'bg-slate-200 text-slate-800 border-slate-400 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700'
+                : isPublished
+                  ? 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800'
+                  : 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800'
             }`}>
-              {isPublished ? '✓ Diterbitkan (Publik)' : '📝 Draf / Perencanaan'}
-            </span>
-            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
-              isPastEvent
-                ? 'bg-slate-100 text-slate-600 border-slate-300 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800'
-                : 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800'
-            }`}>
-              {isPastEvent ? 'Selesai' : 'Mendatang'}
+              {isCompleted ? '🏁 Event Selesai (Arsip)' : isPublished ? '✓ Diterbitkan (Publik)' : '📝 Draf / Perencanaan'}
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-4">
@@ -434,6 +438,18 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
           >
             {copiedWa ? <Check size={14} /> : <Copy size={14} />}
             <span>{copiedWa ? '✓ Copied List WA!' : 'Salin List WA'}</span>
+          </button>
+
+          <button
+            onClick={handleToggleComplete}
+            className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-md border ${
+              isCompleted
+                ? 'bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 hover:bg-amber-200 border-amber-300 dark:border-amber-800'
+                : 'bg-slate-800 hover:bg-slate-900 text-white dark:bg-slate-700 dark:hover:bg-slate-600'
+            }`}
+          >
+            <CheckCircle2 size={14} />
+            <span>{isCompleted ? 'Buka Kembali Event' : 'Tandai Event Selesai'}</span>
           </button>
 
           <button
