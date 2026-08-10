@@ -47,9 +47,9 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
     waText += `👥 Total: ${registrations.length} Umat\n\n`;
 
     const sortedRegs = [...registrations].sort((a, b) => {
-      const nameA = a.profile?.full_name || '';
-      const nameB = b.profile?.full_name || '';
-      return nameA.localeCompare(nameB);
+      const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return timeA - timeB;
     });
 
     sortedRegs.forEach((r, idx) => {
@@ -92,11 +92,11 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
 
   const totalRemainingAmount = Math.max(0, totalTargetAmount - totalPaidAmount);
 
-  // STABLE SORTING: Always sort alphabetically by Umat's Name to prevent row position jumping
+  // SORT BY REGISTRATION ORDER: First to register comes first (No. 1 = earliest created_at)
   const sortedRegistrations = [...registrations].sort((a, b) => {
-    const nameA = a.profile?.full_name || '';
-    const nameB = b.profile?.full_name || '';
-    return nameA.localeCompare(nameB);
+    const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+    return timeA - timeB;
   });
 
   // Filter ONLY when search term or filter dropdowns are explicitly active
