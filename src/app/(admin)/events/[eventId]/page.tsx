@@ -15,7 +15,8 @@ import {
   ListTodo,
   Globe,
   Send,
-  FileEdit
+  FileEdit,
+  Users
 } from 'lucide-react';
 import { 
   getEventById, 
@@ -88,7 +89,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
 
   // PDF Printable Modal State
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
-  const [pdfMode, setPdfMode] = useState<'proposal' | 'lpj'>('proposal');
+  const [pdfMode, setPdfMode] = useState<'proposal' | 'lpj' | 'peserta'>('proposal');
 
   // Forms
   const [selectedUmatId, setSelectedUmatId] = useState('');
@@ -397,6 +398,17 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
           >
             {isPublished ? <FileEdit size={14} /> : <Globe size={14} />}
             <span>{isPublished ? 'Kembalikan ke Draf' : 'Terbitkan Event ke Umat'}</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setPdfMode('peserta');
+              setIsPdfModalOpen(true);
+            }}
+            className="px-3 py-2 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 hover:bg-emerald-200 text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer border border-emerald-200 dark:border-emerald-800"
+          >
+            <Users size={14} />
+            <span>Cetak List Peserta (Ketua Acara)</span>
           </button>
 
           <button
