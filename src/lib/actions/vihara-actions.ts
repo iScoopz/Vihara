@@ -445,7 +445,7 @@ export async function addDonation(donation: Omit<Donation, 'id' | 'created_at'>)
   return { success: true, donation: newDonation };
 }
 
-export const getProfiles = cache(async (): Promise<Profile[]> => {
+export async function getProfiles(): Promise<Profile[]> {
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
@@ -460,7 +460,7 @@ export const getProfiles = cache(async (): Promise<Profile[]> => {
     }
   }
   return [...profilesStore];
-});
+}
 
 export async function addProfile(profile: Omit<Profile, 'id' | 'created_at'>) {
   const newProfile: Profile = {
@@ -527,7 +527,7 @@ export async function deleteProfile(id: string) {
   return { success: true };
 }
 
-export const getEvents = cache(async (): Promise<ViharaEvent[]> => {
+export async function getEvents(): Promise<ViharaEvent[]> {
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
@@ -561,9 +561,9 @@ export const getEvents = cache(async (): Promise<ViharaEvent[]> => {
     committees: committeesStore.filter(c => c.event_id === ev.id),
     org_structure: ev.org_structure || (ev.is_complex ? INITIAL_ORG_STRUCTURE : undefined)
   }));
-});
+}
 
-export const getEventById = cache(async (id: string): Promise<ViharaEvent | null> => {
+export async function getEventById(id: string): Promise<ViharaEvent | null> {
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
@@ -604,7 +604,7 @@ export const getEventById = cache(async (id: string): Promise<ViharaEvent | null
     proposal_rundowns: ev.proposal_rundowns || [],
     skenario_kerja: ev.skenario_kerja || []
   };
-});
+}
 
 export async function createEvent(eventData: Omit<ViharaEvent, 'id' | 'created_at'>) {
   const newEvent: ViharaEvent = {
@@ -857,7 +857,7 @@ export async function addBudgetItem(budget: Omit<EventBudget, 'id'>) {
   return { success: true, budget: newBudget };
 }
 
-export const getRegistrationsForEvent = cache(async (eventId: string) => {
+export async function getRegistrationsForEvent(eventId: string) {
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
@@ -892,7 +892,7 @@ export const getRegistrationsForEvent = cache(async (eventId: string) => {
       ...r,
       profile: profilesStore.find(p => p.id === r.profile_id)
     }));
-});
+}
 
 export async function toggleAttendance(registrationId: string) {
   let reg = registrationsStore.find(r => r.id === registrationId);
