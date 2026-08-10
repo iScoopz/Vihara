@@ -77,6 +77,12 @@ export interface EventSkenarioKerja {
   notes?: string; // e.g. "Pastikan 4 mic wireless terisi baterai"
 }
 
+export interface EventExtraFee {
+  id: string;
+  fee_name: string;
+  amount: number;
+}
+
 export interface ViharaEvent {
   id: string;
   title: string;
@@ -91,6 +97,7 @@ export interface ViharaEvent {
   pic_name?: string;
   org_structure?: EventOrgStructure;
   pricing_per_bagian?: Record<string, number>;
+  extra_fees?: EventExtraFee[];
   created_at?: string;
   registrations_count?: number;
   budgets?: EventBudget[];

@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS public.events (
   pic_name TEXT,
   org_structure JSONB,
   pricing_per_bagian JSONB,
+  extra_fees JSONB,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

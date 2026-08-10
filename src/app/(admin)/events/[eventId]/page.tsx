@@ -47,6 +47,7 @@ import { EventRABTab } from '@/components/events/EventRABTab';
 import { EventLaporanTab } from '@/components/events/EventLaporanTab';
 import { EventPdfModal } from '@/components/events/EventPdfModal';
 import { EventModals } from '@/components/events/EventModals';
+import { EventPricingModal } from '@/components/events/EventPricingModal';
 
 export default function EventDetailPage({ params }: { params: Promise<{ eventId: string }> }) {
   const resolvedParams = use(params);
@@ -61,6 +62,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
   const [isRegModalOpen, setIsRegModalOpen] = useState(false);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [isAddSubModalOpen, setIsAddSubModalOpen] = useState(false);
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
 
   // Proposal Rundown Modal State
   const [isProposalRundownModalOpen, setIsProposalRundownModalOpen] = useState(false);
@@ -539,6 +541,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
           onOpenRegModal={() => setIsRegModalOpen(true)}
           onToggleAttendance={handleToggleAttendance}
           onTogglePayment={handleTogglePayment}
+          onOpenPricingModal={() => setIsPricingModalOpen(true)}
         />
       )}
 
@@ -644,6 +647,14 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
           onClose={() => setIsPdfModalOpen(false)}
         />
       )}
+
+      {/* EVENT PRICING & EXTRA FEES MODAL */}
+      <EventPricingModal
+        isOpen={isPricingModalOpen}
+        event={event}
+        onClose={() => setIsPricingModalOpen(false)}
+        onSaved={loadData}
+      />
     </div>
   );
 }

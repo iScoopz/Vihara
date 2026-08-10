@@ -30,7 +30,8 @@ import {
   CetyaProfile,
   HanProfile,
   EventProposalRundown,
-  EventSkenarioKerja
+  EventSkenarioKerja,
+  EventExtraFee
 } from '@/types/database';
 
 let profilesStore = [...INITIAL_PROFILES];
@@ -640,6 +641,38 @@ export async function togglePublishEvent(eventId: string) {
   revalidatePath(`/events/${eventId}`);
   revalidatePath('/kegiatan');
   return { success: true, is_published: ev?.is_published };
+}
+
+export async function updateEventPricing(
+  eventId: string,
+  pricingPerBagian: Record<string, number>,
+  extraFees: EventExtraFee[]
+) {
+  const ev = eventsStore.find(e => e.id === eventId);
+  if (ev) {
+    ev.pricing_per_bagian = pricingPerBagian;
+    ev.extra_fees = extraFees;
+
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = await createClient();
+        const { error } = await supabase
+          .from('events')
+          .update({ 
+            pricing_per_bagian: pricingPerBagian, 
+            extra_fees: extraFees 
+          })
+          .eq('id', eventId);
+        if (error) console.error('Supabase updateEventPricing error:', error);
+      } catch (e) {
+        console.error('updateEventPricing exception:', e);
+      }
+    }
+  }
+
+  revalidatePath('/events');
+  revalidatePath(`/events/${eventId}`);
+  return { success: true, event: ev };
 }
 
 export async function addSubSectionToOrg(eventId: string, sectionType: 'sub_acara' | 'sub_umum', roleName: string, picName: string) {
