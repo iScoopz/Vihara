@@ -1,22 +1,41 @@
 import React from 'react';
-import { Plus, FileSpreadsheet, TrendingUp, TrendingDown, DollarSign, Wallet } from 'lucide-react';
-import { ViharaEvent } from '@/types/database';
+import { Plus, FileSpreadsheet, TrendingUp, TrendingDown, DollarSign, Wallet, Users } from 'lucide-react';
+import { ViharaEvent, EventRegistration } from '@/types/database';
 import { exportRABToExcel } from '@/lib/export-utils';
 
 interface EventRABTabProps {
   event: ViharaEvent;
+  registrations?: EventRegistration[];
   onOpenBudgetModal: () => void;
 }
 
-export const EventRABTab: React.FC<EventRABTabProps> = ({ event, onOpenBudgetModal }) => {
+export const EventRABTab: React.FC<EventRABTabProps> = ({ event, registrations = [], onOpenBudgetModal }) => {
   const pemasukanItems = event.budgets?.filter(b => b.budget_type === 'pemasukan') || [];
   const rabItems = event.budgets?.filter(b => b.budget_type === 'rab') || [];
   const realisasiItems = event.budgets?.filter(b => b.budget_type === 'realisasi') || [];
 
-  const totalPemasukan = pemasukanItems.reduce((acc, curr) => acc + curr.amount, 0);
+  // Calculate total Umat registration fees (Base Price per Bagian + Extra Fees)
+  const pricing = event.pricing_per_bagian || {};
+  const extraFees = event.extra_fees || [];
+  let totalUmatRegistrationFees = 0;
+
+  registrations.forEach((reg) => {
+    const bagian = reg.profile?.bagian || 'Inspirasi';
+    const baseFee = pricing[bagian] || 0;
+    const selectedFeeIds = reg.selected_extra_fee_ids || [];
+    const extraTotal = extraFees
+      .filter((f) => selectedFeeIds.includes(f.id))
+      .reduce((sum, f) => sum + f.amount, 0);
+
+    const totalFee = reg.amount_paid !== undefined ? reg.amount_paid : (baseFee + extraTotal);
+    totalUmatRegistrationFees += totalFee;
+  });
+
+  const totalPemasukanManual = pemasukanItems.reduce((acc, curr) => acc + curr.amount, 0);
+  const totalPemasukanGlobal = totalPemasukanManual + totalUmatRegistrationFees;
   const totalRAB = rabItems.reduce((acc, curr) => acc + curr.amount, 0);
   const totalRealisasi = realisasiItems.reduce((acc, curr) => acc + curr.amount, 0);
-  const saldoKas = totalPemasukan - totalRealisasi;
+  const saldoKasGlobal = totalPemasukanGlobal - totalRealisasi;
 
   return (
     <div className="space-y-6 print:hidden">
@@ -27,7 +46,7 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({ event, onOpenBudgetMod
               <Wallet size={18} className="text-purple-600" />
               <span>RAB, Realisasi & Dana Paramita (Keuangan Event)</span>
             </h3>
-            <p className="text-xs text-slate-500">Pencatatan Pemasukan Dana Paramita, Target Anggaran RAB, dan Realisasi Pengeluaran Event.</p>
+            <p className="text-xs text-slate-500">Pencatatan Pemasukan Dana Paramita, Biaya Pendaftaran Umat, Target Anggaran RAB, dan Realisasi Pengeluaran Event.</p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -51,15 +70,18 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({ event, onOpenBudgetMod
 
         {/* 4 Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-          {/* Card Dana Paramita (Pemasukan) */}
+          {/* Card Total Pemasukan Global */}
           <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60">
             <div className="flex items-center justify-between text-emerald-800 dark:text-emerald-300 font-bold mb-1">
-              <span className="text-[11px]">Dana Paramita (Pemasukan):</span>
+              <span className="text-[11px]">Total Pemasukan (Paramita + Umat):</span>
               <TrendingUp size={14} />
             </div>
-            <strong className="text-base font-black text-emerald-950 dark:text-emerald-100">
-              Rp {totalPemasukan.toLocaleString('id-ID')}
+            <strong className="text-base font-black text-emerald-950 dark:text-emerald-100 block">
+              Rp {totalPemasukanGlobal.toLocaleString('id-ID')}
             </strong>
+            <span className="text-[10px] text-slate-500 block mt-0.5">
+              (Umat: Rp {totalUmatRegistrationFees.toLocaleString('id-ID')} + Paramita: Rp {totalPemasukanManual.toLocaleString('id-ID')})
+            </span>
           </div>
 
           {/* Card Target RAB */}
@@ -68,9 +90,10 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({ event, onOpenBudgetMod
               <span className="text-[11px]">Target RAB (Rencana):</span>
               <DollarSign size={14} />
             </div>
-            <strong className="text-base font-black text-purple-950 dark:text-purple-100">
+            <strong className="text-base font-black text-purple-950 dark:text-purple-100 block">
               Rp {totalRAB.toLocaleString('id-ID')}
             </strong>
+            <span className="text-[10px] text-slate-500 block mt-0.5">Total Rencana Pengeluaran</span>
           </div>
 
           {/* Card Realisasi */}
@@ -79,14 +102,15 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({ event, onOpenBudgetMod
               <span className="text-[11px]">Realisasi (Pengeluaran):</span>
               <TrendingDown size={14} />
             </div>
-            <strong className="text-base font-black text-amber-950 dark:text-amber-100">
+            <strong className="text-base font-black text-amber-950 dark:text-amber-100 block">
               Rp {totalRealisasi.toLocaleString('id-ID')}
             </strong>
+            <span className="text-[10px] text-slate-500 block mt-0.5">Pengeluaran Terpakai</span>
           </div>
 
           {/* Card Saldo Kas */}
           <div className={`p-3.5 rounded-xl border ${
-            saldoKas >= 0 
+            saldoKasGlobal >= 0 
               ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/60 text-blue-950 dark:text-blue-100'
               : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/60 text-rose-950 dark:text-rose-100'
           }`}>
@@ -94,9 +118,12 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({ event, onOpenBudgetMod
               <span className="text-[11px]">Saldo Keuangan Event:</span>
               <Wallet size={14} />
             </div>
-            <strong className="text-base font-black">
-              Rp {saldoKas.toLocaleString('id-ID')}
+            <strong className="text-base font-black block">
+              Rp {saldoKasGlobal.toLocaleString('id-ID')}
             </strong>
+            <span className="text-[10px] opacity-80 block mt-0.5">
+              {saldoKasGlobal >= 0 ? 'Surplus Anggaran' : 'Defisit Anggaran'}
+            </span>
           </div>
         </div>
 

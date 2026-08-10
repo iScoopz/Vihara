@@ -659,6 +659,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
       {activeTab === 'rab' && (
         <EventRABTab
           event={event}
+          registrations={registrations}
           onOpenBudgetModal={() => setIsBudgetModalOpen(true)}
         />
       )}

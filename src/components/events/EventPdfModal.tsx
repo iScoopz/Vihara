@@ -15,17 +15,57 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
   event,
   registrations,
   pdfMode,
-  onClose
-}) => {
+  onClose}) => {
   const org = event.org_structure;
   const pemasukanItems = event.budgets?.filter(b => b.budget_type === 'pemasukan') || [];
   const rabItems = event.budgets?.filter(b => b.budget_type === 'rab') || [];
   const realisasiItems = event.budgets?.filter(b => b.budget_type === 'realisasi') || [];
 
-  const totalPemasukan = pemasukanItems.reduce((acc, curr) => acc + curr.amount, 0);
+  // Detailed financial breakdown per Bagian for LPJ
+  const pricing = event.pricing_per_bagian || {};
+  const extraFees = event.extra_fees || [];
+
+  const bagianBreakdown = BAGIAN_LPJ_ORDER.map((bagian) => {
+    const regsInBagian = registrations.filter(
+      (r) => (r.profile?.bagian || 'Inspirasi') === bagian
+    );
+    const count = regsInBagian.length;
+    const basePrice = pricing[bagian] || 0;
+    const subtotalBase = count * basePrice;
+
+    let subtotalExtra = 0;
+    regsInBagian.forEach((r) => {
+      const selectedIds = r.selected_extra_fee_ids || [];
+      const extraTotal = extraFees
+        .filter((f) => selectedIds.includes(f.id))
+        .reduce((sum, f) => sum + f.amount, 0);
+      subtotalExtra += extraTotal;
+    });
+
+    const totalPemasukanBagian = subtotalBase + subtotalExtra;
+
+    return {
+      bagian,
+      count,
+      basePrice,
+      subtotalBase,
+      subtotalExtra,
+      totalPemasukanBagian
+    };
+  }).filter((b) => b.count > 0 || b.basePrice > 0);
+
+  const totalUmatRegistrationFees = bagianBreakdown.reduce(
+    (sum, b) => sum + b.totalPemasukanBagian,
+    0
+  );
+  const totalPemasukanManual = pemasukanItems.reduce(
+    (acc, curr) => acc + curr.amount,
+    0
+  );
+  const totalPemasukanGlobal = totalPemasukanManual + totalUmatRegistrationFees;
   const totalRAB = rabItems.reduce((acc, curr) => acc + curr.amount, 0);
   const totalRealisasi = realisasiItems.reduce((acc, curr) => acc + curr.amount, 0);
-  const saldoKas = totalPemasukan - totalRealisasi;
+  const saldoKasGlobal = totalPemasukanGlobal - totalRealisasi;
 
   // Stable sort by Umat's Name for Participant List
   const sortedRegistrations = [...registrations].sort((a, b) => {
@@ -295,76 +335,145 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                 </div>
               )}
 
-              {/* SECTION 4: KEUANGAN (DANA PARAMITA, RAB & REALISASI) */}
-              <div className="space-y-3">
+              {/* SECTION 4: KEUANGAN LPJ (RINCIAN BIAYA PER BAGIAN & REALISASI) */}
+              <div className="space-y-4">
                 <h4 className="text-xs font-black uppercase text-purple-950 border-b border-purple-200 pb-1">
                   {pdfMode === 'proposal' ? 'III. Rencana Anggaran Biaya (RAB)' : 'IV. Laporan Keuangan, Dana Paramita & Realisasi'}
                 </h4>
 
-                <table className="w-full text-left text-xs border-collapse border border-slate-300">
-                  <thead>
-                    <tr className="bg-purple-900 text-white font-bold">
-                      <th className="p-2 border border-slate-300 text-center w-8">No</th>
-                      <th className="p-2 border border-slate-300">Nama Item / Keterangan</th>
-                      {pdfMode === 'lpj' && <th className="p-2 border border-slate-300 text-right">Dana Paramita (Rp)</th>}
-                      <th className="p-2 border border-slate-300 text-right">Anggaran RAB (Rp)</th>
-                      {pdfMode === 'lpj' && <th className="p-2 border border-slate-300 text-right">Realisasi (Rp)</th>}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {event.budgets && event.budgets.length > 0 ? (
-                      event.budgets.map((b, i) => {
-                        const isPemasukan = b.budget_type === 'pemasukan';
-                        return (
-                          <tr key={b.id} className={i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
-                            <td className="p-2 border border-slate-300 text-center font-bold">{i + 1}</td>
-                            <td className="p-2 border border-slate-300 font-bold">
-                              {b.item_name}{' '}
-                              <span className="text-[9px] font-normal text-slate-500">
-                                ({b.budget_type === 'pemasukan' ? 'Pemasukan' : b.budget_type === 'rab' ? 'RAB' : 'Realisasi'})
-                              </span>
-                            </td>
-                            {pdfMode === 'lpj' && (
+                {pdfMode === 'lpj' && (
+                  <div className="space-y-2">
+                    <h5 className="text-[11px] font-bold text-slate-800 uppercase tracking-wide">
+                      A. Rincian Pemasukan Biaya Pendaftaran Umat Per Bagian
+                    </h5>
+                    <table className="w-full text-left text-xs border-collapse border border-slate-300">
+                      <thead>
+                        <tr className="bg-purple-950 text-white font-bold">
+                          <th className="p-2 border border-slate-300 text-center w-8">No</th>
+                          <th className="p-2 border border-slate-300">Nama Bagian Umat</th>
+                          <th className="p-2 border border-slate-300 text-right">Tarif Pokok (Rp)</th>
+                          <th className="p-2 border border-slate-300 text-center">Jumlah Umat Terdaftar</th>
+                          <th className="p-2 border border-slate-300 text-right">Subtotal Pemasukan (Rp)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {bagianBreakdown.length > 0 ? (
+                          bagianBreakdown.map((item, idx) => (
+                            <tr key={item.bagian} className={idx % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
+                              <td className="p-2 border border-slate-300 text-center font-bold text-slate-500">{idx + 1}</td>
+                              <td className="p-2 border border-slate-300 font-extrabold text-slate-900">{item.bagian}</td>
+                              <td className="p-2 border border-slate-300 text-right font-semibold">Rp {item.basePrice.toLocaleString('id-ID')}</td>
+                              <td className="p-2 border border-slate-300 text-center font-bold text-purple-900">{item.count} Umat</td>
                               <td className="p-2 border border-slate-300 text-right font-bold text-emerald-700">
-                                {isPemasukan ? `+ Rp ${b.amount.toLocaleString('id-ID')}` : '-'}
+                                Rp {item.totalPemasukanBagian.toLocaleString('id-ID')}
+                                {item.subtotalExtra > 0 && (
+                                  <span className="block text-[9px] font-normal text-slate-500">
+                                    (termasuk Ekstra: Rp {item.subtotalExtra.toLocaleString('id-ID')})
+                                  </span>
+                                )}
                               </td>
-                            )}
-                            <td className="p-2 border border-slate-300 text-right font-semibold">
-                              {b.budget_type === 'rab' ? `Rp ${b.amount.toLocaleString('id-ID')}` : '-'}
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={5} className="p-3 text-center text-slate-400 italic">
+                              Belum ada pendaftaran Umat pada bagian manapun.
                             </td>
-                            {pdfMode === 'lpj' && (
-                              <td className="p-2 border border-slate-300 text-right font-semibold text-amber-900">
-                                {b.budget_type === 'realisasi' ? `Rp ${b.amount.toLocaleString('id-ID')}` : '-'}
-                              </td>
-                            )}
                           </tr>
-                        );
-                      })
-                    ) : (
-                      <tr>
-                        <td colSpan={pdfMode === 'lpj' ? 5 : 3} className="p-4 text-center text-slate-400 italic">
-                          Belum ada item keuangan yang dimasukkan.
-                        </td>
+                        )}
+                      </tbody>
+                      <tfoot>
+                        <tr className="bg-emerald-100 font-black text-emerald-950">
+                          <td colSpan={4} className="p-2 border border-slate-300 text-right uppercase">TOTAL PEMASUKAN PENDAFTARAN UMAT</td>
+                          <td className="p-2 border border-slate-300 text-right text-emerald-900 font-black">
+                            Rp {totalUmatRegistrationFees.toLocaleString('id-ID')}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                )}
+
+                {/* Table B / Main Financial Table */}
+                <div className="space-y-2">
+                  {pdfMode === 'lpj' && (
+                    <h5 className="text-[11px] font-bold text-slate-800 uppercase tracking-wide">
+                      B. Dana Paramita (Pemasukan Manual), Target RAB & Realisasi Pengeluaran
+                    </h5>
+                  )}
+                  <table className="w-full text-left text-xs border-collapse border border-slate-300">
+                    <thead>
+                      <tr className="bg-purple-900 text-white font-bold">
+                        <th className="p-2 border border-slate-300 text-center w-8">No</th>
+                        <th className="p-2 border border-slate-300">Nama Item / Keterangan</th>
+                        {pdfMode === 'lpj' && <th className="p-2 border border-slate-300 text-right">Dana Paramita (Rp)</th>}
+                        <th className="p-2 border border-slate-300 text-right">Anggaran RAB (Rp)</th>
+                        {pdfMode === 'lpj' && <th className="p-2 border border-slate-300 text-right">Realisasi (Rp)</th>}
                       </tr>
-                    )}
-                  </tbody>
-                  <tfoot>
-                    <tr className="bg-purple-100 font-extrabold">
-                      <td colSpan={2} className="p-2 border border-slate-300 text-right">TOTAL KESELURUHAN</td>
-                      {pdfMode === 'lpj' && <td className="p-2 border border-slate-300 text-right text-emerald-800">Rp {totalPemasukan.toLocaleString('id-ID')}</td>}
-                      <td className="p-2 border border-slate-300 text-right text-purple-950">Rp {totalRAB.toLocaleString('id-ID')}</td>
-                      {pdfMode === 'lpj' && <td className="p-2 border border-slate-300 text-right text-amber-950">Rp {totalRealisasi.toLocaleString('id-ID')}</td>}
-                    </tr>
-                    {pdfMode === 'lpj' && (
-                      <tr className="bg-purple-200 font-black">
-                        <td colSpan={4} className="p-2 border border-slate-300 text-right uppercase">SALDO KEUSAN EVENT (PEMASUKAN - REALISASI)</td>
-                        <td className={`p-2 border border-slate-300 text-right ${saldoKas >= 0 ? 'text-emerald-900' : 'text-rose-900'}`}>
-                          Rp {saldoKas.toLocaleString('id-ID')}
-                        </td>
+                    </thead>
+                    <tbody>
+                      {event.budgets && event.budgets.length > 0 ? (
+                        event.budgets.map((b, i) => {
+                          const isPemasukan = b.budget_type === 'pemasukan';
+                          return (
+                            <tr key={b.id} className={i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
+                              <td className="p-2 border border-slate-300 text-center font-bold">{i + 1}</td>
+                              <td className="p-2 border border-slate-300 font-bold">
+                                {b.item_name}{' '}
+                                <span className="text-[9px] font-normal text-slate-500">
+                                  ({b.budget_type === 'pemasukan' ? 'Pemasukan Manual' : b.budget_type === 'rab' ? 'RAB' : 'Realisasi'})
+                                </span>
+                              </td>
+                              {pdfMode === 'lpj' && (
+                                <td className="p-2 border border-slate-300 text-right font-bold text-emerald-700">
+                                  {isPemasukan ? `+ Rp ${b.amount.toLocaleString('id-ID')}` : '-'}
+                                </td>
+                              )}
+                              <td className="p-2 border border-slate-300 text-right font-semibold">
+                                {b.budget_type === 'rab' ? `Rp ${b.amount.toLocaleString('id-ID')}` : '-'}
+                              </td>
+                              {pdfMode === 'lpj' && (
+                                <td className="p-2 border border-slate-300 text-right font-semibold text-amber-900">
+                                  {b.budget_type === 'realisasi' ? `Rp ${b.amount.toLocaleString('id-ID')}` : '-'}
+                                </td>
+                              )}
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr>
+                          <td colSpan={pdfMode === 'lpj' ? 5 : 3} className="p-4 text-center text-slate-400 italic">
+                            Belum ada item keuangan manual yang dimasukkan.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                    <tfoot>
+                      <tr className="bg-purple-100 font-extrabold">
+                        <td colSpan={2} className="p-2 border border-slate-300 text-right">TOTAL PEMASUKAN MANUAL & ANGGARAN</td>
+                        {pdfMode === 'lpj' && <td className="p-2 border border-slate-300 text-right text-emerald-800">Rp {totalPemasukanManual.toLocaleString('id-ID')}</td>}
+                        <td className="p-2 border border-slate-300 text-right text-purple-950">Rp {totalRAB.toLocaleString('id-ID')}</td>
+                        {pdfMode === 'lpj' && <td className="p-2 border border-slate-300 text-right text-amber-950">Rp {totalRealisasi.toLocaleString('id-ID')}</td>}
                       </tr>
-                    )}
-                  </tfoot>
-                </table>
+                      {pdfMode === 'lpj' && (
+                        <>
+                          <tr className="bg-purple-200 font-black">
+                            <td colSpan={4} className="p-2 border border-slate-300 text-right uppercase">TOTAL PEMASUKAN GLOBAL (PARAMITA + PENDAFTARAN UMAT)</td>
+                            <td className="p-2 border border-slate-300 text-right text-emerald-950 font-black">
+                              Rp {totalPemasukanGlobal.toLocaleString('id-ID')}
+                            </td>
+                          </tr>
+                          <tr className="bg-purple-900 text-white font-black text-xs">
+                            <td colSpan={4} className="p-2 border border-slate-300 text-right uppercase">SALDO KEUANGAN EVENT (TOTAL PEMASUKAN GLOBAL - REALISASI)</td>
+                            <td className={`p-2 border border-slate-300 text-right ${saldoKasGlobal >= 0 ? 'text-amber-300' : 'text-rose-300'}`}>
+                              Rp {saldoKasGlobal.toLocaleString('id-ID')}
+                            </td>
+                          </tr>
+                        </>
+                      )}
+                    </tfoot>
+                  </table>
+                </div>
               </div>
 
               {/* SIGNATURE BLOCK */}
