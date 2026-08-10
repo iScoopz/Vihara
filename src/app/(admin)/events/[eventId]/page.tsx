@@ -472,30 +472,34 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
             className="px-3 py-2 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 hover:bg-emerald-200 text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer border border-emerald-200 dark:border-emerald-800"
           >
             <Users size={14} />
-            <span>Cetak List Peserta (Ketua Acara)</span>
+            <span>Cetak List Peserta</span>
           </button>
 
-          <button
-            onClick={() => {
-              setPdfMode('proposal');
-              setIsPdfModalOpen(true);
-            }}
-            className="px-3 py-2 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-200 hover:bg-purple-200 text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer border border-purple-200 dark:border-purple-800"
-          >
-            <Printer size={14} />
-            <span>Cetak Proposal Event</span>
-          </button>
+          {(event.is_complex ?? true) && (
+            <>
+              <button
+                onClick={() => {
+                  setPdfMode('proposal');
+                  setIsPdfModalOpen(true);
+                }}
+                className="px-3 py-2 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-200 hover:bg-purple-200 text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer border border-purple-200 dark:border-purple-800"
+              >
+                <Printer size={14} />
+                <span>Cetak Proposal Event</span>
+              </button>
 
-          <button
-            onClick={() => {
-              setPdfMode('lpj');
-              setIsPdfModalOpen(true);
-            }}
-            className="px-3 py-2 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 hover:bg-amber-200 text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer border border-amber-200 dark:border-amber-800"
-          >
-            <FileText size={14} />
-            <span>Cetak LPJ Event</span>
-          </button>
+              <button
+                onClick={() => {
+                  setPdfMode('lpj');
+                  setIsPdfModalOpen(true);
+                }}
+                className="px-3 py-2 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 hover:bg-amber-200 text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer border border-amber-200 dark:border-amber-800"
+              >
+                <FileText size={14} />
+                <span>Cetak LPJ Event</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -513,41 +517,45 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
           <span>Overview</span>
         </button>
 
-        <button
-          onClick={() => setActiveTab('bidang')}
-          className={`pb-3 px-3 font-extrabold text-xs transition flex items-center gap-2 border-b-2 whitespace-nowrap cursor-pointer ${
-            activeTab === 'bidang'
-              ? 'border-purple-600 text-purple-700 dark:text-purple-300'
-              : 'border-transparent text-slate-400 hover:text-slate-700'
-          }`}
-        >
-          <Layers size={16} />
-          <span>Panitia & Struktur Organisasi</span>
-        </button>
+        {(event.is_complex ?? true) && (
+          <>
+            <button
+              onClick={() => setActiveTab('bidang')}
+              className={`pb-3 px-3 font-extrabold text-xs transition flex items-center gap-2 border-b-2 whitespace-nowrap cursor-pointer ${
+                activeTab === 'bidang'
+                  ? 'border-purple-600 text-purple-700 dark:text-purple-300'
+                  : 'border-transparent text-slate-400 hover:text-slate-700'
+              }`}
+            >
+              <Layers size={16} />
+              <span>Panitia & Struktur Organisasi</span>
+            </button>
 
-        <button
-          onClick={() => setActiveTab('rundown')}
-          className={`pb-3 px-3 font-extrabold text-xs transition flex items-center gap-2 border-b-2 whitespace-nowrap cursor-pointer ${
-            activeTab === 'rundown'
-              ? 'border-purple-600 text-purple-700 dark:text-purple-300'
-              : 'border-transparent text-slate-400 hover:text-slate-700'
-          }`}
-        >
-          <Clock size={16} />
-          <span>Rundown Proposal ({event.proposal_rundowns?.length || 0})</span>
-        </button>
+            <button
+              onClick={() => setActiveTab('rundown')}
+              className={`pb-3 px-3 font-extrabold text-xs transition flex items-center gap-2 border-b-2 whitespace-nowrap cursor-pointer ${
+                activeTab === 'rundown'
+                  ? 'border-purple-600 text-purple-700 dark:text-purple-300'
+                  : 'border-transparent text-slate-400 hover:text-slate-700'
+              }`}
+            >
+              <Clock size={16} />
+              <span>Rundown Proposal ({event.proposal_rundowns?.length || 0})</span>
+            </button>
 
-        <button
-          onClick={() => setActiveTab('skenario')}
-          className={`pb-3 px-3 font-extrabold text-xs transition flex items-center gap-2 border-b-2 whitespace-nowrap cursor-pointer ${
-            activeTab === 'skenario'
-              ? 'border-purple-600 text-purple-700 dark:text-purple-300'
-              : 'border-transparent text-slate-400 hover:text-slate-700'
-          }`}
-        >
-          <ListTodo size={16} />
-          <span>Skenario Kerja SK ({event.skenario_kerja?.length || 0})</span>
-        </button>
+            <button
+              onClick={() => setActiveTab('skenario')}
+              className={`pb-3 px-3 font-extrabold text-xs transition flex items-center gap-2 border-b-2 whitespace-nowrap cursor-pointer ${
+                activeTab === 'skenario'
+                  ? 'border-purple-600 text-purple-700 dark:text-purple-300'
+                  : 'border-transparent text-slate-400 hover:text-slate-700'
+              }`}
+            >
+              <ListTodo size={16} />
+              <span>Skenario Kerja SK ({event.skenario_kerja?.length || 0})</span>
+            </button>
+          </>
+        )}
 
         <button
           onClick={() => setActiveTab('registrasi')}
@@ -561,17 +569,19 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
           <span>Presensi Umat ({registrations.length}/{event.quota || 100})</span>
         </button>
 
-        <button
-          onClick={() => setActiveTab('rab')}
-          className={`pb-3 px-3 font-extrabold text-xs transition flex items-center gap-2 border-b-2 whitespace-nowrap cursor-pointer ${
-            activeTab === 'rab'
-              ? 'border-purple-600 text-purple-700 dark:text-purple-300'
-              : 'border-transparent text-slate-400 hover:text-slate-700'
-          }`}
-        >
-          <Receipt size={16} />
-          <span>RAB & Realisasi</span>
-        </button>
+        {(event.is_complex ?? true) && (
+          <button
+            onClick={() => setActiveTab('rab')}
+            className={`pb-3 px-3 font-extrabold text-xs transition flex items-center gap-2 border-b-2 whitespace-nowrap cursor-pointer ${
+              activeTab === 'rab'
+                ? 'border-purple-600 text-purple-700 dark:text-purple-300'
+                : 'border-transparent text-slate-400 hover:text-slate-700'
+            }`}
+          >
+            <Receipt size={16} />
+            <span>RAB & Realisasi</span>
+          </button>
+        )}
 
         <button
           onClick={() => setActiveTab('laporan')}
@@ -582,7 +592,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
           }`}
         >
           <FileText size={16} />
-          <span>Laporan Event & Export</span>
+          <span>Cetak Report</span>
         </button>
       </div>
 
