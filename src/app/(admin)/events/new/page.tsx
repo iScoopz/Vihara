@@ -292,37 +292,39 @@ export default function CreateNewEventPage() {
           </div>
         </div>
 
-        {/* SECTION 2: BIAYA EVENT PER BAGIAN UMAT */}
-        <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4 text-xs">
-          <div className="border-b border-purple-100 dark:border-purple-900/60 pb-3">
-            <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-              <Receipt className="text-emerald-500" size={18} />
-              <span>2. Pengaturan Biaya Pendaftaran Event per Bagian Umat</span>
-            </h3>
-            <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
-              Tentukan nominal biaya (Rp) untuk masing-masing Bagian Umat. Masukkan 0 jika Gratis.
-            </p>
-          </div>
+        {/* SECTION 2: BIAYA EVENT PER BAGIAN UMAT (HANYA DITAMPILKAN JIKA EVENT KOMPLEKS) */}
+        {isComplex && (
+          <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4 text-xs">
+            <div className="border-b border-purple-100 dark:border-purple-900/60 pb-3">
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                <Receipt className="text-emerald-500" size={18} />
+                <span>2. Pengaturan Biaya Pendaftaran Event per Bagian Umat</span>
+              </h3>
+              <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
+                Tentukan nominal biaya (Rp) untuk masing-masing Bagian Umat. Masukkan 0 jika Gratis.
+              </p>
+            </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            {BAGIAN_LIST.map((bg) => (
-              <div key={bg} className="p-3.5 rounded-xl bg-slate-50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-900/60 space-y-1.5">
-                <label className="block font-black text-purple-950 dark:text-purple-200 text-xs">{bg}</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2 text-[11px] font-bold text-slate-400">Rp</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="5000"
-                    value={pricingPerBagian[bg] || '0'}
-                    onChange={(e) => setPricingPerBagian({ ...pricingPerBagian, [bg]: e.target.value })}
-                    className="w-full bg-white dark:bg-purple-900/60 border border-purple-200 dark:border-purple-800 rounded-lg pl-9 pr-3 py-1.5 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                  />
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              {BAGIAN_LIST.map((bg) => (
+                <div key={bg} className="p-3.5 rounded-xl bg-slate-50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-900/60 space-y-1.5">
+                  <label className="block font-black text-purple-950 dark:text-purple-200 text-xs">{bg}</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2 text-[11px] font-bold text-slate-400">Rp</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="5000"
+                      value={pricingPerBagian[bg] || '0'}
+                      onChange={(e) => setPricingPerBagian({ ...pricingPerBagian, [bg]: e.target.value })}
+                      className="w-full bg-white dark:bg-purple-900/60 border border-purple-200 dark:border-purple-800 rounded-lg pl-9 pr-3 py-1.5 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* SECTION 3: HIERARKI KEPANITIAAN UTAMA (HANYA DITAMPILKAN JIKA EVENT KOMPLEKS) */}
         {isComplex && (
