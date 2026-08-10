@@ -127,7 +127,7 @@ export interface EventBudget {
   id: string;
   event_id: string;
   item_name: string;
-  budget_type: 'rab' | 'realisasi';
+  budget_type: 'rab' | 'realisasi' | 'pemasukan';
   amount: number;
   notes?: string;
 }

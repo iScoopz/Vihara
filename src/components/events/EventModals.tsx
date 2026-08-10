@@ -1,6 +1,7 @@
 import React from 'react';
 import { Clock, ListTodo, Edit2 } from 'lucide-react';
 import { ViharaEvent, Profile, EventProposalRundown, EventSkenarioKerja } from '@/types/database';
+import { SearchableUmatSelect } from '@/components/ui/SearchableUmatSelect';
 
 interface EventModalsProps {
   event: ViharaEvent;
@@ -75,8 +76,8 @@ interface EventModalsProps {
   isBudgetModalOpen: boolean;
   budgetItem: string;
   setBudgetItem: (val: string) => void;
-  budgetType: 'rab' | 'realisasi';
-  setBudgetType: (val: 'rab' | 'realisasi') => void;
+  budgetType: 'rab' | 'realisasi' | 'pemasukan';
+  setBudgetType: (val: 'rab' | 'realisasi' | 'pemasukan') => void;
   budgetAmount: string;
   setBudgetAmount: (val: string) => void;
   onAddBudget: (e: React.FormEvent) => void;
@@ -469,18 +470,14 @@ export const EventModals: React.FC<EventModalsProps> = ({
             
             <form onSubmit={onAdminRegister} className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Pilih Umat dari Master Data</label>
-                <select
+                <SearchableUmatSelect
+                  label="Pilih Umat dari Master Data"
                   required
+                  profiles={profiles}
                   value={selectedUmatId}
-                  onChange={(e) => setSelectedUmatId(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                >
-                  <option value="">-- Pilih Nama Umat --</option>
-                  {profiles.map(p => (
-                    <option key={p.id} value={p.id}>{p.full_name} ({p.cetya || 'Sentra Makassar'})</option>
-                  ))}
-                </select>
+                  onChange={(id) => setSelectedUmatId(id)}
+                  placeholder="-- Ketik / Cari Nama Umat --"
+                />
               </div>
 
               {regMsg && (
@@ -524,8 +521,9 @@ export const EventModals: React.FC<EventModalsProps> = ({
                   onChange={(e: any) => setBudgetType(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
                 >
-                  <option value="rab">Anggaran Rencana (RAB)</option>
-                  <option value="realisasi">Realisasi Aktual Pengeluaran</option>
+                  <option value="pemasukan">✨ Dana Paramita (Pemasukan)</option>
+                  <option value="rab">📊 Anggaran Rencana (RAB Pengeluaran)</option>
+                  <option value="realisasi">💸 Realisasi Aktual Pengeluaran</option>
                 </select>
               </div>
 

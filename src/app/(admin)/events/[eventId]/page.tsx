@@ -133,7 +133,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
 
   // Budget Form
   const [budgetItem, setBudgetItem] = useState('');
-  const [budgetType, setBudgetType] = useState<'rab' | 'realisasi'>('rab');
+  const [budgetType, setBudgetType] = useState<'rab' | 'realisasi' | 'pemasukan'>('pemasukan');
   const [budgetAmount, setBudgetAmount] = useState('');
 
   // Sub-Section Form

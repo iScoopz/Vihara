@@ -6,22 +6,33 @@ import { EventBudget, EventSkenarioKerja } from '@/types/database';
  * Opens immediately in Microsoft Excel with formatted columns, currency headers, and totals!
  */
 export function exportRABToExcel(eventTitle: string, budgets: EventBudget[]) {
+  const pemasukanItems = budgets.filter(b => b.budget_type === 'pemasukan');
   const rabItems = budgets.filter(b => b.budget_type === 'rab');
   const realisasiItems = budgets.filter(b => b.budget_type === 'realisasi');
 
-  const itemMap: Record<string, { rab: number; realisasi: number; notes: string }> = {};
+  const itemMap: Record<string, { pemasukan: number; rab: number; realisasi: number; notes: string }> = {};
 
-  rabItems.forEach(b => {
+  pemasukanItems.forEach(b => {
     itemMap[b.item_name] = {
-      rab: Number(b.amount),
+      pemasukan: Number(b.amount),
+      rab: 0,
       realisasi: 0,
       notes: b.notes || '-'
     };
   });
 
+  rabItems.forEach(b => {
+    if (!itemMap[b.item_name]) {
+      itemMap[b.item_name] = { pemasukan: 0, rab: Number(b.amount), realisasi: 0, notes: b.notes || '-' };
+    } else {
+      itemMap[b.item_name].rab = Number(b.amount);
+      if (b.notes) itemMap[b.item_name].notes = b.notes;
+    }
+  });
+
   realisasiItems.forEach(b => {
     if (!itemMap[b.item_name]) {
-      itemMap[b.item_name] = { rab: 0, realisasi: Number(b.amount), notes: b.notes || '-' };
+      itemMap[b.item_name] = { pemasukan: 0, rab: 0, realisasi: Number(b.amount), notes: b.notes || '-' };
     } else {
       itemMap[b.item_name].realisasi = Number(b.amount);
       if (b.notes) itemMap[b.item_name].notes = b.notes;
@@ -39,7 +50,7 @@ export function exportRABToExcel(eventTitle: string, budgets: EventBudget[]) {
         <x:ExcelWorkbook>
           <x:ExcelWorksheets>
             <x:ExcelWorksheet>
-              <x:Name>Laporan RAB & Realisasi</x:Name>
+              <x:Name>Laporan Keuangan Event</x:Name>
               <x:WorksheetOptions>
                 <x:DisplayGridlines/>
               </x:WorksheetOptions>
@@ -58,15 +69,13 @@ export function exportRABToExcel(eventTitle: string, budgets: EventBudget[]) {
         .row-even { background-color: #f8fafc; }
         .row-odd { background-color: #ffffff; }
         .currency { text-align: right; font-family: Consolas, monospace; }
-        .status-hemat { color: #15803d; font-weight: bold; text-align: center; }
-        .status-over { color: #b91c1c; font-weight: bold; text-align: center; }
         .footer-row { background-color: #f3e8ff; font-weight: bold; }
       </style>
     </head>
     <body>
       <table>
         <tr>
-          <td colspan="6" class="title-header">LAPORAN ANGGARAN & REALISASI KEUANGAN EVENT - VIHARA MNSBDI</td>
+          <td colspan="6" class="title-header">LAPORAN KEUANGAN & DANA PARAMITA EVENT - VIHARA MNSBDI</td>
         </tr>
         <tr>
           <td colspan="2" class="meta-row"><b>Nama Event:</b></td>
@@ -80,16 +89,17 @@ export function exportRABToExcel(eventTitle: string, budgets: EventBudget[]) {
         <thead>
           <tr>
             <th style="width: 40px;">No</th>
-            <th style="width: 250px;">Nama Item Pengeluaran</th>
-            <th style="width: 150px;">Anggaran Rencana (RAB)</th>
-            <th style="width: 150px;">Realisasi Aktual</th>
-            <th style="width: 150px;">Selisih (Hemat / Over)</th>
-            <th style="width: 250px;">Status / Catatan</th>
+            <th style="width: 250px;">Nama Item / Deskripsi</th>
+            <th style="width: 170px;">Dana Paramita (Pemasukan)</th>
+            <th style="width: 170px;">Anggaran Rencana (RAB)</th>
+            <th style="width: 170px;">Realisasi Pengeluaran</th>
+            <th style="width: 200px;">Catatan</th>
           </tr>
         </thead>
         <tbody>
   `;
 
+  let totalPemasukan = 0;
   let totalRAB = 0;
   let totalRealisasi = 0;
   let index = 1;
@@ -97,16 +107,12 @@ export function exportRABToExcel(eventTitle: string, budgets: EventBudget[]) {
   if (Object.keys(itemMap).length === 0) {
     htmlContent += `
       <tr>
-        <td colspan="6" style="text-align:center; color:#94a3b8; padding:12px;">Belum ada data anggaran.</td>
+        <td colspan="6" style="text-align:center; color:#94a3b8; padding:12px;">Belum ada data keuangan.</td>
       </tr>
     `;
   } else {
     Object.entries(itemMap).forEach(([itemName, data]) => {
-      const variance = data.rab - data.realisasi;
-      const isHemat = variance >= 0;
-      const statusText = isHemat ? 'Hemat / Sesuai Target' : 'Over Budget';
-      const statusClass = isHemat ? 'status-hemat' : 'status-over';
-
+      totalPemasukan += data.pemasukan;
       totalRAB += data.rab;
       totalRealisasi += data.realisasi;
 
@@ -116,30 +122,27 @@ export function exportRABToExcel(eventTitle: string, budgets: EventBudget[]) {
         <tr class="${rowClass}">
           <td style="text-align: center;">${index}</td>
           <td><b>${itemName}</b></td>
+          <td class="currency" style="color: #059669;">Rp ${data.pemasukan.toLocaleString('id-ID')}</td>
           <td class="currency">Rp ${data.rab.toLocaleString('id-ID')}</td>
           <td class="currency">Rp ${data.realisasi.toLocaleString('id-ID')}</td>
-          <td class="currency" style="color: ${isHemat ? '#15803d' : '#b91c1c'};">
-            Rp ${variance.toLocaleString('id-ID')}
-          </td>
-          <td class="${statusClass}">${statusText} <br/><span style="font-size:10px; color:#64748b; font-weight:normal;">(${data.notes})</span></td>
+          <td><span style="font-size:10px; color:#64748b;">${data.notes}</span></td>
         </tr>
       `;
       index++;
     });
   }
 
-  const totalVariance = totalRAB - totalRealisasi;
-  const isTotalHemat = totalVariance >= 0;
+  const saldoKas = totalPemasukan - totalRealisasi;
 
   htmlContent += `
         </tbody>
         <tfoot>
           <tr class="footer-row">
             <td colspan="2" style="text-align:right;">TOTAL KESELURUHAN</td>
+            <td class="currency" style="color: #059669;">Rp ${totalPemasukan.toLocaleString('id-ID')}</td>
             <td class="currency">Rp ${totalRAB.toLocaleString('id-ID')}</td>
             <td class="currency">Rp ${totalRealisasi.toLocaleString('id-ID')}</td>
-            <td class="currency" style="color: ${isTotalHemat ? '#15803d' : '#b91c1c'};">Rp ${totalVariance.toLocaleString('id-ID')}</td>
-            <td class="${isTotalHemat ? 'status-hemat' : 'status-over'}">${isTotalHemat ? 'SURPLUS ANGGARAN' : 'DEFISIT ANGGARAN'}</td>
+            <td style="text-align:center;">SALDO: <b>Rp ${saldoKas.toLocaleString('id-ID')}</b></td>
           </tr>
         </tfoot>
       </table>

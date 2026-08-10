@@ -24,6 +24,7 @@ import {
   getProfiles
 } from '@/lib/actions/vihara-actions';
 import { InventoryItem, InventoryTransaction, Profile } from '@/types/database';
+import { SearchableUmatSelect } from '@/components/ui/SearchableUmatSelect';
 
 export default function InventoryPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -389,21 +390,16 @@ export default function InventoryPage() {
 
             <form onSubmit={handleProcessPurchase} className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Pilih Umat Pembeli</label>
-                <select
+                <SearchableUmatSelect
+                  label="Pilih Umat Pembeli"
+                  profiles={profiles}
                   value={selectedUmatId}
-                  onChange={(e) => {
-                    setSelectedUmatId(e.target.value);
-                    const u = profiles.find(p => p.id === e.target.value);
-                    if (u) setCustomBuyerName(u.full_name);
+                  onChange={(id, profile) => {
+                    setSelectedUmatId(id);
+                    if (profile) setCustomBuyerName(profile.full_name);
                   }}
-                  className="w-full bg-slate-50 dark:bg-indigo-950 border border-purple-100 dark:border-indigo-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                >
-                  <option value="">-- Non-Umat / Pembeli Umum --</option>
-                  {profiles.map(p => (
-                    <option key={p.id} value={p.id}>{p.full_name} ({p.han || 'Umat'})</option>
-                  ))}
-                </select>
+                  placeholder="-- Non-Umat / Cari Umat --"
+                />
               </div>
 
               <div>

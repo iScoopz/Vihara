@@ -18,10 +18,14 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
   onClose
 }) => {
   const org = event.org_structure;
+  const pemasukanItems = event.budgets?.filter(b => b.budget_type === 'pemasukan') || [];
   const rabItems = event.budgets?.filter(b => b.budget_type === 'rab') || [];
   const realisasiItems = event.budgets?.filter(b => b.budget_type === 'realisasi') || [];
+
+  const totalPemasukan = pemasukanItems.reduce((acc, curr) => acc + curr.amount, 0);
   const totalRAB = rabItems.reduce((acc, curr) => acc + curr.amount, 0);
   const totalRealisasi = realisasiItems.reduce((acc, curr) => acc + curr.amount, 0);
+  const saldoKas = totalPemasukan - totalRealisasi;
 
   // Stable sort by Umat's Name for Participant List
   const sortedRegistrations = [...registrations].sort((a, b) => {
@@ -291,52 +295,74 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                 </div>
               )}
 
-              {/* SECTION 4: KEUANGAN (RAB VS REALISASI) */}
+              {/* SECTION 4: KEUANGAN (DANA PARAMITA, RAB & REALISASI) */}
               <div className="space-y-3 print-avoid-break">
                 <h4 className="text-xs font-black uppercase text-purple-950 border-b border-purple-200 pb-1">
-                  {pdfMode === 'proposal' ? 'III. Rencana Anggaran Biaya (RAB)' : 'IV. Perbandingan Realisasi Keuangan vs RAB'}
+                  {pdfMode === 'proposal' ? 'III. Rencana Anggaran Biaya (RAB)' : 'IV. Laporan Keuangan, Dana Paramita & Realisasi'}
                 </h4>
 
                 <table className="w-full text-left text-xs border-collapse border border-slate-300">
                   <thead>
                     <tr className="bg-purple-900 text-white font-bold">
-                      <th className="p-2.5 border border-slate-300 text-center w-10">No</th>
-                      <th className="p-2.5 border border-slate-300">Nama Item Pengeluaran</th>
-                      <th className="p-2.5 border border-slate-300 text-right">Rencana RAB (Rp)</th>
-                      {pdfMode === 'lpj' && <th className="p-2.5 border border-slate-300 text-right">Realisasi (Rp)</th>}
-                      {pdfMode === 'lpj' && <th className="p-2.5 border border-slate-300 text-right">Selisih (Rp)</th>}
+                      <th className="p-2 border border-slate-300 text-center w-8">No</th>
+                      <th className="p-2 border border-slate-300">Nama Item / Keterangan</th>
+                      {pdfMode === 'lpj' && <th className="p-2 border border-slate-300 text-right">Dana Paramita (Rp)</th>}
+                      <th className="p-2 border border-slate-300 text-right">Anggaran RAB (Rp)</th>
+                      {pdfMode === 'lpj' && <th className="p-2 border border-slate-300 text-right">Realisasi (Rp)</th>}
                     </tr>
                   </thead>
                   <tbody>
-                    {rabItems.map((b, i) => {
-                      const realisasi = realisasiItems.find(r => r.item_name === b.item_name)?.amount || 0;
-                      const variance = b.amount - realisasi;
-                      return (
-                        <tr key={b.id} className={i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
-                          <td className="p-2 border border-slate-300 text-center">{i + 1}</td>
-                          <td className="p-2 border border-slate-300 font-bold">{b.item_name}</td>
-                          <td className="p-2 border border-slate-300 text-right font-semibold">Rp {b.amount.toLocaleString('id-ID')}</td>
-                          {pdfMode === 'lpj' && <td className="p-2 border border-slate-300 text-right font-semibold text-amber-900">Rp {realisasi.toLocaleString('id-ID')}</td>}
-                          {pdfMode === 'lpj' && (
-                            <td className={`p-2 border border-slate-300 text-right font-bold ${variance >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                              Rp {variance.toLocaleString('id-ID')}
+                    {event.budgets && event.budgets.length > 0 ? (
+                      event.budgets.map((b, i) => {
+                        const isPemasukan = b.budget_type === 'pemasukan';
+                        return (
+                          <tr key={b.id} className={i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
+                            <td className="p-2 border border-slate-300 text-center font-bold">{i + 1}</td>
+                            <td className="p-2 border border-slate-300 font-bold">
+                              {b.item_name}{' '}
+                              <span className="text-[9px] font-normal text-slate-500">
+                                ({b.budget_type === 'pemasukan' ? 'Pemasukan' : b.budget_type === 'rab' ? 'RAB' : 'Realisasi'})
+                              </span>
                             </td>
-                          )}
-                        </tr>
-                      );
-                    })}
+                            {pdfMode === 'lpj' && (
+                              <td className="p-2 border border-slate-300 text-right font-bold text-emerald-700">
+                                {isPemasukan ? `+ Rp ${b.amount.toLocaleString('id-ID')}` : '-'}
+                              </td>
+                            )}
+                            <td className="p-2 border border-slate-300 text-right font-semibold">
+                              {b.budget_type === 'rab' ? `Rp ${b.amount.toLocaleString('id-ID')}` : '-'}
+                            </td>
+                            {pdfMode === 'lpj' && (
+                              <td className="p-2 border border-slate-300 text-right font-semibold text-amber-900">
+                                {b.budget_type === 'realisasi' ? `Rp ${b.amount.toLocaleString('id-ID')}` : '-'}
+                              </td>
+                            )}
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={pdfMode === 'lpj' ? 5 : 3} className="p-4 text-center text-slate-400 italic">
+                          Belum ada item keuangan yang dimasukkan.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                   <tfoot>
                     <tr className="bg-purple-100 font-extrabold">
-                      <td colSpan={2} className="p-2.5 border border-slate-300 text-right">TOTAL KESELURUHAN</td>
-                      <td className="p-2.5 border border-slate-300 text-right text-purple-950">Rp {totalRAB.toLocaleString('id-ID')}</td>
-                      {pdfMode === 'lpj' && <td className="p-2.5 border border-slate-300 text-right text-amber-950">Rp {totalRealisasi.toLocaleString('id-ID')}</td>}
-                      {pdfMode === 'lpj' && (
-                        <td className={`p-2.5 border border-slate-300 text-right ${totalRAB - totalRealisasi >= 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
-                          Rp {(totalRAB - totalRealisasi).toLocaleString('id-ID')}
-                        </td>
-                      )}
+                      <td colSpan={2} className="p-2 border border-slate-300 text-right">TOTAL KESELURUHAN</td>
+                      {pdfMode === 'lpj' && <td className="p-2 border border-slate-300 text-right text-emerald-800">Rp {totalPemasukan.toLocaleString('id-ID')}</td>}
+                      <td className="p-2 border border-slate-300 text-right text-purple-950">Rp {totalRAB.toLocaleString('id-ID')}</td>
+                      {pdfMode === 'lpj' && <td className="p-2 border border-slate-300 text-right text-amber-950">Rp {totalRealisasi.toLocaleString('id-ID')}</td>}
                     </tr>
+                    {pdfMode === 'lpj' && (
+                      <tr className="bg-purple-200 font-black">
+                        <td colSpan={4} className="p-2 border border-slate-300 text-right uppercase">SALDO KEUSAN EVENT (PEMASUKAN - REALISASI)</td>
+                        <td className={`p-2 border border-slate-300 text-right ${saldoKas >= 0 ? 'text-emerald-900' : 'text-rose-900'}`}>
+                          Rp {saldoKas.toLocaleString('id-ID')}
+                        </td>
+                      </tr>
+                    )}
                   </tfoot>
                 </table>
               </div>

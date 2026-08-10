@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { HeartHandshake, ArrowLeft, CheckCircle2, UserCheck, CreditCard, Sparkles, Receipt } from 'lucide-react';
 import { getProfiles, addDonation } from '@/lib/actions/vihara-actions';
+import { SearchableUmatSelect } from '@/components/ui/SearchableUmatSelect';
 import { Profile } from '@/types/database';
 
 export default function NewDonationPage() {
@@ -83,23 +84,16 @@ export default function NewDonationPage() {
           <form onSubmit={handleSubmitDonation} className="space-y-4 text-xs">
             {/* Umat Autocomplete Select */}
             <div>
-              <label className="block font-extrabold text-slate-700 dark:text-slate-300 mb-1">
-                Pilih Umat Terdaftar (Opsional)
-              </label>
-              <select
+              <SearchableUmatSelect
+                label="Pilih Umat Terdaftar (Opsional)"
+                profiles={profiles}
                 value={selectedUmatId}
-                onChange={(e) => {
-                  setSelectedUmatId(e.target.value);
-                  const found = profiles.find(p => p.id === e.target.value);
-                  if (found) setDonorName(found.full_name);
+                onChange={(id, profile) => {
+                  setSelectedUmatId(id);
+                  if (profile) setDonorName(profile.full_name);
                 }}
-                className="w-full bg-slate-50 dark:bg-indigo-950 border border-purple-100 dark:border-indigo-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-semibold"
-              >
-                <option value="">-- Donatur Anonim / Non-Umat --</option>
-                {profiles.map(p => (
-                  <option key={p.id} value={p.id}>{p.full_name} ({p.han || 'Umat'})</option>
-                ))}
-              </select>
+                placeholder="-- Donatur Anonim / Cari Umat --"
+              />
             </div>
 
             {/* Nama Donatur */}

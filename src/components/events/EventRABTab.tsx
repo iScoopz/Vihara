@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, FileSpreadsheet } from 'lucide-react';
+import { Plus, FileSpreadsheet, TrendingUp, TrendingDown, DollarSign, Wallet } from 'lucide-react';
 import { ViharaEvent } from '@/types/database';
 import { exportRABToExcel } from '@/lib/export-utils';
 
@@ -9,20 +9,25 @@ interface EventRABTabProps {
 }
 
 export const EventRABTab: React.FC<EventRABTabProps> = ({ event, onOpenBudgetModal }) => {
+  const pemasukanItems = event.budgets?.filter(b => b.budget_type === 'pemasukan') || [];
   const rabItems = event.budgets?.filter(b => b.budget_type === 'rab') || [];
   const realisasiItems = event.budgets?.filter(b => b.budget_type === 'realisasi') || [];
+
+  const totalPemasukan = pemasukanItems.reduce((acc, curr) => acc + curr.amount, 0);
   const totalRAB = rabItems.reduce((acc, curr) => acc + curr.amount, 0);
   const totalRealisasi = realisasiItems.reduce((acc, curr) => acc + curr.amount, 0);
+  const saldoKas = totalPemasukan - totalRealisasi;
 
   return (
     <div className="space-y-6 print:hidden">
       <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-purple-100 dark:border-purple-900/60 pb-3">
           <div>
-            <h3 className="text-base font-black text-slate-900 dark:text-white">
-              Rencana Anggaran Biaya (RAB) vs Realisasi
+            <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <Wallet size={18} className="text-purple-600" />
+              <span>RAB, Realisasi & Dana Paramita (Keuangan Event)</span>
             </h3>
-            <p className="text-xs text-slate-500">Kelola item pengeluaran RAB dan pencatatan realisasi dana event.</p>
+            <p className="text-xs text-slate-500">Pencatatan Pemasukan Dana Paramita, Target Anggaran RAB, dan Realisasi Pengeluaran Event.</p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -44,67 +49,103 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({ event, onOpenBudgetMod
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-          <div className="p-4 rounded-xl bg-purple-50 dark:bg-purple-950/50 border border-purple-100 dark:border-purple-900">
-            <span className="text-slate-500 font-bold block mb-1">Total Target RAB (Rencana):</span>
-            <strong className="text-lg font-black text-purple-950 dark:text-purple-200">
+        {/* 4 Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+          {/* Card Dana Paramita (Pemasukan) */}
+          <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60">
+            <div className="flex items-center justify-between text-emerald-800 dark:text-emerald-300 font-bold mb-1">
+              <span className="text-[11px]">Dana Paramita (Pemasukan):</span>
+              <TrendingUp size={14} />
+            </div>
+            <strong className="text-base font-black text-emerald-950 dark:text-emerald-100">
+              Rp {totalPemasukan.toLocaleString('id-ID')}
+            </strong>
+          </div>
+
+          {/* Card Target RAB */}
+          <div className="p-3.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/60">
+            <div className="flex items-center justify-between text-purple-800 dark:text-purple-300 font-bold mb-1">
+              <span className="text-[11px]">Target RAB (Rencana):</span>
+              <DollarSign size={14} />
+            </div>
+            <strong className="text-base font-black text-purple-950 dark:text-purple-100">
               Rp {totalRAB.toLocaleString('id-ID')}
             </strong>
           </div>
 
-          <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-100 dark:border-amber-900">
-            <span className="text-slate-500 font-bold block mb-1">Total Realisasi (Aktual):</span>
-            <strong className="text-lg font-black text-amber-950 dark:text-amber-200">
+          {/* Card Realisasi */}
+          <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60">
+            <div className="flex items-center justify-between text-amber-800 dark:text-amber-300 font-bold mb-1">
+              <span className="text-[11px]">Realisasi (Pengeluaran):</span>
+              <TrendingDown size={14} />
+            </div>
+            <strong className="text-base font-black text-amber-950 dark:text-amber-100">
               Rp {totalRealisasi.toLocaleString('id-ID')}
             </strong>
           </div>
 
-          <div className={`p-4 rounded-xl border ${
-            totalRAB - totalRealisasi >= 0 
-              ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 text-emerald-900 dark:text-emerald-300'
-              : 'bg-rose-50 dark:bg-rose-950/50 border-rose-200 text-rose-900 dark:text-rose-300'
+          {/* Card Saldo Kas */}
+          <div className={`p-3.5 rounded-xl border ${
+            saldoKas >= 0 
+              ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/60 text-blue-950 dark:text-blue-100'
+              : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/60 text-rose-950 dark:text-rose-100'
           }`}>
-            <span className="font-bold block mb-1">Selisih Anggaran:</span>
-            <strong className="text-lg font-black">
-              Rp {(totalRAB - totalRealisasi).toLocaleString('id-ID')}
+            <div className="flex items-center justify-between font-bold mb-1">
+              <span className="text-[11px]">Saldo Keuangan Event:</span>
+              <Wallet size={14} />
+            </div>
+            <strong className="text-base font-black">
+              Rp {saldoKas.toLocaleString('id-ID')}
             </strong>
           </div>
         </div>
 
+        {/* Financial Table with Dana Paramita Column */}
         <div className="overflow-x-auto pt-2">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-purple-100 dark:border-purple-900/60 text-slate-400 font-extrabold">
                 <th className="pb-3 w-10 text-center">No</th>
-                <th className="pb-3">Nama Item Pengeluaran</th>
+                <th className="pb-3">Nama Item / Deskripsi</th>
                 <th className="pb-3 text-center">Jenis Record</th>
-                <th className="pb-3 text-right">Jumlah (Rp)</th>
+                <th className="pb-3 text-right text-emerald-600 dark:text-emerald-400">Dana Paramita (Pemasukan)</th>
+                <th className="pb-3 text-right text-slate-700 dark:text-slate-300">Pengeluaran (RAB / Realisasi)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-purple-50 dark:divide-purple-900/40">
               {event.budgets && event.budgets.length > 0 ? (
-                event.budgets.map((b, i) => (
-                  <tr key={b.id} className="hover:bg-purple-50/50 dark:hover:bg-purple-950/40">
-                    <td className="py-3 text-center font-bold text-slate-500">{i + 1}</td>
-                    <td className="py-3 font-bold text-slate-900 dark:text-white">{b.item_name}</td>
-                    <td className="py-3 text-center">
-                      <span className={`px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase ${
-                        b.budget_type === 'rab'
-                          ? 'bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-300'
-                          : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300'
-                      }`}>
-                        {b.budget_type === 'rab' ? 'Anggaran RAB' : 'Realisasi'}
-                      </span>
-                    </td>
-                    <td className="py-3 text-right font-black text-slate-900 dark:text-white">
-                      Rp {b.amount.toLocaleString('id-ID')}
-                    </td>
-                  </tr>
-                ))
+                event.budgets.map((b, i) => {
+                  const isPemasukan = b.budget_type === 'pemasukan';
+                  return (
+                    <tr key={b.id} className="hover:bg-purple-50/50 dark:hover:bg-purple-950/40">
+                      <td className="py-3 text-center font-bold text-slate-500">{i + 1}</td>
+                      <td className="py-3 font-bold text-slate-900 dark:text-white">{b.item_name}</td>
+                      <td className="py-3 text-center">
+                        <span className={`px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase ${
+                          b.budget_type === 'pemasukan'
+                            ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300'
+                            : b.budget_type === 'rab'
+                            ? 'bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-300'
+                            : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300'
+                        }`}>
+                          {b.budget_type === 'pemasukan' ? '✨ Dana Paramita' : b.budget_type === 'rab' ? '📊 Target RAB' : '💸 Realisasi'}
+                        </span>
+                      </td>
+                      {/* Kolom Dana Paramita (Pemasukan) */}
+                      <td className="py-3 text-right font-black text-emerald-600 dark:text-emerald-400">
+                        {isPemasukan ? `+ Rp ${b.amount.toLocaleString('id-ID')}` : '-'}
+                      </td>
+                      {/* Kolom Pengeluaran */}
+                      <td className="py-3 text-right font-black text-slate-900 dark:text-white">
+                        {!isPemasukan ? `Rp ${b.amount.toLocaleString('id-ID')}` : '-'}
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
-                  <td colSpan={4} className="py-6 text-center text-slate-400 text-xs italic">
-                    Belum ada item anggaran keuangan yang dimasukkan.
+                  <td colSpan={5} className="py-6 text-center text-slate-400 text-xs italic">
+                    Belum ada item keuangan / Dana Paramita yang dimasukkan.
                   </td>
                 </tr>
               )}
