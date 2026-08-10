@@ -255,7 +255,7 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
 
               {/* SECTION 3 (FOR LPJ): UNIFIED PARTICIPANT TABLE SORTED BY BAGIAN ORDER */}
               {pdfMode === 'lpj' && (
-                <div className="space-y-3 print-avoid-break">
+                <div className="space-y-3">
                   <h4 className="text-xs font-black uppercase text-purple-950 border-b border-purple-200 pb-1">
                     III. Daftar Umat Terdaftar
                   </h4>
@@ -296,7 +296,7 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
               )}
 
               {/* SECTION 4: KEUANGAN (DANA PARAMITA, RAB & REALISASI) */}
-              <div className="space-y-3 print-avoid-break">
+              <div className="space-y-3">
                 <h4 className="text-xs font-black uppercase text-purple-950 border-b border-purple-200 pb-1">
                   {pdfMode === 'proposal' ? 'III. Rencana Anggaran Biaya (RAB)' : 'IV. Laporan Keuangan, Dana Paramita & Realisasi'}
                 </h4>
