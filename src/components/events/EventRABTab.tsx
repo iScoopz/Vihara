@@ -14,10 +14,11 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({ event, registrations =
   const rabItems = event.budgets?.filter(b => b.budget_type === 'rab') || [];
   const realisasiItems = event.budgets?.filter(b => b.budget_type === 'realisasi') || [];
 
-  // Calculate total Umat registration fees (Base Price per Bagian + Extra Fees)
+  // Calculate total Umat registration fees for ALL registered Umat (Base Price + Extra Fees)
   const pricing = event.pricing_per_bagian || {};
   const extraFees = event.extra_fees || [];
   let totalUmatRegistrationFees = 0;
+  let totalUmatPaidFees = 0;
 
   registrations.forEach((reg) => {
     const bagian = reg.profile?.bagian || 'Inspirasi';
@@ -27,8 +28,12 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({ event, registrations =
       .filter((f) => selectedFeeIds.includes(f.id))
       .reduce((sum, f) => sum + f.amount, 0);
 
-    const totalFee = reg.amount_paid !== undefined ? reg.amount_paid : (baseFee + extraTotal);
-    totalUmatRegistrationFees += totalFee;
+    const expectedFee = baseFee + extraTotal;
+    totalUmatRegistrationFees += expectedFee;
+
+    if (reg.is_paid) {
+      totalUmatPaidFees += reg.amount_paid !== undefined ? reg.amount_paid : expectedFee;
+    }
   });
 
   const totalPemasukanManual = pemasukanItems.reduce((acc, curr) => acc + curr.amount, 0);
@@ -73,14 +78,14 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({ event, registrations =
           {/* Card Total Pemasukan Global */}
           <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60">
             <div className="flex items-center justify-between text-emerald-800 dark:text-emerald-300 font-bold mb-1">
-              <span className="text-[11px]">Total Pemasukan (Paramita + Umat):</span>
+              <span className="text-[11px]">Proyeksi Pemasukan Total:</span>
               <TrendingUp size={14} />
             </div>
             <strong className="text-base font-black text-emerald-950 dark:text-emerald-100 block">
               Rp {totalPemasukanGlobal.toLocaleString('id-ID')}
             </strong>
-            <span className="text-[10px] text-slate-500 block mt-0.5">
-              (Umat: Rp {totalUmatRegistrationFees.toLocaleString('id-ID')} + Paramita: Rp {totalPemasukanManual.toLocaleString('id-ID')})
+            <span className="text-[10px] text-slate-500 block mt-0.5 leading-tight">
+              (Total {registrations.length} Umat: Rp {totalUmatRegistrationFees.toLocaleString('id-ID')} + Paramita: Rp {totalPemasukanManual.toLocaleString('id-ID')})
             </span>
           </div>
 
