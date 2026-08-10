@@ -46,7 +46,13 @@
 @media print {
   @page {
     size: A4 portrait;
-    margin: 12mm 15mm;
+    margin: 10mm 12mm;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    overflow: visible !important;
   }
 
   /* Hide navigation, sidebars, buttons, and screen headers */
@@ -54,16 +60,21 @@
     display: none !important;
   }
 
-  /* Make document container flow naturally for print */
+  /* Make printable document wrapper cover screen and flow naturally */
   #printable-pdf-document-wrapper {
-    position: static !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    min-height: 100% !important;
+    height: auto !important;
     background: #ffffff !important;
     padding: 0 !important;
     margin: 0 !important;
-    width: 100% !important;
-    height: auto !important;
     display: block !important;
     visibility: visible !important;
+    z-index: 999999 !important;
+    overflow: visible !important;
     box-shadow: none !important;
     backdrop-filter: none !important;
   }
@@ -81,22 +92,36 @@
     padding: 0 !important;
   }
 
-  #printable-pdf-document, #printable-pdf-document * {
-    visibility: visible !important;
-  }
-
   #printable-pdf-document {
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
     background: #ffffff !important;
     color: #0f172a !important;
-    font-size: 12px !important;
-    line-height: 1.5 !important;
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+    box-shadow: none !important;
   }
 
-  /* Page break rules */
-  .print-avoid-break, tr, .signature-block {
+  /* Multi-page break & table header repeat rules */
+  table {
+    page-break-inside: auto !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  tfoot {
+    display: table-footer-group !important;
+  }
+
+  .print-avoid-break, .signature-block {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }

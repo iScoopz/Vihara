@@ -49,7 +49,7 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 overflow-y-auto p-4 md:p-8">
+    <div id="printable-pdf-document-wrapper" className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 overflow-y-auto p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-4">
         {/* Modal Controls (Hidden when printed) */}
         <div className="bg-slate-900 p-4 rounded-2xl border border-purple-800 flex justify-between items-center text-white print:hidden">
@@ -78,7 +78,7 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
         </div>
 
         {/* PRINT PAPER CONTAINER (A4 FORMATTED FOR PRINT) */}
-        <div className="bg-white text-slate-900 p-8 md:p-12 rounded-2xl shadow-2xl space-y-6 print:p-0 print:shadow-none print:bg-transparent">
+        <div id="printable-pdf-document" className="bg-white text-slate-900 p-8 md:p-12 rounded-2xl shadow-2xl space-y-6 print:p-0 print:shadow-none print:bg-transparent">
           
           {/* KOP SURAT OFFISIAL MNSBDI */}
           <div className="text-center border-b-4 border-double border-purple-950 pb-4 space-y-1">

@@ -56,9 +56,12 @@ import { EventPdfModal } from '@/components/events/EventPdfModal';
 import { EventModals } from '@/components/events/EventModals';
 import { EventPricingModal } from '@/components/events/EventPricingModal';
 
+import { useToast } from '@/components/ui/ToastNotification';
+
 export default function EventDetailPage({ params }: { params: Promise<{ eventId: string }> }) {
   const resolvedParams = use(params);
   const eventId = resolvedParams.eventId;
+  const { showToast } = useToast();
 
   const [event, setEvent] = useState<ViharaEvent | null>(null);
   const [registrations, setRegistrations] = useState<EventRegistration[]>([]);
@@ -175,8 +178,10 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
 
     if (res.error) {
       setRegMsg(res.error);
+      showToast(res.error, 'error', 'Gagal Mendaftarkan Umat');
     } else {
       setRegMsg('✓ Umat berhasil didaftarkan oleh Admin');
+      showToast('Umat berhasil didaftarkan ke event ini.', 'success', 'Pendaftaran Berhasil');
       setTimeout(() => setRegMsg(''), 3000);
       setIsRegModalOpen(false);
       loadData();
@@ -185,11 +190,17 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
 
   const handleCancelRegistration = async (regId: string) => {
     await cancelRegistration(regId);
+    showToast('Pendaftaran umat telah dibatalkan dari event ini.', 'info', 'Pembatalan Pendaftaran');
     loadData();
   };
 
   const handleToggleAttendance = async (regId: string) => {
-    await toggleAttendance(regId);
+    const res = await toggleAttendance(regId);
+    showToast(
+      res.is_attended ? 'Presensi kehadiran umat ditandai HADIR.' : 'Presensi kehadiran ditandai ABSEN.',
+      'success',
+      'Update Presensi'
+    );
     loadData();
   };
 

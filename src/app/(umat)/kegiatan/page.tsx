@@ -6,7 +6,10 @@ import { CalendarDays, MapPin, Clock, CheckCircle2, UserCheck, Sparkles, Calenda
 import { getEvents, registerForEvent, cancelRegistration, getRegistrationsForEvent } from '@/lib/actions/vihara-actions';
 import { ViharaEvent } from '@/types/database';
 
+import { useToast } from '@/components/ui/ToastNotification';
+
 export default function PublicEventCatalogPage() {
+  const { showToast } = useToast();
   const [events, setEvents] = useState<ViharaEvent[]>([]);
   const [registeredEventIds, setRegisteredEventIds] = useState<string[]>([]);
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -42,11 +45,13 @@ export default function PublicEventCatalogPage() {
     setLoadingId(null);
     if (res.error) {
       setMessage({ text: res.error, type: 'error' });
+      showToast(res.error, 'error', 'Pendaftaran Gagal');
     } else {
       setMessage({ 
         text: '✓ Berhasil mendaftar event! Pendaftaran Anda dicatat otomatis (Self-Registration)', 
         type: 'success' 
       });
+      showToast('Anda telah berhasil mendaftar pada event ini!', 'success', 'Pendaftaran Berhasil');
       loadCatalog();
     }
   };
@@ -60,6 +65,7 @@ export default function PublicEventCatalogPage() {
     if (myReg) {
       await cancelRegistration(myReg.id);
       setMessage({ text: '✓ Pendaftaran event berhasil dibatalkan.', type: 'success' });
+      showToast('Pendaftaran Anda pada event ini berhasil dibatalkan.', 'info', 'Pembatalan Event');
       loadCatalog();
     }
     setLoadingId(null);

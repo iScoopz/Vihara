@@ -7,9 +7,11 @@ import { HeartHandshake, ArrowLeft, CheckCircle2, UserCheck, CreditCard, Sparkle
 import { getProfiles, addDonation } from '@/lib/actions/vihara-actions';
 import { SearchableUmatSelect } from '@/components/ui/SearchableUmatSelect';
 import { Profile } from '@/types/database';
+import { useToast } from '@/components/ui/ToastNotification';
 
 export default function NewDonationPage() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [selectedUmatId, setSelectedUmatId] = useState('');
   const [donorName, setDonorName] = useState('');
@@ -47,6 +49,7 @@ export default function NewDonationPage() {
       notes: notes
     });
 
+    showToast(`Donasi Dana Paramita sebesar Rp ${numAmount.toLocaleString('id-ID')} berhasil dicatat.`, 'success', 'Donasi Berhasil');
     setLoading(false);
     router.push('/donations');
   };
