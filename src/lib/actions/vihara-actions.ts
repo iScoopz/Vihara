@@ -445,27 +445,21 @@ export async function addDonation(donation: Omit<Donation, 'id' | 'created_at'>)
   return { success: true, donation: newDonation };
 }
 
-const getProfilesInternal = unstable_cache(
-  async (): Promise<Profile[]> => {
-    if (isSupabaseConfigured()) {
-      try {
-        const supabase = await createClient();
-        const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-        if (!error && data) {
-          return data;
-        }
-      } catch (e) {
-        console.error('getProfiles exception:', e);
-      }
-    }
-    return [...profilesStore];
-  },
-  ['profiles-cache'],
-  { revalidate: 60, tags: ['profiles'] }
-);
-
 export async function getProfiles(): Promise<Profile[]> {
-  return getProfilesInternal();
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+      if (error) {
+        console.error('Supabase getProfiles error:', error);
+      } else if (data) {
+        return data;
+      }
+    } catch (e) {
+      console.error('getProfiles exception:', e);
+    }
+  }
+  return [...profilesStore];
 }
 
 export async function addProfile(profile: Omit<Profile, 'id' | 'created_at'>) {
@@ -535,48 +529,40 @@ export async function deleteProfile(id: string) {
   return { success: true };
 }
 
-const getEventsInternal = unstable_cache(
-  async (): Promise<ViharaEvent[]> => {
-    if (isSupabaseConfigured()) {
-      try {
-        const supabase = await createClient();
-        const [eventsRes, regsRes] = await Promise.all([
-          supabase.from('events').select('*').order('event_date', { ascending: true }),
-          supabase.from('event_registrations').select('event_id')
-        ]);
-
-        if (eventsRes.data) {
-          const dbRegs = regsRes.data || [];
-          return eventsRes.data.map(ev => {
-            const dbCount = dbRegs.filter(r => r.event_id === ev.id).length;
-            const mockCount = registrationsStore.filter(r => r.event_id === ev.id).length;
-            return {
-              ...ev,
-              registrations_count: Math.max(dbCount, mockCount),
-              budgets: budgetsStore.filter(b => b.event_id === ev.id),
-              committees: committeesStore.filter(c => c.event_id === ev.id)
-            };
-          });
-        }
-      } catch (e) {
-        console.error('getEvents exception:', e);
-      }
-    }
-
-    return eventsStore.map(ev => ({
-      ...ev,
-      registrations_count: registrationsStore.filter(r => r.event_id === ev.id).length,
-      budgets: budgetsStore.filter(b => b.event_id === ev.id),
-      committees: committeesStore.filter(c => c.event_id === ev.id),
-      org_structure: ev.org_structure || (ev.is_complex ? INITIAL_ORG_STRUCTURE : undefined)
-    }));
-  },
-  ['events-list-cache'],
-  { revalidate: 60 }
-);
-
 export async function getEvents(): Promise<ViharaEvent[]> {
-  return getEventsInternal();
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const [eventsRes, regsRes] = await Promise.all([
+        supabase.from('events').select('*').order('event_date', { ascending: true }),
+        supabase.from('event_registrations').select('event_id')
+      ]);
+
+      if (eventsRes.data) {
+        const dbRegs = regsRes.data || [];
+        return eventsRes.data.map(ev => {
+          const dbCount = dbRegs.filter(r => r.event_id === ev.id).length;
+          const mockCount = registrationsStore.filter(r => r.event_id === ev.id).length;
+          return {
+            ...ev,
+            registrations_count: Math.max(dbCount, mockCount),
+            budgets: budgetsStore.filter(b => b.event_id === ev.id),
+            committees: committeesStore.filter(c => c.event_id === ev.id)
+          };
+        });
+      }
+    } catch (e) {
+      console.error('getEvents exception:', e);
+    }
+  }
+
+  return eventsStore.map(ev => ({
+    ...ev,
+    registrations_count: registrationsStore.filter(r => r.event_id === ev.id).length,
+    budgets: budgetsStore.filter(b => b.event_id === ev.id),
+    committees: committeesStore.filter(c => c.event_id === ev.id),
+    org_structure: ev.org_structure || (ev.is_complex ? INITIAL_ORG_STRUCTURE : undefined)
+  }));
 }
 
 export async function getEventById(id: string): Promise<ViharaEvent | null> {
