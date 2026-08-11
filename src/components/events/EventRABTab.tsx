@@ -56,7 +56,7 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({ event, registrations =
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => exportRABToExcel(event.title, event.budgets || [])}
+              onClick={() => exportRABToExcel(event.title, event.budgets || [], totalUmatRegistrationFees, registrations.length)}
               className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1 shadow cursor-pointer"
             >
               <FileSpreadsheet size={14} />
@@ -132,7 +132,7 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({ event, registrations =
           </div>
         </div>
 
-        {/* Financial Table with Dana Paramita Column */}
+        {/* Financial Table with Dana Paramita & Total Biaya Event Umat */}
         <div className="overflow-x-auto pt-2">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
@@ -140,17 +140,35 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({ event, registrations =
                 <th className="pb-3 w-10 text-center">No</th>
                 <th className="pb-3">Nama Item / Deskripsi</th>
                 <th className="pb-3 text-center">Jenis Record</th>
-                <th className="pb-3 text-right text-emerald-600 dark:text-emerald-400">Dana Paramita (Pemasukan)</th>
+                <th className="pb-3 text-right text-emerald-600 dark:text-emerald-400">Dana Paramita & Biaya Event (Pemasukan)</th>
                 <th className="pb-3 text-right text-slate-700 dark:text-slate-300">Pengeluaran (RAB / Realisasi)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-purple-50 dark:divide-purple-900/40">
+              {/* Mandatory Row: Biaya Event dari Umat Terdaftar */}
+              <tr className="bg-emerald-50/70 dark:bg-emerald-950/50 font-black">
+                <td className="py-3 text-center text-emerald-700 dark:text-emerald-300">1</td>
+                <td className="py-3 text-emerald-950 dark:text-emerald-100 flex items-center gap-1.5">
+                  <Users size={14} className="text-emerald-600 dark:text-emerald-400" />
+                  <span>Biaya Event Umat Terdaftar ({registrations.length} Umat)</span>
+                </td>
+                <td className="py-3 text-center">
+                  <span className="px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase bg-emerald-200 text-emerald-950 dark:bg-emerald-900 dark:text-emerald-100">
+                    👥 Biaya Event Umat
+                  </span>
+                </td>
+                <td className="py-3 text-right text-emerald-700 dark:text-emerald-300 text-sm">
+                  + Rp {totalUmatRegistrationFees.toLocaleString('id-ID')}
+                </td>
+                <td className="py-3 text-right text-slate-400">-</td>
+              </tr>
+
               {event.budgets && event.budgets.length > 0 ? (
                 event.budgets.map((b, i) => {
                   const isPemasukan = b.budget_type === 'pemasukan';
                   return (
                     <tr key={b.id} className="hover:bg-purple-50/50 dark:hover:bg-purple-950/40">
-                      <td className="py-3 text-center font-bold text-slate-500">{i + 1}</td>
+                      <td className="py-3 text-center font-bold text-slate-500">{i + 2}</td>
                       <td className="py-3 font-bold text-slate-900 dark:text-white">{b.item_name}</td>
                       <td className="py-3 text-center">
                         <span className={`px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase ${
@@ -174,13 +192,7 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({ event, registrations =
                     </tr>
                   );
                 })
-              ) : (
-                <tr>
-                  <td colSpan={5} className="py-6 text-center text-slate-400 text-xs italic">
-                    Belum ada item keuangan / Dana Paramita yang dimasukkan.
-                  </td>
-                </tr>
-              )}
+              ) : null}
             </tbody>
           </table>
         </div>

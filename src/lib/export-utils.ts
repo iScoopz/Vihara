@@ -5,20 +5,40 @@ import { EventBudget, EventSkenarioKerja } from '@/types/database';
  * and semicolon delimiters (compatible with Indonesian Windows Excel regional settings).
  * Opens immediately in Microsoft Excel with formatted columns, currency headers, and totals!
  */
-export function exportRABToExcel(eventTitle: string, budgets: EventBudget[]) {
+export function exportRABToExcel(
+  eventTitle: string, 
+  budgets: EventBudget[], 
+  totalUmatRegistrationFees: number = 0, 
+  registrationsCount: number = 0
+) {
   const pemasukanItems = budgets.filter(b => b.budget_type === 'pemasukan');
   const rabItems = budgets.filter(b => b.budget_type === 'rab');
   const realisasiItems = budgets.filter(b => b.budget_type === 'realisasi');
 
   const itemMap: Record<string, { pemasukan: number; rab: number; realisasi: number; notes: string }> = {};
 
-  pemasukanItems.forEach(b => {
-    itemMap[b.item_name] = {
-      pemasukan: Number(b.amount),
+  // Insert Umat Registration Fee Income if present
+  if (totalUmatRegistrationFees > 0 || registrationsCount > 0) {
+    const label = `Biaya Event Umat Terdaftar (${registrationsCount} Umat)`;
+    itemMap[label] = {
+      pemasukan: Number(totalUmatRegistrationFees),
       rab: 0,
       realisasi: 0,
-      notes: b.notes || '-'
+      notes: `Total penerimaan biaya pendaftaran ${registrationsCount} Umat`
     };
+  }
+
+  pemasukanItems.forEach(b => {
+    if (!itemMap[b.item_name]) {
+      itemMap[b.item_name] = {
+        pemasukan: Number(b.amount),
+        rab: 0,
+        realisasi: 0,
+        notes: b.notes || '-'
+      };
+    } else {
+      itemMap[b.item_name].pemasukan += Number(b.amount);
+    }
   });
 
   rabItems.forEach(b => {
