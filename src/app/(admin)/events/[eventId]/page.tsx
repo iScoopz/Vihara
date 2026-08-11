@@ -22,9 +22,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { 
-  getEventById, 
-  getRegistrationsForEvent, 
-  getProfiles,
+  getEventDetailPageBundle,
   registerForEvent, 
   cancelRegistration,
   toggleAttendance, 
@@ -154,13 +152,11 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
   const [editSubPicName, setEditSubPicName] = useState('');
 
   const loadData = async () => {
-    const ev = await getEventById(eventId);
-    if (!ev) return;
-    setEvent(ev);
-    const regs = await getRegistrationsForEvent(eventId);
-    setRegistrations(regs);
-    const profs = await getProfiles();
-    setProfiles(profs);
+    const bundle = await getEventDetailPageBundle(eventId);
+    if (!bundle.event) return;
+    setEvent(bundle.event);
+    setRegistrations(bundle.registrations);
+    setProfiles(bundle.profiles);
   };
 
   useEffect(() => {

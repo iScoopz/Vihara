@@ -9,12 +9,7 @@ import {
   Package, 
   Building
 } from 'lucide-react';
-import { 
-  getProfiles, 
-  getEvents, 
-  getDonations, 
-  getInventory 
-} from '@/lib/actions/vihara-actions';
+import { getDashboardPageBundle } from '@/lib/actions/vihara-actions';
 import { Profile, ViharaEvent, Donation, InventoryItem } from '@/types/database';
 
 export default function AdminDashboardPage() {
@@ -25,17 +20,11 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     async function loadData() {
-      const [profs, evs, dons, invs] = await Promise.all([
-        getProfiles(),
-        getEvents(),
-        getDonations(),
-        getInventory()
-      ]);
-
-      setProfiles(profs);
-      setEvents(evs);
-      setDonations(dons);
-      setInventory(invs);
+      const bundle = await getDashboardPageBundle();
+      setProfiles(bundle.profiles);
+      setEvents(bundle.events);
+      setDonations(bundle.donations);
+      setInventory(bundle.inventory);
     }
     loadData();
   }, []);

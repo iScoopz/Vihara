@@ -54,6 +54,50 @@ function isSupabaseConfigured() {
   );
 }
 
+// UNIFIED SINGLE-PASS BUNDLE FETCHERS (Reduces 4-5 HTTP POST requests down to 1 single request)
+export async function getUmatPageBundle() {
+  const [profilesList, sentrasList, cetyasList, hansList] = await Promise.all([
+    getProfiles(),
+    getSentras(),
+    getCetyas(),
+    getHans()
+  ]);
+  return {
+    profiles: profilesList,
+    sentras: sentrasList,
+    cetyas: cetyasList,
+    hans: hansList
+  };
+}
+
+export async function getEventDetailPageBundle(eventId: string) {
+  const [eventObj, regsList, profilesList] = await Promise.all([
+    getEventById(eventId),
+    getRegistrationsForEvent(eventId),
+    getProfiles()
+  ]);
+  return {
+    event: eventObj,
+    registrations: regsList,
+    profiles: profilesList
+  };
+}
+
+export async function getDashboardPageBundle() {
+  const [eventsList, profilesList, donationsList, inventoryList] = await Promise.all([
+    getEvents(),
+    getProfiles(),
+    getDonations(),
+    getInventory()
+  ]);
+  return {
+    events: eventsList,
+    profiles: profilesList,
+    donations: donationsList,
+    inventory: inventoryList
+  };
+}
+
 // SENTRA, CETYA, HAN ACTIONS
 export async function getSentras(): Promise<string[]> {
   return [...INITIAL_SENTRAS];

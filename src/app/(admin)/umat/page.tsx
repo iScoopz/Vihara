@@ -22,16 +22,13 @@ import {
   X
 } from 'lucide-react';
 import { 
-  getProfiles, 
+  getUmatPageBundle,
   addProfile, 
   updateProfile, 
   deleteProfile,
-  getSentras,
-  getCetyas,
   addCetya,
   updateCetya,
   deleteCetya,
-  getHans,
   addHan,
   updateHan,
   deleteHan
@@ -127,23 +124,17 @@ export default function UmatDirectoryPage() {
   });
 
   const loadAllData = async () => {
-    const [pList, sList, cList, hList] = await Promise.all([
-      getProfiles(),
-      getSentras(),
-      getCetyas(),
-      getHans()
-    ]);
-
-    setProfiles(pList);
-    setSentras(sList);
-    setCetyas(cList);
-    if (cList.length > 0) {
-      setCetya(cList[0].name);
-      setHanCetyaInput(cList[0].name);
+    const bundle = await getUmatPageBundle();
+    setProfiles(bundle.profiles);
+    setSentras(bundle.sentras);
+    setCetyas(bundle.cetyas);
+    if (bundle.cetyas.length > 0) {
+      setCetya(bundle.cetyas[0].name);
+      setHanCetyaInput(bundle.cetyas[0].name);
     }
-    setHans(hList);
-    if (hList.length > 0) {
-      setHan(hList[0].name);
+    setHans(bundle.hans);
+    if (bundle.hans.length > 0) {
+      setHan(bundle.hans[0].name);
     }
   };
 
