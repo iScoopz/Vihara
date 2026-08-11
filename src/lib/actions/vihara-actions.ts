@@ -972,6 +972,93 @@ export async function deleteBudgetItem(id: string, eventId?: string) {
   return { success: true };
 }
 
+export async function deleteBudgetItems(ids: string[], eventId?: string) {
+  if (!ids || ids.length === 0) return { success: true };
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { error } = await supabase.from('event_budgets').delete().in('id', ids);
+      if (error) console.error('Supabase deleteBudgetItems error:', error);
+    } catch (e) {
+      console.error('deleteBudgetItems exception:', e);
+    }
+  }
+
+  budgetsStore = budgetsStore.filter(b => !ids.includes(b.id));
+  if (eventId) {
+    revalidatePath(`/events/${eventId}`);
+  }
+  revalidatePath('/events');
+  return { success: true };
+}
+
+export async function updateGroupedBudget(
+  eventId: string, 
+  data: {
+    itemName: string;
+    rabId?: string;
+    rabAmount: number;
+    realisasiId?: string;
+    realisasiAmount: number;
+    pemasukanId?: string;
+    pemasukanAmount: number;
+  }
+) {
+  const cleanName = data.itemName.trim();
+
+  const syncType = async (id?: string, type?: 'rab' | 'realisasi' | 'pemasukan', amount: number = 0) => {
+    if (!type) return;
+    if (id && amount > 0) {
+      const existing = budgetsStore.find(b => b.id === id);
+      if (existing) {
+        existing.item_name = cleanName;
+        existing.amount = amount;
+      }
+      if (isSupabaseConfigured()) {
+        try {
+          const supabase = await createClient();
+          await supabase.from('event_budgets').update({ item_name: cleanName, amount }).eq('id', id);
+        } catch (e) {}
+      }
+    } else if (id && amount === 0) {
+      budgetsStore = budgetsStore.filter(b => b.id !== id);
+      if (isSupabaseConfigured()) {
+        try {
+          const supabase = await createClient();
+          await supabase.from('event_budgets').delete().eq('id', id);
+        } catch (e) {}
+      }
+    } else if (!id && amount > 0) {
+      const newB: EventBudget = {
+        id: `b_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        event_id: eventId,
+        item_name: cleanName,
+        budget_type: type,
+        amount
+      };
+      budgetsStore.push(newB);
+      if (isSupabaseConfigured()) {
+        try {
+          const supabase = await createClient();
+          await supabase.from('event_budgets').insert([newB]);
+        } catch (e) {}
+      }
+    }
+  };
+
+  await Promise.all([
+    syncType(data.rabId, 'rab', data.rabAmount),
+    syncType(data.realisasiId, 'realisasi', data.realisasiAmount),
+    syncType(data.pemasukanId, 'pemasukan', data.pemasukanAmount)
+  ]);
+
+  if (eventId) {
+    revalidatePath(`/events/${eventId}`);
+  }
+  revalidatePath('/events');
+  return { success: true };
+}
+
 export async function getRegistrationsForEvent(eventId: string) {
   if (isSupabaseConfigured()) {
     try {

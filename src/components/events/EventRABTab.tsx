@@ -1,16 +1,9 @@
 import React from 'react';
-import { Plus, FileSpreadsheet, TrendingUp, TrendingDown, DollarSign, Wallet, Users, Trash2, CheckCircle2, AlertTriangle, ArrowDown } from 'lucide-react';
+import { Plus, FileSpreadsheet, TrendingUp, TrendingDown, DollarSign, Wallet, Users, Trash2, Edit2, CheckCircle2, AlertTriangle, ArrowDown } from 'lucide-react';
 import { ViharaEvent, EventRegistration } from '@/types/database';
 import { exportRABToExcel } from '@/lib/export-utils';
 
-interface EventRABTabProps {
-  event: ViharaEvent;
-  registrations?: EventRegistration[];
-  onOpenBudgetModal: (initialName?: string, initialType?: 'rab' | 'realisasi' | 'pemasukan') => void;
-  onDeleteBudgetItem?: (id: string) => void;
-}
-
-interface GroupedBudgetItem {
+export interface GroupedBudgetItem {
   key: string;
   itemName: string;
   pemasukan: number;
@@ -22,11 +15,20 @@ interface GroupedBudgetItem {
   realisasiId?: string;
 }
 
+interface EventRABTabProps {
+  event: ViharaEvent;
+  registrations?: EventRegistration[];
+  onOpenBudgetModal: (initialName?: string, initialType?: 'rab' | 'realisasi' | 'pemasukan') => void;
+  onOpenEditBudgetModal?: (item: GroupedBudgetItem) => void;
+  onDeleteBudgetItems?: (ids: string[]) => void;
+}
+
 export const EventRABTab: React.FC<EventRABTabProps> = ({ 
   event, 
   registrations = [], 
   onOpenBudgetModal,
-  onDeleteBudgetItem 
+  onOpenEditBudgetModal,
+  onDeleteBudgetItems 
 }) => {
   const pemasukanItems = event.budgets?.filter(b => b.budget_type === 'pemasukan') || [];
   const rabItems = event.budgets?.filter(b => b.budget_type === 'rab') || [];
@@ -195,7 +197,7 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
                 <th className="pb-3 text-right text-purple-600 dark:text-purple-400">Target RAB (Rencana)</th>
                 <th className="pb-3 text-right text-amber-600 dark:text-amber-400">Realisasi Pengeluaran</th>
                 <th className="pb-3 text-center">Status / Selisih</th>
-                <th className="pb-3 text-center w-28">Aksi</th>
+                <th className="pb-3 text-center w-36">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-purple-50 dark:divide-purple-900/40">
@@ -225,6 +227,7 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
                   const hasRab = item.rab > 0;
                   const hasRealisasi = item.realisasi > 0;
                   const hasPemasukan = item.pemasukan > 0;
+                  const allItemIds = [item.rabId, item.realisasiId, item.pemasukanId].filter(Boolean) as string[];
 
                   return (
                     <tr key={item.key} className="hover:bg-purple-50/50 dark:hover:bg-purple-950/40">
@@ -291,14 +294,21 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
                             </button>
                           )}
 
-                          {onDeleteBudgetItem && (
+                          {onOpenEditBudgetModal && (
                             <button
-                              onClick={() => {
-                                const targetId = item.rabId || item.realisasiId || item.pemasukanId;
-                                if (targetId) onDeleteBudgetItem(targetId);
-                              }}
+                              onClick={() => onOpenEditBudgetModal(item)}
+                              className="p-1 text-slate-400 hover:text-amber-500 transition cursor-pointer"
+                              title="Edit item keuangan ini"
+                            >
+                              <Edit2 size={13} />
+                            </button>
+                          )}
+
+                          {onDeleteBudgetItems && (
+                            <button
+                              onClick={() => onDeleteBudgetItems(allItemIds)}
                               className="p-1 text-slate-400 hover:text-rose-500 transition cursor-pointer"
-                              title="Hapus item ini"
+                              title="Hapus seluruh item keuangan ini"
                             >
                               <Trash2 size={13} />
                             </button>

@@ -83,6 +83,19 @@ interface EventModalsProps {
   setBudgetAmount: (val: string) => void;
   onAddBudget: (e: React.FormEvent) => void;
   onCloseBudgetModal: () => void;
+
+  // Edit Budget Modal State
+  isEditBudgetModalOpen?: boolean;
+  editBudgetName?: string;
+  setEditBudgetName?: (val: string) => void;
+  editRabAmount?: string;
+  setEditRabAmount?: (val: string) => void;
+  editRealisasiAmount?: string;
+  setEditRealisasiAmount?: (val: string) => void;
+  editPemasukanAmount?: string;
+  setEditPemasukanAmount?: (val: string) => void;
+  onSaveEditBudget?: (e: React.FormEvent) => void;
+  onCloseEditBudgetModal?: () => void;
 }
 
 export const EventModals: React.FC<EventModalsProps> = ({
@@ -157,7 +170,19 @@ export const EventModals: React.FC<EventModalsProps> = ({
   budgetAmount,
   setBudgetAmount,
   onAddBudget,
-  onCloseBudgetModal
+  onCloseBudgetModal,
+
+  isEditBudgetModalOpen = false,
+  editBudgetName = '',
+  setEditBudgetName,
+  editRabAmount = '',
+  setEditRabAmount,
+  editRealisasiAmount = '',
+  setEditRealisasiAmount,
+  editPemasukanAmount = '',
+  setEditPemasukanAmount,
+  onSaveEditBudget,
+  onCloseEditBudgetModal
 }) => {
   const org = event.org_structure;
 
@@ -545,6 +570,69 @@ export const EventModals: React.FC<EventModalsProps> = ({
               <div className="flex justify-end gap-3 pt-3 border-t border-purple-100 dark:border-purple-900/60">
                 <button type="button" onClick={onCloseBudgetModal} className="px-4 py-2 rounded-xl font-bold text-slate-500 cursor-pointer">Batal</button>
                 <button type="submit" className="gradient-mnsbdi text-white font-extrabold px-4 py-2 rounded-xl text-xs shadow-md cursor-pointer">Simpan Item</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Edit Budget Item */}
+      {isEditBudgetModalOpen && (
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:hidden">
+          <div className="bg-white dark:bg-[#160e29] border border-purple-200 dark:border-purple-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <h3 className="text-lg font-extrabold text-slate-900 dark:text-white border-b border-purple-100 dark:border-purple-900/60 pb-3">
+              Edit Item Keuangan Kegiatan
+            </h3>
+            
+            <form onSubmit={onSaveEditBudget} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Nama Item Keuangan</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="misal: Sampah, Konsumsi Umat"
+                  value={editBudgetName}
+                  onChange={(e) => setEditBudgetName && setEditBudgetName(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-purple-700 dark:text-purple-300 mb-1">Target Anggaran RAB (Rp)</label>
+                <input
+                  type="number"
+                  placeholder="0 (kosongkan jika tidak ada RAB)"
+                  value={editRabAmount}
+                  onChange={(e) => setEditRabAmount && setEditRabAmount(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-amber-700 dark:text-amber-300 mb-1">Realisasi Pengeluaran (Rp)</label>
+                <input
+                  type="number"
+                  placeholder="0 (kosongkan jika belum ada realisasi)"
+                  value={editRealisasiAmount}
+                  onChange={(e) => setEditRealisasiAmount && setEditRealisasiAmount(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-emerald-700 dark:text-emerald-300 mb-1">Total Pemasukan / Sumbangan (Rp)</label>
+                <input
+                  type="number"
+                  placeholder="0 (kosongkan jika pengeluaran)"
+                  value={editPemasukanAmount}
+                  onChange={(e) => setEditPemasukanAmount && setEditPemasukanAmount(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-purple-100 dark:border-purple-900/60">
+                <button type="button" onClick={onCloseEditBudgetModal} className="px-4 py-2 rounded-xl font-bold text-slate-500 cursor-pointer">Batal</button>
+                <button type="submit" className="gradient-mnsbdi text-white font-extrabold px-4 py-2 rounded-xl text-xs shadow-md cursor-pointer">Simpan Perubahan</button>
               </div>
             </form>
           </div>

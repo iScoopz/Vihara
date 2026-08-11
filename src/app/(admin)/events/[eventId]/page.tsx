@@ -28,6 +28,8 @@ import {
   toggleAttendance, 
   addBudgetItem, 
   deleteBudgetItem,
+  deleteBudgetItems,
+  updateGroupedBudget,
   addSubSectionToOrg,
   updateSubSectionInOrg,
   deleteSubSectionFromOrg,
@@ -49,7 +51,7 @@ import { EventPanitiaTab } from '@/components/events/EventPanitiaTab';
 import { EventProposalRundownTab } from '@/components/events/EventProposalRundownTab';
 import { EventSkenarioKerjaTab } from '@/components/events/EventSkenarioKerjaTab';
 import { EventPresensiTab } from '@/components/events/EventPresensiTab';
-import { EventRABTab } from '@/components/events/EventRABTab';
+import { EventRABTab, GroupedBudgetItem } from '@/components/events/EventRABTab';
 import { EventLaporanTab } from '@/components/events/EventLaporanTab';
 import { EventPdfModal } from '@/components/events/EventPdfModal';
 import { EventModals } from '@/components/events/EventModals';
@@ -247,6 +249,14 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
     loadData();
   };
 
+  // Edit Budget Modal State
+  const [isEditBudgetModalOpen, setIsEditBudgetModalOpen] = useState(false);
+  const [editingGroupedBudget, setEditingGroupedBudget] = useState<GroupedBudgetItem | null>(null);
+  const [editBudgetName, setEditBudgetName] = useState('');
+  const [editRabAmount, setEditRabAmount] = useState('');
+  const [editRealisasiAmount, setEditRealisasiAmount] = useState('');
+  const [editPemasukanAmount, setEditPemasukanAmount] = useState('');
+
   const handleOpenBudgetModal = (initialName?: string, initialType?: 'rab' | 'realisasi' | 'pemasukan') => {
     setBudgetItem(initialName || '');
     setBudgetType(initialType || 'pemasukan');
@@ -254,8 +264,36 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
     setIsBudgetModalOpen(true);
   };
 
-  const handleDeleteBudgetItem = async (budgetId: string) => {
-    await deleteBudgetItem(budgetId, event.id);
+  const handleOpenEditBudgetModal = (item: GroupedBudgetItem) => {
+    setEditingGroupedBudget(item);
+    setEditBudgetName(item.itemName);
+    setEditRabAmount(item.rab > 0 ? String(item.rab) : '');
+    setEditRealisasiAmount(item.realisasi > 0 ? String(item.realisasi) : '');
+    setEditPemasukanAmount(item.pemasukan > 0 ? String(item.pemasukan) : '');
+    setIsEditBudgetModalOpen(true);
+  };
+
+  const handleSaveEditBudget = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingGroupedBudget) return;
+    await updateGroupedBudget(event.id, {
+      itemName: editBudgetName,
+      rabId: editingGroupedBudget.rabId,
+      rabAmount: Number(editRabAmount) || 0,
+      realisasiId: editingGroupedBudget.realisasiId,
+      realisasiAmount: Number(editRealisasiAmount) || 0,
+      pemasukanId: editingGroupedBudget.pemasukanId,
+      pemasukanAmount: Number(editPemasukanAmount) || 0,
+    });
+    showToast('Perubahan item keuangan berhasil disimpan.', 'success', 'Item Keuangan Diperbarui');
+    setIsEditBudgetModalOpen(false);
+    setEditingGroupedBudget(null);
+    loadData();
+  };
+
+  const handleDeleteBudgetItems = async (ids: string[]) => {
+    await deleteBudgetItems(ids, event.id);
+    showToast('Item keuangan berhasil dihapus secara total.', 'success', 'Item Dihapus');
     loadData();
   };
 
@@ -673,7 +711,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
           event={event}
           registrations={registrations}
           onOpenBudgetModal={handleOpenBudgetModal}
-          onDeleteBudgetItem={handleDeleteBudgetItem}
+          onOpenEditBudgetModal={handleOpenEditBudgetModal}
+          onDeleteBudgetItems={handleDeleteBudgetItems}
         />
       )}
 
@@ -762,6 +801,18 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
         setBudgetAmount={setBudgetAmount}
         onAddBudget={handleAddBudget}
         onCloseBudgetModal={() => setIsBudgetModalOpen(false)}
+
+        isEditBudgetModalOpen={isEditBudgetModalOpen}
+        editBudgetName={editBudgetName}
+        setEditBudgetName={setEditBudgetName}
+        editRabAmount={editRabAmount}
+        setEditRabAmount={setEditRabAmount}
+        editRealisasiAmount={editRealisasiAmount}
+        setEditRealisasiAmount={setEditRealisasiAmount}
+        editPemasukanAmount={editPemasukanAmount}
+        setEditPemasukanAmount={setEditPemasukanAmount}
+        onSaveEditBudget={handleSaveEditBudget}
+        onCloseEditBudgetModal={() => setIsEditBudgetModalOpen(false)}
       />
 
       {/* PRINTABLE PDF MODAL */}
