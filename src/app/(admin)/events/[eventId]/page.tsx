@@ -153,6 +153,14 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
   const [editSubRoleName, setEditSubRoleName] = useState('');
   const [editSubPicName, setEditSubPicName] = useState('');
 
+  // Edit Budget Modal State
+  const [isEditBudgetModalOpen, setIsEditBudgetModalOpen] = useState(false);
+  const [editingGroupedBudget, setEditingGroupedBudget] = useState<GroupedBudgetItem | null>(null);
+  const [editBudgetName, setEditBudgetName] = useState('');
+  const [editRabAmount, setEditRabAmount] = useState('');
+  const [editRealisasiAmount, setEditRealisasiAmount] = useState('');
+  const [editPemasukanAmount, setEditPemasukanAmount] = useState('');
+
   const loadData = async () => {
     const bundle = await getEventDetailPageBundle(eventId);
     if (!bundle.event) return;
@@ -248,14 +256,6 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
     setIsEditSubModalOpen(false);
     loadData();
   };
-
-  // Edit Budget Modal State
-  const [isEditBudgetModalOpen, setIsEditBudgetModalOpen] = useState(false);
-  const [editingGroupedBudget, setEditingGroupedBudget] = useState<GroupedBudgetItem | null>(null);
-  const [editBudgetName, setEditBudgetName] = useState('');
-  const [editRabAmount, setEditRabAmount] = useState('');
-  const [editRealisasiAmount, setEditRealisasiAmount] = useState('');
-  const [editPemasukanAmount, setEditPemasukanAmount] = useState('');
 
   const handleOpenBudgetModal = (initialName?: string, initialType?: 'rab' | 'realisasi' | 'pemasukan') => {
     setBudgetItem(initialName || '');

@@ -409,6 +409,9 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                         <th className="p-2 border border-slate-300 text-right">Pemasukan (Rp)</th>
                         <th className="p-2 border border-slate-300 text-right">Anggaran RAB (Rp)</th>
                         {pdfMode === 'lpj' && <th className="p-2 border border-slate-300 text-right">Realisasi (Rp)</th>}
+                        <th className="p-2 border border-slate-300 text-right">
+                          {pdfMode === 'lpj' ? 'Selisih (RAB vs Realisasi)' : 'Proyeksi Selisih / Surplus'}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -423,6 +426,9 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                         </td>
                         <td className="p-2 border border-slate-300 text-right text-slate-400">-</td>
                         {pdfMode === 'lpj' && <td className="p-2 border border-slate-300 text-right text-slate-400">-</td>}
+                        <td className="p-2 border border-slate-300 text-right font-black text-emerald-700">
+                          + Rp {totalUmatRegistrationFees.toLocaleString('id-ID')}
+                        </td>
                       </tr>
 
                       {(() => {
@@ -447,40 +453,81 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
 
                         const groupedPdfItems = Object.values(pdfGroupedMap);
 
-                        return groupedPdfItems.map((item, i) => (
-                          <tr key={item.key} className={i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
-                            <td className="p-2 border border-slate-300 text-center font-bold">{i + 2}</td>
-                            <td className="p-2 border border-slate-300 font-extrabold text-slate-900">{item.itemName}</td>
-                            <td className="p-2 border border-slate-300 text-right font-bold text-emerald-700">
-                              {item.pemasukan > 0 ? `+ Rp ${item.pemasukan.toLocaleString('id-ID')}` : '-'}
-                            </td>
-                            <td className="p-2 border border-slate-300 text-right font-semibold">
-                              {item.rab > 0 ? `Rp ${item.rab.toLocaleString('id-ID')}` : '-'}
-                            </td>
-                            {pdfMode === 'lpj' && (
-                              <td className="p-2 border border-slate-300 text-right font-semibold text-amber-900">
-                                {item.realisasi > 0 ? `Rp ${item.realisasi.toLocaleString('id-ID')}` : '-'}
+                        return groupedPdfItems.map((item, i) => {
+                          const selisihProposal = item.pemasukan - item.rab;
+                          const selisihLpj = item.rab > 0 && item.realisasi > 0 
+                            ? item.rab - item.realisasi 
+                            : item.pemasukan > 0 
+                              ? item.pemasukan 
+                              : item.realisasi > 0 
+                                ? -item.realisasi 
+                                : -item.rab;
+
+                          const displayedSelisih = pdfMode === 'lpj' ? selisihLpj : selisihProposal;
+
+                          return (
+                            <tr key={item.key} className={i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
+                              <td className="p-2 border border-slate-300 text-center font-bold">{i + 2}</td>
+                              <td className="p-2 border border-slate-300 font-extrabold text-slate-900">{item.itemName}</td>
+                              <td className="p-2 border border-slate-300 text-right font-bold text-emerald-700">
+                                {item.pemasukan > 0 ? `+ Rp ${item.pemasukan.toLocaleString('id-ID')}` : '-'}
                               </td>
-                            )}
-                          </tr>
-                        ));
+                              <td className="p-2 border border-slate-300 text-right font-semibold">
+                                {item.rab > 0 ? `Rp ${item.rab.toLocaleString('id-ID')}` : '-'}
+                              </td>
+                              {pdfMode === 'lpj' && (
+                                <td className="p-2 border border-slate-300 text-right font-semibold text-amber-900">
+                                  {item.realisasi > 0 ? `Rp ${item.realisasi.toLocaleString('id-ID')}` : '-'}
+                                </td>
+                              )}
+                              <td className={`p-2 border border-slate-300 text-right font-bold ${
+                                displayedSelisih > 0 ? 'text-emerald-700' : displayedSelisih < 0 ? 'text-rose-700' : 'text-slate-500'
+                              }`}>
+                                {displayedSelisih > 0 
+                                  ? `+ Rp ${displayedSelisih.toLocaleString('id-ID')}`
+                                  : displayedSelisih < 0
+                                    ? `- Rp ${Math.abs(displayedSelisih).toLocaleString('id-ID')}`
+                                    : 'Rp 0'}
+                              </td>
+                            </tr>
+                          );
+                        });
                       })()}
                     </tbody>
                     <tfoot>
-                      <tr className="bg-purple-100 font-extrabold">
-                        <td colSpan={2} className="p-2 border border-slate-300 text-right">TOTAL KESELURUHAN</td>
-                        <td className="p-2 border border-slate-300 text-right text-emerald-800 font-black">Rp {totalPemasukanGlobal.toLocaleString('id-ID')}</td>
-                        <td className="p-2 border border-slate-300 text-right text-purple-950 font-black">Rp {totalRAB.toLocaleString('id-ID')}</td>
-                        {pdfMode === 'lpj' && <td className="p-2 border border-slate-300 text-right text-amber-950 font-black">Rp {totalRealisasi.toLocaleString('id-ID')}</td>}
-                      </tr>
-                      {pdfMode === 'lpj' && (
-                        <tr className="bg-purple-900 text-white font-black text-xs">
-                          <td colSpan={4} className="p-2 border border-slate-300 text-right uppercase">SALDO KEUANGAN KEGIATAN (TOTAL PEMASUKAN - REALISASI)</td>
-                          <td className={`p-2 border border-slate-300 text-right ${saldoKasGlobal >= 0 ? 'text-amber-300' : 'text-rose-300'}`}>
-                            Rp {saldoKasGlobal.toLocaleString('id-ID')}
-                          </td>
-                        </tr>
-                      )}
+                      {(() => {
+                        const selisihTotalProposal = totalPemasukanGlobal - totalRAB;
+                        const selisihTotalLpj = totalRAB - totalRealisasi;
+                        const displayedTotalSelisih = pdfMode === 'lpj' ? selisihTotalLpj : selisihTotalProposal;
+
+                        return (
+                          <>
+                            <tr className="bg-purple-100 font-extrabold">
+                              <td colSpan={2} className="p-2 border border-slate-300 text-right uppercase">TOTAL KESELURUHAN</td>
+                              <td className="p-2 border border-slate-300 text-right text-emerald-800 font-black">Rp {totalPemasukanGlobal.toLocaleString('id-ID')}</td>
+                              <td className="p-2 border border-slate-300 text-right text-purple-950 font-black">Rp {totalRAB.toLocaleString('id-ID')}</td>
+                              {pdfMode === 'lpj' && <td className="p-2 border border-slate-300 text-right text-amber-950 font-black">Rp {totalRealisasi.toLocaleString('id-ID')}</td>}
+                              <td className={`p-2 border border-slate-300 text-right font-black ${
+                                displayedTotalSelisih >= 0 ? 'text-emerald-800' : 'text-rose-800'
+                              }`}>
+                                {displayedTotalSelisih >= 0 
+                                  ? `+ Rp ${displayedTotalSelisih.toLocaleString('id-ID')}` 
+                                  : `- Rp ${Math.abs(displayedTotalSelisih).toLocaleString('id-ID')}`}
+                              </td>
+                            </tr>
+                            {pdfMode === 'lpj' && (
+                              <tr className="bg-purple-900 text-white font-black text-xs">
+                                <td colSpan={5} className="p-2 border border-slate-300 text-right uppercase">
+                                  SALDO KEUANGAN KEGIATAN (PEMASUKAN - REALISASI)
+                                </td>
+                                <td className={`p-2 border border-slate-300 text-right ${saldoKasGlobal >= 0 ? 'text-amber-300' : 'text-rose-300'}`}>
+                                  Rp {saldoKasGlobal.toLocaleString('id-ID')} {saldoKasGlobal >= 0 ? '(SURPLUS)' : '(DEFISIT)'}
+                                </td>
+                              </tr>
+                            )}
+                          </>
+                        );
+                      })()}
                     </tfoot>
                   </table>
                 </div>
