@@ -425,33 +425,46 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                         {pdfMode === 'lpj' && <td className="p-2 border border-slate-300 text-right text-slate-400">-</td>}
                       </tr>
 
-                      {event.budgets && event.budgets.length > 0 ? (
-                        event.budgets.map((b, i) => {
-                          const isPemasukan = b.budget_type === 'pemasukan';
-                          return (
-                            <tr key={b.id} className={i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
-                              <td className="p-2 border border-slate-300 text-center font-bold">{i + 2}</td>
-                              <td className="p-2 border border-slate-300 font-bold">
-                                {b.item_name}{' '}
-                                <span className="text-[9px] font-normal text-slate-500">
-                                  ({b.budget_type === 'pemasukan' ? 'Pemasukan / Sumbangan' : b.budget_type === 'rab' ? 'RAB' : 'Realisasi'})
-                                </span>
+                      {(() => {
+                        const pdfGroupedMap: Record<string, { key: string; itemName: string; pemasukan: number; rab: number; realisasi: number }> = {};
+                        (event.budgets || []).forEach((b) => {
+                          const cleanName = b.item_name.trim();
+                          const key = cleanName.toLowerCase();
+                          if (!pdfGroupedMap[key]) {
+                            pdfGroupedMap[key] = {
+                              key,
+                              itemName: cleanName,
+                              pemasukan: b.budget_type === 'pemasukan' ? b.amount : 0,
+                              rab: b.budget_type === 'rab' ? b.amount : 0,
+                              realisasi: b.budget_type === 'realisasi' ? b.amount : 0,
+                            };
+                          } else {
+                            if (b.budget_type === 'pemasukan') pdfGroupedMap[key].pemasukan += b.amount;
+                            else if (b.budget_type === 'rab') pdfGroupedMap[key].rab += b.amount;
+                            else if (b.budget_type === 'realisasi') pdfGroupedMap[key].realisasi += b.amount;
+                          }
+                        });
+
+                        const groupedPdfItems = Object.values(pdfGroupedMap);
+
+                        return groupedPdfItems.map((item, i) => (
+                          <tr key={item.key} className={i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
+                            <td className="p-2 border border-slate-300 text-center font-bold">{i + 2}</td>
+                            <td className="p-2 border border-slate-300 font-extrabold text-slate-900">{item.itemName}</td>
+                            <td className="p-2 border border-slate-300 text-right font-bold text-emerald-700">
+                              {item.pemasukan > 0 ? `+ Rp ${item.pemasukan.toLocaleString('id-ID')}` : '-'}
+                            </td>
+                            <td className="p-2 border border-slate-300 text-right font-semibold">
+                              {item.rab > 0 ? `Rp ${item.rab.toLocaleString('id-ID')}` : '-'}
+                            </td>
+                            {pdfMode === 'lpj' && (
+                              <td className="p-2 border border-slate-300 text-right font-semibold text-amber-900">
+                                {item.realisasi > 0 ? `Rp ${item.realisasi.toLocaleString('id-ID')}` : '-'}
                               </td>
-                              <td className="p-2 border border-slate-300 text-right font-bold text-emerald-700">
-                                {isPemasukan ? `+ Rp ${b.amount.toLocaleString('id-ID')}` : '-'}
-                              </td>
-                              <td className="p-2 border border-slate-300 text-right font-semibold">
-                                {b.budget_type === 'rab' ? `Rp ${b.amount.toLocaleString('id-ID')}` : '-'}
-                              </td>
-                              {pdfMode === 'lpj' && (
-                                <td className="p-2 border border-slate-300 text-right font-semibold text-amber-900">
-                                  {b.budget_type === 'realisasi' ? `Rp ${b.amount.toLocaleString('id-ID')}` : '-'}
-                                </td>
-                              )}
-                            </tr>
-                          );
-                        })
-                      ) : null}
+                            )}
+                          </tr>
+                        ));
+                      })()}
                     </tbody>
                     <tfoot>
                       <tr className="bg-purple-100 font-extrabold">

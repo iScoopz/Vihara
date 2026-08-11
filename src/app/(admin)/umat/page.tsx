@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   Users, 
   UserPlus, 
@@ -162,7 +162,41 @@ export default function UmatDirectoryPage() {
   // Umat Actions
   const handleAddUmat = async (e: React.FormEvent) => {
     e.preventDefault();
-    await addProfile({
+
+    const tempId = `p_${Date.now()}`;
+    const newProfile: Profile = {
+      id: tempId,
+      role: role,
+      full_name: fullName,
+      email: email.trim() || undefined,
+      sentra: sentra,
+      cetya: cetya,
+      han: han,
+      phone: phone,
+      bagian: bagian || undefined,
+      birth_date: birthDate,
+      gender: gender,
+      address: address,
+      emergency_contact: emergencyContact,
+      is_active: true,
+      created_at: new Date().toISOString()
+    };
+
+    // Instant Optimistic State Update
+    setProfiles(prev => [newProfile, ...prev]);
+
+    setIsAddUmatModalOpen(false);
+    setRole('umat');
+    setEmail('');
+    setFullName('');
+    setPhone('');
+    setBagian('');
+    setBirthDate('');
+    setAddress('');
+    setEmergencyContact('');
+
+    // Background server call
+    const res = await addProfile({
       role: role,
       full_name: fullName,
       email: email.trim() || undefined,
@@ -178,16 +212,9 @@ export default function UmatDirectoryPage() {
       is_active: true
     });
 
-    setIsAddUmatModalOpen(false);
-    setRole('umat');
-    setEmail('');
-    setFullName('');
-    setPhone('');
-    setBagian('');
-    setBirthDate('');
-    setAddress('');
-    setEmergencyContact('');
-    loadAllData();
+    if (res.profile) {
+      setProfiles(prev => prev.map(p => p.id === tempId ? res.profile : p));
+    }
   };
 
   const openEditUmatModal = (profile: Profile) => {
@@ -212,7 +239,8 @@ export default function UmatDirectoryPage() {
     e.preventDefault();
     if (!editingProfile) return;
 
-    await updateProfile(editingProfile.id, {
+    const targetId = editingProfile.id;
+    const updateData: Partial<Profile> = {
       role: editRole,
       full_name: editFullName,
       email: editEmail.trim() || undefined,
@@ -226,11 +254,16 @@ export default function UmatDirectoryPage() {
       address: editAddress,
       emergency_contact: editEmergencyContact,
       is_active: editIsActive
-    });
+    };
+
+    // Instant Optimistic State Update
+    setProfiles(prev => prev.map(p => p.id === targetId ? { ...p, ...updateData } : p));
 
     setIsEditUmatModalOpen(false);
     setEditingProfile(null);
-    loadAllData();
+
+    // Background server call
+    await updateProfile(targetId, updateData);
   };
 
   const handleDeleteUmat = (profile: Profile) => {
@@ -239,8 +272,9 @@ export default function UmatDirectoryPage() {
       title: 'Hapus Data Umat?',
       message: `Apakah Anda yakin ingin menghapus data umat "${profile.full_name}"? Tindakan ini tidak dapat dibatalkan.`,
       onConfirm: async () => {
+        // Instant Optimistic Update
+        setProfiles(prev => prev.filter(p => p.id !== profile.id));
         await deleteProfile(profile.id);
-        loadAllData();
       }
     });
   };
@@ -350,28 +384,46 @@ export default function UmatDirectoryPage() {
     });
   };
 
-  // Filter Umat
-  const filteredProfiles = profiles.filter(p => {
-    const matchSearch = p.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        (p.han && p.han.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                        (p.cetya && p.cetya.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                        (p.phone && p.phone.includes(searchTerm));
-    
-    const matchSentra = selectedSentraFilter === 'all' || p.sentra === selectedSentraFilter;
-    const matchCetya = selectedCetyaFilter === 'all' || p.cetya === selectedCetyaFilter;
-    const matchHan = selectedHanFilter === 'all' || p.han === selectedHanFilter;
-    const matchBagian = selectedBagianFilter === 'all' || p.bagian === selectedBagianFilter;
-    const matchStatus = selectedStatus === 'all' || 
-                        (selectedStatus === 'active' ? p.is_active : !p.is_active);
-    
-    let matchMonth = true;
-    if (selectedMonth !== 'all' && p.birth_date) {
-      const monthNum = parseInt(p.birth_date.split('-')[1], 10);
-      matchMonth = monthNum === parseInt(selectedMonth, 10);
-    }
+  // Filter Umat with useMemo for high performance
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 25;
 
-    return matchSearch && matchSentra && matchCetya && matchHan && matchBagian && matchStatus && matchMonth;
-  });
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedSentraFilter, selectedCetyaFilter, selectedHanFilter, selectedBagianFilter, selectedStatus, selectedMonth]);
+
+  const filteredProfiles = useMemo(() => {
+    return profiles.filter(p => {
+      const matchSearch = !searchTerm ||
+                          p.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (p.han && p.han.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                          (p.cetya && p.cetya.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                          (p.phone && p.phone.includes(searchTerm));
+      
+      const matchSentra = selectedSentraFilter === 'all' || p.sentra === selectedSentraFilter;
+      const matchCetya = selectedCetyaFilter === 'all' || p.cetya === selectedCetyaFilter;
+      const matchHan = selectedHanFilter === 'all' || p.han === selectedHanFilter;
+      const matchBagian = selectedBagianFilter === 'all' || p.bagian === selectedBagianFilter;
+      const matchStatus = selectedStatus === 'all' || 
+                          (selectedStatus === 'active' ? p.is_active : !p.is_active);
+      
+      let matchMonth = true;
+      if (selectedMonth !== 'all' && p.birth_date) {
+        const parts = p.birth_date.split('-');
+        if (parts[1]) {
+          matchMonth = parseInt(parts[1], 10) === parseInt(selectedMonth, 10);
+        }
+      }
+
+      return matchSearch && matchSentra && matchCetya && matchHan && matchBagian && matchStatus && matchMonth;
+    });
+  }, [profiles, searchTerm, selectedSentraFilter, selectedCetyaFilter, selectedHanFilter, selectedBagianFilter, selectedStatus, selectedMonth]);
+
+  const totalPages = Math.ceil(filteredProfiles.length / pageSize) || 1;
+  const paginatedProfiles = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredProfiles.slice(start, start + pageSize);
+  }, [filteredProfiles, currentPage, pageSize]);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -589,7 +641,7 @@ export default function UmatDirectoryPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-purple-100 dark:divide-purple-900/60 text-sm">
-                  {filteredProfiles.map((umat) => (
+                  {paginatedProfiles.map((umat) => (
                     <tr key={umat.id} className="hover:bg-purple-50/40 dark:hover:bg-purple-950/40 transition">
                       <td className="py-4 px-6 font-bold text-slate-900 dark:text-white flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-extrabold flex items-center justify-center text-xs border border-purple-200 dark:border-purple-800">
@@ -619,29 +671,33 @@ export default function UmatDirectoryPage() {
                         </span>
                       </td>
 
-                      <td className="py-4 px-6">
-                        <div className="flex flex-col gap-1.5">
+                      <td className="py-4 px-6 font-bold text-xs">
+                        <div className="space-y-0.5">
+                          <p className="text-purple-900 dark:text-purple-300 flex items-center gap-1">
+                            <Home size={12} className="text-purple-600" /> {umat.han || '-'}
+                          </p>
                           {umat.bagian && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2.5 py-1 rounded w-fit">
+                            <span className="text-[10px] bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-300 font-extrabold px-2 py-0.5 rounded inline-block">
                               {umat.bagian}
                             </span>
                           )}
-                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-2.5 py-1 rounded border border-purple-200 dark:border-purple-800 w-fit">
-                            <Home size={12} /> {umat.han || '-'}
-                          </span>
                         </div>
                       </td>
 
-                      <td className="py-4 px-6 text-slate-700 dark:text-slate-300 text-xs">
-                        <span className="flex items-center gap-1 font-semibold">
-                          <Calendar size={14} className="text-purple-500" />
-                          {umat.birth_date ? new Date(umat.birth_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
-                        </span>
+                      <td className="py-4 px-6 text-xs text-slate-600 dark:text-slate-400 font-medium">
+                        {umat.birth_date ? (
+                          <span className="flex items-center gap-1">
+                            <Calendar size={13} className="text-purple-500" />
+                            {new Date(umat.birth_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">-</span>
+                        )}
                       </td>
 
                       <td className="py-4 px-6">
                         {umat.is_active ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded">
+                          <span className="inline-flex items-center gap-1 text-xs font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded">
                             <CheckCircle size={12} /> Aktif
                           </span>
                         ) : (
@@ -683,6 +739,37 @@ export default function UmatDirectoryPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="p-4 bg-purple-50/50 dark:bg-purple-950/40 border-t border-purple-100 dark:border-purple-900/60 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs">
+                <span className="font-bold text-slate-600 dark:text-slate-400">
+                  Menampilkan {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, filteredProfiles.length)} dari {filteredProfiles.length} Data Umat
+                </span>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    className="px-3 py-1.5 rounded-lg bg-white dark:bg-purple-900 border border-purple-200 dark:border-purple-800 text-slate-700 dark:text-slate-200 font-extrabold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-purple-100 dark:hover:bg-purple-800 transition cursor-pointer"
+                  >
+                    ← Sebelumnya
+                  </button>
+
+                  <span className="font-black px-2 text-purple-950 dark:text-purple-200">
+                    Halaman {currentPage} / {totalPages}
+                  </span>
+
+                  <button
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    className="px-3 py-1.5 rounded-lg bg-white dark:bg-purple-900 border border-purple-200 dark:border-purple-800 text-slate-700 dark:text-slate-200 font-extrabold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-purple-100 dark:hover:bg-purple-800 transition cursor-pointer"
+                  >
+                    Selanjutnya →
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
