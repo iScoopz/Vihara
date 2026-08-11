@@ -501,16 +501,16 @@ export const EventModals: React.FC<EventModalsProps> = ({
         <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:hidden">
           <div className="bg-white dark:bg-[#160e29] border border-purple-200 dark:border-purple-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <h3 className="text-lg font-extrabold text-slate-900 dark:text-white border-b border-purple-100 dark:border-purple-900/60 pb-3">
-              Tambah Item Keuangan Event
+              Tambah / Input Item Keuangan Kegiatan
             </h3>
             
             <form onSubmit={onAddBudget} className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Nama Item Pengeluaran</label>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Nama Item Keuangan</label>
                 <input
                   type="text"
                   required
-                  placeholder="misal: Konsumsi Umat, Dekorasi Altar, Sound System"
+                  placeholder="misal: Sampah, Konsumsi Umat, Dekorasi Altar, Sound System"
                   value={budgetItem}
                   onChange={(e) => setBudgetItem(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
@@ -518,24 +518,24 @@ export const EventModals: React.FC<EventModalsProps> = ({
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Jenis Record</label>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Jenis Record Keuangan</label>
                 <select
                   value={budgetType}
                   onChange={(e: any) => setBudgetType(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
                 >
-                  <option value="pemasukan">✨ Dana Paramita (Pemasukan)</option>
-                  <option value="rab">📊 Anggaran Rencana (RAB Pengeluaran)</option>
-                  <option value="realisasi">💸 Realisasi Aktual Pengeluaran</option>
+                  <option value="pemasukan">✨ Pemasukan / Sumbangan (Dana Paramita, Sponsorship)</option>
+                  <option value="rab">📊 Target Anggaran (RAB Pengeluaran)</option>
+                  <option value="realisasi">💸 Realisasi Pengeluaran (Pengeluaran Langsung / Realisasi RAB)</option>
                 </select>
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Jumlah (Rp)</label>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Jumlah Nominal (Rp)</label>
                 <input
                   type="number"
                   required
-                  placeholder="misal: 1500000"
+                  placeholder="misal: 100000"
                   value={budgetAmount}
                   onChange={(e) => setBudgetAmount(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"

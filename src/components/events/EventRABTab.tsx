@@ -1,15 +1,33 @@
 import React from 'react';
-import { Plus, FileSpreadsheet, TrendingUp, TrendingDown, DollarSign, Wallet, Users } from 'lucide-react';
+import { Plus, FileSpreadsheet, TrendingUp, TrendingDown, DollarSign, Wallet, Users, Trash2, CheckCircle2, AlertTriangle, ArrowDown } from 'lucide-react';
 import { ViharaEvent, EventRegistration } from '@/types/database';
 import { exportRABToExcel } from '@/lib/export-utils';
 
 interface EventRABTabProps {
   event: ViharaEvent;
   registrations?: EventRegistration[];
-  onOpenBudgetModal: () => void;
+  onOpenBudgetModal: (initialName?: string, initialType?: 'rab' | 'realisasi' | 'pemasukan') => void;
+  onDeleteBudgetItem?: (id: string) => void;
 }
 
-export const EventRABTab: React.FC<EventRABTabProps> = ({ event, registrations = [], onOpenBudgetModal }) => {
+interface GroupedBudgetItem {
+  key: string;
+  itemName: string;
+  pemasukan: number;
+  rab: number;
+  realisasi: number;
+  notes: string;
+  pemasukanId?: string;
+  rabId?: string;
+  realisasiId?: string;
+}
+
+export const EventRABTab: React.FC<EventRABTabProps> = ({ 
+  event, 
+  registrations = [], 
+  onOpenBudgetModal,
+  onDeleteBudgetItem 
+}) => {
   const pemasukanItems = event.budgets?.filter(b => b.budget_type === 'pemasukan') || [];
   const rabItems = event.budgets?.filter(b => b.budget_type === 'rab') || [];
   const realisasiItems = event.budgets?.filter(b => b.budget_type === 'realisasi') || [];
@@ -42,6 +60,40 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({ event, registrations =
   const totalRealisasi = realisasiItems.reduce((acc, curr) => acc + curr.amount, 0);
   const saldoKasGlobal = totalPemasukanGlobal - totalRealisasi;
 
+  // Group budgets by Item Name to prevent duplicate separate rows for RAB and Realisasi
+  const groupedMap: Record<string, GroupedBudgetItem> = {};
+
+  (event.budgets || []).forEach((b) => {
+    const cleanName = b.item_name.trim();
+    const key = cleanName.toLowerCase();
+    if (!groupedMap[key]) {
+      groupedMap[key] = {
+        key,
+        itemName: cleanName,
+        pemasukan: b.budget_type === 'pemasukan' ? b.amount : 0,
+        rab: b.budget_type === 'rab' ? b.amount : 0,
+        realisasi: b.budget_type === 'realisasi' ? b.amount : 0,
+        notes: b.notes || '',
+        pemasukanId: b.budget_type === 'pemasukan' ? b.id : undefined,
+        rabId: b.budget_type === 'rab' ? b.id : undefined,
+        realisasiId: b.budget_type === 'realisasi' ? b.id : undefined,
+      };
+    } else {
+      if (b.budget_type === 'pemasukan') {
+        groupedMap[key].pemasukan += b.amount;
+        groupedMap[key].pemasukanId = b.id;
+      } else if (b.budget_type === 'rab') {
+        groupedMap[key].rab += b.amount;
+        groupedMap[key].rabId = b.id;
+      } else if (b.budget_type === 'realisasi') {
+        groupedMap[key].realisasi += b.amount;
+        groupedMap[key].realisasiId = b.id;
+      }
+    }
+  });
+
+  const groupedItems = Object.values(groupedMap);
+
   return (
     <div className="space-y-6 print:hidden">
       <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4">
@@ -64,7 +116,7 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({ event, registrations =
             </button>
 
             <button
-              onClick={onOpenBudgetModal}
+              onClick={() => onOpenBudgetModal()}
               className="px-3 py-1.5 rounded-xl gradient-mnsbdi text-white font-extrabold text-xs flex items-center gap-1 shadow-md cursor-pointer"
             >
               <Plus size={14} />
@@ -132,62 +184,126 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({ event, registrations =
           </div>
         </div>
 
-        {/* Financial Table with Total Pemasukan & Total Biaya Kegiatan Umat */}
+        {/* Financial Table with Grouped Items & Quick Realisasi Input */}
         <div className="overflow-x-auto pt-2">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-purple-100 dark:border-purple-900/60 text-slate-400 font-extrabold">
                 <th className="pb-3 w-10 text-center">No</th>
                 <th className="pb-3">Nama Item / Deskripsi</th>
-                <th className="pb-3 text-center">Jenis Record</th>
                 <th className="pb-3 text-right text-emerald-600 dark:text-emerald-400">Total Pemasukan (Rp)</th>
-                <th className="pb-3 text-right text-slate-700 dark:text-slate-300">Pengeluaran (RAB / Realisasi)</th>
+                <th className="pb-3 text-right text-purple-600 dark:text-purple-400">Target RAB (Rencana)</th>
+                <th className="pb-3 text-right text-amber-600 dark:text-amber-400">Realisasi Pengeluaran</th>
+                <th className="pb-3 text-center">Status / Selisih</th>
+                <th className="pb-3 text-center w-28">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-purple-50 dark:divide-purple-900/40">
               {/* Mandatory Row: Biaya Kegiatan dari Umat Terdaftar */}
               <tr className="bg-emerald-50/70 dark:bg-emerald-950/50 font-black">
                 <td className="py-3 text-center text-emerald-700 dark:text-emerald-300">1</td>
-                <td className="py-3 text-emerald-950 dark:text-emerald-100 flex items-center gap-1.5">
+                <td className="py-3 text-emerald-950 dark:text-emerald-100 font-extrabold flex items-center gap-1.5">
                   <Users size={14} className="text-emerald-600 dark:text-emerald-400" />
                   <span>Biaya Pendaftaran Kegiatan Umat ({registrations.length} Umat)</span>
                 </td>
-                <td className="py-3 text-center">
-                  <span className="px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase bg-emerald-200 text-emerald-950 dark:bg-emerald-900 dark:text-emerald-100">
-                    👥 Biaya Kegiatan Umat
-                  </span>
-                </td>
-                <td className="py-3 text-right text-emerald-700 dark:text-emerald-300 text-sm">
+                <td className="py-3 text-right text-emerald-700 dark:text-emerald-300 font-black text-sm">
                   + Rp {totalUmatRegistrationFees.toLocaleString('id-ID')}
                 </td>
                 <td className="py-3 text-right text-slate-400">-</td>
+                <td className="py-3 text-right text-slate-400">-</td>
+                <td className="py-3 text-center">
+                  <span className="px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase bg-emerald-200 text-emerald-950 dark:bg-emerald-900 dark:text-emerald-100">
+                    👥 Biaya Umat
+                  </span>
+                </td>
+                <td className="py-3 text-center text-slate-400 text-[10px] italic">Otomatis</td>
               </tr>
 
-              {event.budgets && event.budgets.length > 0 ? (
-                event.budgets.map((b, i) => {
-                  const isPemasukan = b.budget_type === 'pemasukan';
+              {groupedItems.length > 0 ? (
+                groupedItems.map((item, i) => {
+                  const diff = item.realisasi - item.rab;
+                  const hasRab = item.rab > 0;
+                  const hasRealisasi = item.realisasi > 0;
+                  const hasPemasukan = item.pemasukan > 0;
+
                   return (
-                    <tr key={b.id} className="hover:bg-purple-50/50 dark:hover:bg-purple-950/40">
+                    <tr key={item.key} className="hover:bg-purple-50/50 dark:hover:bg-purple-950/40">
                       <td className="py-3 text-center font-bold text-slate-500">{i + 2}</td>
-                      <td className="py-3 font-bold text-slate-900 dark:text-white">{b.item_name}</td>
-                      <td className="py-3 text-center">
-                        <span className={`px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase ${
-                          b.budget_type === 'pemasukan'
-                            ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300'
-                            : b.budget_type === 'rab'
-                            ? 'bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-300'
-                            : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300'
-                        }`}>
-                          {b.budget_type === 'pemasukan' ? '✨ Pemasukan / Sumbangan' : b.budget_type === 'rab' ? '📊 Target RAB' : '💸 Realisasi'}
-                        </span>
-                      </td>
-                      {/* Kolom Dana Paramita (Pemasukan) */}
+                      <td className="py-3 font-extrabold text-slate-900 dark:text-white">{item.itemName}</td>
+                      
+                      {/* Pemasukan */}
                       <td className="py-3 text-right font-black text-emerald-600 dark:text-emerald-400">
-                        {isPemasukan ? `+ Rp ${b.amount.toLocaleString('id-ID')}` : '-'}
+                        {hasPemasukan ? `+ Rp ${item.pemasukan.toLocaleString('id-ID')}` : '-'}
                       </td>
-                      {/* Kolom Pengeluaran */}
-                      <td className="py-3 text-right font-black text-slate-900 dark:text-white">
-                        {!isPemasukan ? `Rp ${b.amount.toLocaleString('id-ID')}` : '-'}
+
+                      {/* Target RAB */}
+                      <td className="py-3 text-right font-bold text-purple-700 dark:text-purple-300">
+                        {hasRab ? `Rp ${item.rab.toLocaleString('id-ID')}` : '-'}
+                      </td>
+
+                      {/* Realisasi Pengeluaran */}
+                      <td className="py-3 text-right font-black text-amber-700 dark:text-amber-300">
+                        {hasRealisasi ? `Rp ${item.realisasi.toLocaleString('id-ID')}` : '-'}
+                      </td>
+
+                      {/* Status / Selisih */}
+                      <td className="py-3 text-center">
+                        {hasPemasukan ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
+                            ✨ Pemasukan
+                          </span>
+                        ) : hasRab && hasRealisasi ? (
+                          diff === 0 ? (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 inline-flex items-center gap-1">
+                              <CheckCircle2 size={12} /> Sesuai RAB (Rp 0)
+                            </span>
+                          ) : diff > 0 ? (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-300 inline-flex items-center gap-1">
+                              <AlertTriangle size={12} /> + Rp {diff.toLocaleString('id-ID')}
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 inline-flex items-center gap-1">
+                              <ArrowDown size={12} /> Hemat Rp {Math.abs(diff).toLocaleString('id-ID')}
+                            </span>
+                          )
+                        ) : hasRab && !hasRealisasi ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-300">
+                            📊 Target RAB
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300">
+                            💸 Realisasi Langsung
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Aksi */}
+                      <td className="py-3 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          {hasRab && !hasRealisasi && (
+                            <button
+                              onClick={() => onOpenBudgetModal(item.itemName, 'realisasi')}
+                              className="px-2 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-[10px] flex items-center gap-1 shadow cursor-pointer"
+                              title="Tambah Realisasi Pengeluaran untuk item ini"
+                            >
+                              <Plus size={11} />
+                              <span>+ Realisasi</span>
+                            </button>
+                          )}
+
+                          {onDeleteBudgetItem && (
+                            <button
+                              onClick={() => {
+                                const targetId = item.rabId || item.realisasiId || item.pemasukanId;
+                                if (targetId) onDeleteBudgetItem(targetId);
+                              }}
+                              className="p-1 text-slate-400 hover:text-rose-500 transition cursor-pointer"
+                              title="Hapus item ini"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -200,3 +316,4 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({ event, registrations =
     </div>
   );
 };
+

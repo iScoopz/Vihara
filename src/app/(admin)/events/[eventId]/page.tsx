@@ -29,6 +29,7 @@ import {
   cancelRegistration,
   toggleAttendance, 
   addBudgetItem, 
+  deleteBudgetItem,
   addSubSectionToOrg,
   updateSubSectionInOrg,
   deleteSubSectionFromOrg,
@@ -247,6 +248,18 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
     e.preventDefault();
     await updateSubSectionInOrg(event.id, editSubType, editSubId, editSubRoleName, editSubPicName);
     setIsEditSubModalOpen(false);
+    loadData();
+  };
+
+  const handleOpenBudgetModal = (initialName?: string, initialType?: 'rab' | 'realisasi' | 'pemasukan') => {
+    setBudgetItem(initialName || '');
+    setBudgetType(initialType || 'pemasukan');
+    setBudgetAmount('');
+    setIsBudgetModalOpen(true);
+  };
+
+  const handleDeleteBudgetItem = async (budgetId: string) => {
+    await deleteBudgetItem(budgetId, event.id);
     loadData();
   };
 
@@ -663,7 +676,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
         <EventRABTab
           event={event}
           registrations={registrations}
-          onOpenBudgetModal={() => setIsBudgetModalOpen(true)}
+          onOpenBudgetModal={handleOpenBudgetModal}
+          onDeleteBudgetItem={handleDeleteBudgetItem}
         />
       )}
 

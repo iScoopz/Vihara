@@ -909,6 +909,25 @@ export async function addBudgetItem(budget: Omit<EventBudget, 'id'>) {
   return { success: true, budget: newBudget };
 }
 
+export async function deleteBudgetItem(id: string, eventId?: string) {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { error } = await supabase.from('event_budgets').delete().eq('id', id);
+      if (error) console.error('Supabase deleteBudgetItem error:', error);
+    } catch (e) {
+      console.error('deleteBudgetItem exception:', e);
+    }
+  }
+
+  budgetsStore = budgetsStore.filter(b => b.id !== id);
+  if (eventId) {
+    revalidatePath(`/events/${eventId}`);
+  }
+  revalidatePath('/events');
+  return { success: true };
+}
+
 export async function getRegistrationsForEvent(eventId: string) {
   if (isSupabaseConfigured()) {
     try {
