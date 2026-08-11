@@ -137,9 +137,9 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
           <div className="text-center space-y-1">
             <h3 className="text-base font-black uppercase tracking-wide text-purple-950 border-b-2 border-purple-900 inline-block pb-0.5">
               {pdfMode === 'proposal' 
-                ? 'PROPOSAL PELAKSANAAN EVENT' 
+                ? 'PROPOSAL PELAKSANAAN KEGIATAN' 
                 : pdfMode === 'lpj' 
-                  ? 'LAPORAN PERTANGGUNGJAWABAN (LPJ) EVENT' 
+                  ? 'LAPORAN PERTANGGUNGJAWABAN (LPJ) KEGIATAN' 
                   : 'DAFTAR PESERTA & HASIL REGISTRASI UMAT'}
             </h3>
             <p className="text-sm font-extrabold text-slate-800">{event.title}</p>
@@ -210,7 +210,7 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                   ) : (
                     <tr>
                       <td colSpan={8} className="p-6 text-center text-slate-400 italic">
-                        Belum ada data pendaftar pada event ini.
+                        Belum ada data pendaftar pada kegiatan ini.
                       </td>
                     </tr>
                   )}
@@ -243,7 +243,7 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
               {/* SECTION 1: STRUKTUR KEPANITIAAN */}
               <div className="space-y-3">
                 <h4 className="text-xs font-black uppercase text-purple-950 border-b border-purple-200 pb-1">
-                  I. Susunan Panitia Pelaksana Event
+                  I. Susunan Panitia Pelaksana Kegiatan
                 </h4>
                 
                 <div className="grid grid-cols-3 gap-3 text-center">
@@ -326,7 +326,7 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                       ) : (
                         <tr>
                           <td colSpan={4} className="p-4 text-center text-slate-400 italic">
-                            Belum ada pendaftar pada event ini.
+                            Belum ada pendaftar pada kegiatan ini.
                           </td>
                         </tr>
                       )}
@@ -335,10 +335,10 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                 </div>
               )}
 
-              {/* SECTION 4: KEUANGAN LPJ (RINCIAN BIAYA PER BAGIAN & REALISASI) */}
+              {/* SECTION 4: KEUANGAN LPJ & PROPOSAL (RINCIAN BIAYA PER BAGIAN & REALISASI) */}
               <div className="space-y-4">
                 <h4 className="text-xs font-black uppercase text-purple-950 border-b border-purple-200 pb-1">
-                  {pdfMode === 'proposal' ? 'III. Rencana Anggaran Biaya (RAB)' : 'IV. Laporan Keuangan, Dana Paramita & Realisasi'}
+                  {pdfMode === 'proposal' ? 'III. Rencana Anggaran Biaya (RAB) & Proyeksi Pemasukan' : 'IV. Laporan Keuangan, Pemasukan & Realisasi Pengeluaran'}
                 </h4>
 
                 {pdfMode === 'lpj' && (
@@ -398,7 +398,7 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                 <div className="space-y-2">
                   {pdfMode === 'lpj' && (
                     <h5 className="text-[11px] font-bold text-slate-800 uppercase tracking-wide">
-                      B. Dana Paramita (Pemasukan Manual), Target RAB & Realisasi Pengeluaran
+                      B. Pemasukan Lainnya (Sumbangan/Dana Paramita), Target RAB & Realisasi Pengeluaran
                     </h5>
                   )}
                   <table className="w-full text-left text-xs border-collapse border border-slate-300">
@@ -406,29 +406,40 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                       <tr className="bg-purple-900 text-white font-bold">
                         <th className="p-2 border border-slate-300 text-center w-8">No</th>
                         <th className="p-2 border border-slate-300">Nama Item / Keterangan</th>
-                        {pdfMode === 'lpj' && <th className="p-2 border border-slate-300 text-right">Dana Paramita (Rp)</th>}
+                        <th className="p-2 border border-slate-300 text-right">Pemasukan (Rp)</th>
                         <th className="p-2 border border-slate-300 text-right">Anggaran RAB (Rp)</th>
                         {pdfMode === 'lpj' && <th className="p-2 border border-slate-300 text-right">Realisasi (Rp)</th>}
                       </tr>
                     </thead>
                     <tbody>
+                      {/* Baris Utama: Total Biaya Pendaftaran Kegiatan Umat */}
+                      <tr className="bg-emerald-50 font-bold">
+                        <td className="p-2 border border-slate-300 text-center font-bold text-emerald-800">1</td>
+                        <td className="p-2 border border-slate-300 font-extrabold text-emerald-950">
+                          Total Biaya Pendaftaran Kegiatan Umat ({registrations.length} Umat)
+                        </td>
+                        <td className="p-2 border border-slate-300 text-right font-black text-emerald-700">
+                          + Rp {totalUmatRegistrationFees.toLocaleString('id-ID')}
+                        </td>
+                        <td className="p-2 border border-slate-300 text-right text-slate-400">-</td>
+                        {pdfMode === 'lpj' && <td className="p-2 border border-slate-300 text-right text-slate-400">-</td>}
+                      </tr>
+
                       {event.budgets && event.budgets.length > 0 ? (
                         event.budgets.map((b, i) => {
                           const isPemasukan = b.budget_type === 'pemasukan';
                           return (
                             <tr key={b.id} className={i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
-                              <td className="p-2 border border-slate-300 text-center font-bold">{i + 1}</td>
+                              <td className="p-2 border border-slate-300 text-center font-bold">{i + 2}</td>
                               <td className="p-2 border border-slate-300 font-bold">
                                 {b.item_name}{' '}
                                 <span className="text-[9px] font-normal text-slate-500">
-                                  ({b.budget_type === 'pemasukan' ? 'Pemasukan Manual' : b.budget_type === 'rab' ? 'RAB' : 'Realisasi'})
+                                  ({b.budget_type === 'pemasukan' ? 'Pemasukan / Sumbangan' : b.budget_type === 'rab' ? 'RAB' : 'Realisasi'})
                                 </span>
                               </td>
-                              {pdfMode === 'lpj' && (
-                                <td className="p-2 border border-slate-300 text-right font-bold text-emerald-700">
-                                  {isPemasukan ? `+ Rp ${b.amount.toLocaleString('id-ID')}` : '-'}
-                                </td>
-                              )}
+                              <td className="p-2 border border-slate-300 text-right font-bold text-emerald-700">
+                                {isPemasukan ? `+ Rp ${b.amount.toLocaleString('id-ID')}` : '-'}
+                              </td>
                               <td className="p-2 border border-slate-300 text-right font-semibold">
                                 {b.budget_type === 'rab' ? `Rp ${b.amount.toLocaleString('id-ID')}` : '-'}
                               </td>
@@ -440,36 +451,22 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                             </tr>
                           );
                         })
-                      ) : (
-                        <tr>
-                          <td colSpan={pdfMode === 'lpj' ? 5 : 3} className="p-4 text-center text-slate-400 italic">
-                            Belum ada item keuangan manual yang dimasukkan.
-                          </td>
-                        </tr>
-                      )}
+                      ) : null}
                     </tbody>
                     <tfoot>
                       <tr className="bg-purple-100 font-extrabold">
-                        <td colSpan={2} className="p-2 border border-slate-300 text-right">TOTAL PEMASUKAN MANUAL & ANGGARAN</td>
-                        {pdfMode === 'lpj' && <td className="p-2 border border-slate-300 text-right text-emerald-800">Rp {totalPemasukanManual.toLocaleString('id-ID')}</td>}
-                        <td className="p-2 border border-slate-300 text-right text-purple-950">Rp {totalRAB.toLocaleString('id-ID')}</td>
-                        {pdfMode === 'lpj' && <td className="p-2 border border-slate-300 text-right text-amber-950">Rp {totalRealisasi.toLocaleString('id-ID')}</td>}
+                        <td colSpan={2} className="p-2 border border-slate-300 text-right">TOTAL KESELURUHAN</td>
+                        <td className="p-2 border border-slate-300 text-right text-emerald-800 font-black">Rp {totalPemasukanGlobal.toLocaleString('id-ID')}</td>
+                        <td className="p-2 border border-slate-300 text-right text-purple-950 font-black">Rp {totalRAB.toLocaleString('id-ID')}</td>
+                        {pdfMode === 'lpj' && <td className="p-2 border border-slate-300 text-right text-amber-950 font-black">Rp {totalRealisasi.toLocaleString('id-ID')}</td>}
                       </tr>
                       {pdfMode === 'lpj' && (
-                        <>
-                          <tr className="bg-purple-200 font-black">
-                            <td colSpan={4} className="p-2 border border-slate-300 text-right uppercase">TOTAL PEMASUKAN GLOBAL (PARAMITA + PENDAFTARAN UMAT)</td>
-                            <td className="p-2 border border-slate-300 text-right text-emerald-950 font-black">
-                              Rp {totalPemasukanGlobal.toLocaleString('id-ID')}
-                            </td>
-                          </tr>
-                          <tr className="bg-purple-900 text-white font-black text-xs">
-                            <td colSpan={4} className="p-2 border border-slate-300 text-right uppercase">SALDO KEUANGAN EVENT (TOTAL PEMASUKAN GLOBAL - REALISASI)</td>
-                            <td className={`p-2 border border-slate-300 text-right ${saldoKasGlobal >= 0 ? 'text-amber-300' : 'text-rose-300'}`}>
-                              Rp {saldoKasGlobal.toLocaleString('id-ID')}
-                            </td>
-                          </tr>
-                        </>
+                        <tr className="bg-purple-900 text-white font-black text-xs">
+                          <td colSpan={4} className="p-2 border border-slate-300 text-right uppercase">SALDO KEUANGAN KEGIATAN (TOTAL PEMASUKAN - REALISASI)</td>
+                          <td className={`p-2 border border-slate-300 text-right ${saldoKasGlobal >= 0 ? 'text-amber-300' : 'text-rose-300'}`}>
+                            Rp {saldoKasGlobal.toLocaleString('id-ID')}
+                          </td>
+                        </tr>
                       )}
                     </tfoot>
                   </table>

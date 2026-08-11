@@ -19,7 +19,7 @@ export function exportRABToExcel(
 
   // Insert Umat Registration Fee Income if present
   if (totalUmatRegistrationFees > 0 || registrationsCount > 0) {
-    const label = `Biaya Event Umat Terdaftar (${registrationsCount} Umat)`;
+    const label = `Biaya Pendaftaran Kegiatan Umat (${registrationsCount} Umat)`;
     itemMap[label] = {
       pemasukan: Number(totalUmatRegistrationFees),
       rab: 0,
@@ -70,7 +70,7 @@ export function exportRABToExcel(
         <x:ExcelWorkbook>
           <x:ExcelWorksheets>
             <x:ExcelWorksheet>
-              <x:Name>Laporan Keuangan Event</x:Name>
+              <x:Name>Laporan Keuangan Kegiatan</x:Name>
               <x:WorksheetOptions>
                 <x:DisplayGridlines/>
               </x:WorksheetOptions>
@@ -95,10 +95,10 @@ export function exportRABToExcel(
     <body>
       <table>
         <tr>
-          <td colspan="6" class="title-header">LAPORAN KEUANGAN & DANA PARAMITA EVENT - VIHARA MNSBDI</td>
+          <td colspan="6" class="title-header">LAPORAN KEUANGAN KEGIATAN - VIHARA MNSBDI</td>
         </tr>
         <tr>
-          <td colspan="2" class="meta-row"><b>Nama Event:</b></td>
+          <td colspan="2" class="meta-row"><b>Nama Kegiatan:</b></td>
           <td colspan="4" class="meta-row">${eventTitle}</td>
         </tr>
         <tr>
@@ -110,7 +110,7 @@ export function exportRABToExcel(
           <tr>
             <th style="width: 40px;">No</th>
             <th style="width: 250px;">Nama Item / Deskripsi</th>
-            <th style="width: 170px;">Dana Paramita (Pemasukan)</th>
+            <th style="width: 170px;">Total Pemasukan (Rp)</th>
             <th style="width: 170px;">Anggaran Rencana (RAB)</th>
             <th style="width: 170px;">Realisasi Pengeluaran</th>
             <th style="width: 200px;">Catatan</th>
