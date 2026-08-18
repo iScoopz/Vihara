@@ -1,31 +1,36 @@
 import React from 'react';
-import { Printer, FileSpreadsheet, FileText, Users } from 'lucide-react';
-import { ViharaEvent } from '@/types/database';
-import { exportSkenarioKerjaToExcel } from '@/lib/export-utils';
+import { Printer, FileSpreadsheet, FileText, Users, Download } from 'lucide-react';
+import { ViharaEvent, EventRegistration } from '@/types/database';
+import { exportSkenarioKerjaToExcel, exportLPJToExcel } from '@/lib/export-utils';
 
 interface EventLaporanTabProps {
   event: ViharaEvent;
+  registrations?: EventRegistration[];
   onOpenPdfModal: (mode: 'proposal' | 'lpj' | 'peserta') => void;
 }
 
-export const EventLaporanTab: React.FC<EventLaporanTabProps> = ({ event, onOpenPdfModal }) => {
+export const EventLaporanTab: React.FC<EventLaporanTabProps> = ({ 
+  event, 
+  registrations = [], 
+  onOpenPdfModal 
+}) => {
   return (
     <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4 print:hidden">
       <h3 className="text-base font-black text-slate-900 dark:text-white border-b border-purple-100 dark:border-purple-900/60 pb-3">
         Pusat Cetak & Export Laporan Event
       </h3>
       <p className="text-xs text-slate-600 dark:text-slate-300">
-        Gunakan tombol di bawah untuk mencetak List Peserta (Ketua Acara), Proposal Event, Laporan Pertanggungjawaban (LPJ), atau mengunduh Skenario Kerja dalam format Excel.
+        Gunakan tombol di bawah untuk mencetak List Peserta (Ketua Acara), Proposal Event, Laporan Pertanggungjawaban (LPJ PDF / Excel), atau mengunduh Skenario Kerja dalam format Excel.
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
         <button
           onClick={() => onOpenPdfModal('peserta')}
           className="p-5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-left space-y-2 hover:border-emerald-500 cursor-pointer transition shadow-sm"
         >
           <Users className="text-emerald-600" size={24} />
           <h4 className="font-extrabold text-slate-900 dark:text-white text-sm">List Peserta (Ketua Acara)</h4>
-          <p className="text-[11px] text-slate-500">Mencetak daftar nama peserta terdaftar & lembar paraf presensi (tanpa data rincian keuangan/biaya).</p>
+          <p className="text-[11px] text-slate-500">Mencetak daftar nama peserta terdaftar, status pelunasan & lembar paraf presensi.</p>
         </button>
 
         <button
@@ -52,7 +57,21 @@ export const EventLaporanTab: React.FC<EventLaporanTabProps> = ({ event, onOpenP
         >
           <FileText className="text-amber-600" size={24} />
           <h4 className="font-extrabold text-slate-900 dark:text-white text-sm">Cetak LPJ Event (PDF)</h4>
-          <p className="text-[11px] text-slate-500">Mencetak Laporan Pertanggungjawaban LENGKAP dengan Rekap Presensi Umat & Realisasi Biaya.</p>
+          <p className="text-[11px] text-slate-500">Mencetak Laporan Pertanggungjawaban LENGKAP dengan Rekap Presensi Umat & Realisasi Biaya (PDF Siap Cetak).</p>
+        </button>
+
+        <button
+          onClick={() => exportLPJToExcel(event, registrations)}
+          className="p-5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 text-left space-y-2 hover:border-emerald-500 cursor-pointer transition shadow-sm"
+        >
+          <div className="flex items-center justify-between">
+            <FileSpreadsheet className="text-emerald-700 dark:text-emerald-400" size={24} />
+            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200">
+              Download .XLS
+            </span>
+          </div>
+          <h4 className="font-extrabold text-slate-900 dark:text-white text-sm">Download LPJ Event (Excel)</h4>
+          <p className="text-[11px] text-slate-500">Mengunduh Laporan Pertanggungjawaban LENGKAP berformat Excel (.xls) beserta Rekap Keuangan & Kehadiran.</p>
         </button>
       </div>
     </div>

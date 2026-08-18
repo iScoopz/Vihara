@@ -719,6 +719,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
       {activeTab === 'laporan' && (
         <EventLaporanTab
           event={event}
+          registrations={registrations}
           onOpenPdfModal={(mode) => {
             setPdfMode(mode);
             setIsPdfModalOpen(true);

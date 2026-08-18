@@ -1,6 +1,7 @@
 import React from 'react';
-import { Printer, X } from 'lucide-react';
+import { Printer, X, FileSpreadsheet } from 'lucide-react';
 import { ViharaEvent, EventRegistration, UmatBagian } from '@/types/database';
+import { exportLPJToExcel } from '@/lib/export-utils';
 
 interface EventPdfModalProps {
   event: ViharaEvent;
@@ -15,7 +16,8 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
   event,
   registrations,
   pdfMode,
-  onClose}) => {
+  onClose
+}) => {
   const org = event.org_structure;
   const pemasukanItems = event.budgets?.filter(b => b.budget_type === 'pemasukan') || [];
   const rabItems = event.budgets?.filter(b => b.budget_type === 'rab') || [];
@@ -101,6 +103,15 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
           </div>
 
           <div className="flex items-center gap-3">
+            {pdfMode === 'lpj' && (
+              <button
+                onClick={() => exportLPJToExcel(event, registrations)}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-black shadow-lg transition cursor-pointer flex items-center gap-1.5"
+              >
+                <FileSpreadsheet size={14} />
+                <span>Download Excel (LPJ)</span>
+              </button>
+            )}
             <button
               onClick={() => window.print()}
               className="gradient-mnsbdi px-4 py-2 rounded-xl text-xs font-black shadow-lg hover:opacity-90 transition cursor-pointer flex items-center gap-1.5"
