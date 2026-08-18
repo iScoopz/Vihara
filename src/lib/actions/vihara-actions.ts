@@ -622,13 +622,26 @@ export async function getEvents(): Promise<ViharaEvent[]> {
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      const [eventsRes, regsRes] = await Promise.all([
+      const [eventsRes, regsRes, budgetRes] = await Promise.all([
         supabase.from('events').select('*').order('event_date', { ascending: true }),
-        supabase.from('event_registrations').select('event_id')
+        supabase.from('event_registrations').select('event_id'),
+        supabase.from('event_budgets').select('*')
       ]);
 
       if (eventsRes.data) {
         const dbRegs = regsRes.data || [];
+        const dbBudgets: EventBudget[] = budgetRes.data || [];
+        
+        // Sync dbBudgets with local budgetsStore
+        dbBudgets.forEach(db => {
+          const idx = budgetsStore.findIndex(b => b.id === db.id);
+          if (idx !== -1) {
+            budgetsStore[idx] = db;
+          } else {
+            budgetsStore.push(db);
+          }
+        });
+
         return eventsRes.data.map(ev => {
           const dbCount = dbRegs.filter(r => r.event_id === ev.id).length;
           const mockCount = registrationsStore.filter(r => r.event_id === ev.id).length;
@@ -658,21 +671,36 @@ export async function getEventById(id: string): Promise<ViharaEvent | null> {
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      const [eventRes, prRes, skRes, regRes] = await Promise.all([
+      const [eventRes, prRes, skRes, regRes, budgetRes] = await Promise.all([
         supabase.from('events').select('*').eq('id', id).single(),
         supabase.from('event_proposal_rundowns').select('*').eq('event_id', id),
         supabase.from('event_skenario_kerja').select('*').eq('event_id', id),
-        supabase.from('event_registrations').select('id', { count: 'exact', head: true }).eq('event_id', id)
+        supabase.from('event_registrations').select('id', { count: 'exact', head: true }).eq('event_id', id),
+        supabase.from('event_budgets').select('*').eq('event_id', id)
       ]);
 
       if (eventRes.data) {
         const evData = eventRes.data;
         const dbCount = regRes.count || 0;
         const mockCount = registrationsStore.filter(r => r.event_id === id).length;
+        
+        const dbBudgets: EventBudget[] = budgetRes.data || [];
+        // Sync dbBudgets with local budgetsStore
+        dbBudgets.forEach(db => {
+          const idx = budgetsStore.findIndex(b => b.id === db.id);
+          if (idx !== -1) {
+            budgetsStore[idx] = db;
+          } else {
+            budgetsStore.push(db);
+          }
+        });
+
+        const evBudgets = budgetsStore.filter(b => b.event_id === id);
+
         return {
           ...evData,
           registrations_count: Math.max(dbCount, mockCount),
-          budgets: budgetsStore.filter(b => b.event_id === id),
+          budgets: evBudgets,
           committees: committeesStore.filter(c => c.event_id === id),
           proposal_rundowns: prRes.data && prRes.data.length > 0 ? prRes.data : (evData.proposal_rundowns || []),
           skenario_kerja: skRes.data && skRes.data.length > 0 ? skRes.data : (evData.skenario_kerja || [])

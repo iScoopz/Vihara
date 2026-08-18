@@ -170,8 +170,7 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                     <th className="p-2.5 border border-slate-300 text-center w-12">L/P</th>
                     <th className="p-2.5 border border-slate-300 text-center">Bagian Umat</th>
                     <th className="p-2.5 border border-slate-300">Cetya & HAN Naungan</th>
-                    <th className="p-2.5 border border-slate-300 text-center">No. Telepon / HP</th>
-                    <th className="p-2.5 border border-slate-300 text-center">Status Presensi</th>
+                    <th className="p-2.5 border border-slate-300 text-center">Status Pelunasan</th>
                     <th className="p-2.5 border border-slate-300 text-center w-28">Paraf / TTD</th>
                   </tr>
                 </thead>
@@ -192,14 +191,11 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                         <td className="p-2 border border-slate-300 text-slate-600">
                           {reg.profile?.cetya || '-'} / {reg.profile?.han || '-'}
                         </td>
-                        <td className="p-2 border border-slate-300 text-center font-mono font-semibold text-slate-700">
-                          {reg.profile?.phone || '-'}
-                        </td>
                         <td className="p-2 border border-slate-300 text-center font-bold">
-                          {reg.is_attended ? (
-                            <span className="text-emerald-700 font-extrabold">✓ Hadir</span>
+                          {reg.is_paid ? (
+                            <span className="text-emerald-700 font-extrabold">✓ Lunas</span>
                           ) : (
-                            <span className="text-slate-400">Belum Presensi</span>
+                            ''
                           )}
                         </td>
                         <td className="p-2 border border-slate-300 text-center text-slate-300 text-[10px]">
@@ -209,7 +205,7 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={8} className="p-6 text-center text-slate-400 italic">
+                      <td colSpan={7} className="p-6 text-center text-slate-400 italic">
                         Belum ada data pendaftar pada kegiatan ini.
                       </td>
                     </tr>
