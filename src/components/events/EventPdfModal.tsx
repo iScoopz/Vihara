@@ -417,7 +417,7 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                         <th className="p-2 border border-slate-300 text-right">Anggaran RAB (Rp)</th>
                         {pdfMode === 'lpj' && <th className="p-2 border border-slate-300 text-right">Realisasi (Rp)</th>}
                         <th className="p-2 border border-slate-300 text-right">
-                          {pdfMode === 'lpj' ? 'Selisih (RAB vs Realisasi)' : 'Proyeksi Selisih / Surplus'}
+                          Selisih (Rp)
                         </th>
                       </tr>
                     </thead>
@@ -461,16 +461,34 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                         const groupedPdfItems = Object.values(pdfGroupedMap);
 
                         return groupedPdfItems.map((item, i) => {
-                          const selisihProposal = item.pemasukan - item.rab;
-                          const selisihLpj = item.rab > 0 && item.realisasi > 0 
-                            ? item.rab - item.realisasi 
-                            : item.pemasukan > 0 
-                              ? item.pemasukan 
-                              : item.realisasi > 0 
-                                ? -item.realisasi 
-                                : -item.rab;
+                          const hasRAB = item.rab > 0;
+                          const hasRealisasi = item.realisasi > 0;
+                          const hasPemasukan = item.pemasukan > 0;
 
-                          const displayedSelisih = pdfMode === 'lpj' ? selisihLpj : selisihProposal;
+                          let displayedSelisih = 0;
+                          let isOverBudget = false;
+                          let isSurplus = false;
+
+                          if (pdfMode === 'lpj') {
+                            if (hasPemasukan) {
+                              displayedSelisih = item.pemasukan;
+                              isSurplus = true;
+                            } else if (hasRAB && hasRealisasi) {
+                              displayedSelisih = item.rab - item.realisasi;
+                              if (displayedSelisih < 0) isOverBudget = true;
+                              else if (displayedSelisih > 0) isSurplus = true;
+                            } else if (hasRealisasi) {
+                              // Pengeluaran langsung tanpa anggaran RAB awal
+                              displayedSelisih = -item.realisasi;
+                              isOverBudget = false; // Bukan over-budget
+                            } else if (hasRAB) {
+                              displayedSelisih = -item.rab;
+                            }
+                          } else {
+                            // Mode proposal
+                            displayedSelisih = item.pemasukan - item.rab;
+                            if (displayedSelisih > 0) isSurplus = true;
+                          }
 
                           return (
                             <tr key={item.key} className={i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
@@ -487,8 +505,12 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                                   {item.realisasi > 0 ? `Rp ${item.realisasi.toLocaleString('id-ID')}` : '-'}
                                 </td>
                               )}
-                              <td className={`p-2 border border-slate-300 text-right font-bold ${
-                                displayedSelisih > 0 ? 'text-emerald-700' : displayedSelisih < 0 ? 'text-rose-700' : 'text-slate-500'
+                              <td className={`p-2 border border-slate-300 text-right ${
+                                isOverBudget 
+                                  ? 'text-rose-700 font-bold' 
+                                  : isSurplus 
+                                    ? 'text-emerald-700 font-bold' 
+                                    : 'text-slate-800 font-semibold'
                               }`}>
                                 {displayedSelisih > 0 
                                   ? `+ Rp ${displayedSelisih.toLocaleString('id-ID')}`
@@ -506,6 +528,8 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                         const selisihTotalProposal = totalPemasukanGlobal - totalRAB;
                         const selisihTotalLpj = totalRAB - totalRealisasi;
                         const displayedTotalSelisih = pdfMode === 'lpj' ? selisihTotalLpj : selisihTotalProposal;
+                        const isTotalOver = pdfMode === 'lpj' ? (totalRAB > 0 && totalRealisasi > totalRAB) : false;
+                        const isTotalSurplus = displayedTotalSelisih > 0;
 
                         return (
                           <>
@@ -515,7 +539,7 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                               <td className="p-2 border border-slate-300 text-right text-purple-950 font-black">Rp {totalRAB.toLocaleString('id-ID')}</td>
                               {pdfMode === 'lpj' && <td className="p-2 border border-slate-300 text-right text-amber-950 font-black">Rp {totalRealisasi.toLocaleString('id-ID')}</td>}
                               <td className={`p-2 border border-slate-300 text-right font-black ${
-                                displayedTotalSelisih >= 0 ? 'text-emerald-800' : 'text-rose-800'
+                                isTotalOver ? 'text-rose-800' : isTotalSurplus ? 'text-emerald-800' : 'text-slate-800'
                               }`}>
                                 {displayedTotalSelisih >= 0 
                                   ? `+ Rp ${displayedTotalSelisih.toLocaleString('id-ID')}` 

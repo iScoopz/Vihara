@@ -559,7 +559,7 @@ export function exportLPJToExcel(event: ViharaEvent, registrations: EventRegistr
             <th style="width: 140px;">Pemasukan (Rp)</th>
             <th style="width: 140px;">Target RAB (Rp)</th>
             <th style="width: 140px;">Realisasi (Rp)</th>
-            <th style="width: 150px;">Selisih (RAB vs Realisasi)</th>
+            <th style="width: 150px;">Selisih (Rp)</th>
             <th style="width: 150px;">Catatan</th>
           </tr>
         </thead>
@@ -575,13 +575,40 @@ export function exportLPJToExcel(event: ViharaEvent, registrations: EventRegistr
             <td><span style="color:#047857; font-size:10px;">Penerimaan Pendaftaran</span></td>
           </tr>
           ${groupedPdfItems.map((item, idx) => {
-            const selisihLpj = item.rab > 0 && item.realisasi > 0 
-              ? item.rab - item.realisasi 
-              : item.pemasukan > 0 
-                ? item.pemasukan 
-                : item.realisasi > 0 
-                  ? -item.realisasi 
-                  : -item.rab;
+            const hasRAB = item.rab > 0;
+            const hasRealisasi = item.realisasi > 0;
+            const hasPemasukan = item.pemasukan > 0;
+
+            let displayedSelisih = 0;
+            let isOverBudget = false;
+            let isSurplus = false;
+
+            if (hasPemasukan) {
+              displayedSelisih = item.pemasukan;
+              isSurplus = true;
+            } else if (hasRAB && hasRealisasi) {
+              displayedSelisih = item.rab - item.realisasi;
+              if (displayedSelisih < 0) isOverBudget = true;
+              else if (displayedSelisih > 0) isSurplus = true;
+            } else if (hasRealisasi) {
+              // Pengeluaran langsung tanpa rencana RAB awal (misal Transfer Makanan)
+              displayedSelisih = -item.realisasi;
+              isOverBudget = false; // Bukan over budget, hanya pengeluaran langsung
+            } else if (hasRAB) {
+              displayedSelisih = -item.rab;
+            }
+
+            const formattedSelisih = displayedSelisih > 0 
+              ? `+ Rp ${displayedSelisih.toLocaleString('id-ID')}` 
+              : displayedSelisih < 0 
+                ? `- Rp ${Math.abs(displayedSelisih).toLocaleString('id-ID')}` 
+                : 'Rp 0';
+
+            const selisihStyle = isOverBudget 
+              ? 'color: #b91c1c; font-weight: bold;' 
+              : isSurplus 
+                ? 'color: #047857; font-weight: bold;' 
+                : 'color: #1e293b; font-weight: normal;';
 
             return `
               <tr class="${idx % 2 === 0 ? 'row-even' : 'row-odd'}">
@@ -596,12 +623,8 @@ export function exportLPJToExcel(event: ViharaEvent, registrations: EventRegistr
                 <td class="currency expense">
                   ${item.realisasi > 0 ? `Rp ${item.realisasi.toLocaleString('id-ID')}` : '-'}
                 </td>
-                <td class="currency ${selisihLpj > 0 ? 'surplus' : selisihLpj < 0 ? 'defisit' : ''}">
-                  ${selisihLpj > 0 
-                    ? `+ Rp ${selisihLpj.toLocaleString('id-ID')} (Hemat)` 
-                    : selisihLpj < 0 
-                      ? `- Rp ${Math.abs(selisihLpj).toLocaleString('id-ID')} (Over)` 
-                      : 'Rp 0 (Sesuai)'}
+                <td class="currency" style="${selisihStyle}">
+                  ${formattedSelisih}
                 </td>
                 <td style="color:#64748b; font-size:10px;">${item.notes}</td>
               </tr>
@@ -614,7 +637,7 @@ export function exportLPJToExcel(event: ViharaEvent, registrations: EventRegistr
             <td class="currency income">Rp ${totalPemasukanGlobal.toLocaleString('id-ID')}</td>
             <td class="currency">Rp ${totalRAB.toLocaleString('id-ID')}</td>
             <td class="currency expense">Rp ${totalRealisasi.toLocaleString('id-ID')}</td>
-            <td class="currency ${totalRAB - totalRealisasi >= 0 ? 'surplus' : 'defisit'}">
+            <td class="currency" style="${totalRAB > 0 && totalRealisasi > totalRAB ? 'color: #b91c1c; font-weight: bold;' : (totalRAB - totalRealisasi > 0) ? 'color: #047857; font-weight: bold;' : 'color: #1e293b;'}">
               ${totalRAB - totalRealisasi >= 0 
                 ? `+ Rp ${(totalRAB - totalRealisasi).toLocaleString('id-ID')}` 
                 : `- Rp ${Math.abs(totalRAB - totalRealisasi).toLocaleString('id-ID')}`}
