@@ -41,8 +41,13 @@ export default function AdminEventsListPage() {
   const handleToggleCompleteCard = async (eventId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    await toggleCompleteEvent(eventId);
-    await loadData();
+    const prev = events;
+    setEvents(events.map(ev => ev.id === eventId ? { ...ev, is_completed: !ev.is_completed } : ev));
+    try {
+      await toggleCompleteEvent(eventId);
+    } catch {
+      setEvents(prev);
+    }
   };
 
   const categories: ('all' | EventCategory)[] = ['all', 'Gongyo', 'Kensyu', 'Pertemuan'];

@@ -44,7 +44,7 @@ import {
   updateRegistrationExtraFees,
   toggleCompleteEvent
 } from '@/lib/actions/vihara-actions';
-import { ViharaEvent, Profile, EventRegistration, EventProposalRundown, EventSkenarioKerja } from '@/types/database';
+import { ViharaEvent, Profile, EventRegistration, EventProposalRundown, EventSkenarioKerja, EventBudget, EventOrgStructure } from '@/types/database';
 
 import { EventOverviewTab } from '@/components/events/EventOverviewTab';
 import { EventPanitiaTab } from '@/components/events/EventPanitiaTab';
@@ -181,44 +181,152 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
     e.preventDefault();
     if (!selectedUmatId) return;
 
+    const profileObj = profiles.find(p => p.id === selectedUmatId);
+    const tempId = `r_${Date.now()}`;
+    const optimisticReg: EventRegistration = {
+      id: tempId,
+      event_id: event.id,
+      profile_id: selectedUmatId,
+      registration_method: 'admin',
+      registered_by: 'admin',
+      is_attended: false,
+      created_at: new Date().toISOString(),
+      profile: profileObj
+    };
+
+    setIsRegModalOpen(false);
+    setSelectedUmatId('');
+    setRegistrations(prev => [...prev, optimisticReg]);
+    setEvent(prev => prev ? { ...prev, registrations_count: (prev.registrations_count || 0) + 1 } : null);
+    showToast('Umat berhasil didaftarkan ke event ini.', 'success', 'Pendaftaran Berhasil');
+
     const res = await registerForEvent(event.id, selectedUmatId, 'p1');
 
     if (res.error) {
-      setRegMsg(res.error);
+      setRegistrations(prev => prev.filter(r => r.id !== tempId));
+      setEvent(prev => prev ? { ...prev, registrations_count: Math.max(0, (prev.registrations_count || 1) - 1) } : null);
       showToast(res.error, 'error', 'Gagal Mendaftarkan Umat');
-    } else {
-      setRegMsg('✓ Umat berhasil didaftarkan oleh Admin');
-      showToast('Umat berhasil didaftarkan ke event ini.', 'success', 'Pendaftaran Berhasil');
-      setTimeout(() => setRegMsg(''), 3000);
-      setIsRegModalOpen(false);
-      loadData();
+    } else if (res.registration) {
+      setRegistrations(prev => prev.map(r => r.id === tempId ? { ...res.registration, profile: profileObj } : r));
     }
   };
 
   const handleCancelRegistration = async (regId: string) => {
-    await cancelRegistration(regId);
+    const target = registrations.find(r => r.id === regId);
+    if (!target) return;
+
+    // Instant optimistic update (0ms)
+    setRegistrations(prev => prev.filter(r => r.id !== regId));
+    setEvent(prev => prev ? { ...prev, registrations_count: Math.max(0, (prev.registrations_count || 1) - 1) } : null);
     showToast('Pendaftaran umat telah dibatalkan dari event ini.', 'info', 'Pembatalan Pendaftaran');
-    loadData();
+
+    try {
+      await cancelRegistration(regId);
+    } catch (err) {
+      setRegistrations(prev => [...prev, target]);
+      setEvent(prev => prev ? { ...prev, registrations_count: (prev.registrations_count || 0) + 1 } : null);
+      showToast('Gagal membatalkan pendaftaran di server.', 'error', 'Kesalahan Jaringan');
+    }
   };
 
   const handleToggleAttendance = async (regId: string) => {
-    const res = await toggleAttendance(regId);
+    const target = registrations.find(r => r.id === regId);
+    if (!target) return;
+    const newAttended = !target.is_attended;
+
+    // Instant optimistic update (0ms)
+    setRegistrations(prev =>
+      prev.map(r => {
+        if (r.id === regId) {
+          return {
+            ...r,
+            is_attended: newAttended,
+            attended_at: newAttended ? new Date().toISOString() : undefined
+          };
+        }
+        return r;
+      })
+    );
+
     showToast(
-      res.is_attended ? 'Presensi kehadiran umat ditandai HADIR.' : 'Presensi kehadiran ditandai ABSEN.',
+      newAttended ? `Presensi ${target.profile?.full_name || 'umat'} ditandai HADIR.` : `Presensi ${target.profile?.full_name || 'umat'} ditandai ABSEN.`,
       'success',
       'Update Presensi'
     );
-    loadData();
+
+    try {
+      await toggleAttendance(regId, newAttended);
+    } catch (err) {
+      setRegistrations(prev =>
+        prev.map(r => (r.id === regId ? target : r))
+      );
+      showToast('Gagal memperbarui status presensi di server.', 'error', 'Kesalahan Jaringan');
+    }
   };
 
   const handleTogglePayment = async (regId: string, amount?: number) => {
-    await toggleRegistrationPayment(regId, amount);
-    loadData();
+    const target = registrations.find(r => r.id === regId);
+    if (!target) return;
+    const newPaid = !target.is_paid;
+    const targetAmount = amount !== undefined ? amount : (target.amount_paid || 0);
+
+    // Instant optimistic update (0ms)
+    setRegistrations(prev =>
+      prev.map(r => {
+        if (r.id === regId) {
+          return {
+            ...r,
+            is_paid: newPaid,
+            paid_at: newPaid ? new Date().toISOString() : undefined,
+            amount_paid: newPaid ? targetAmount : 0
+          };
+        }
+        return r;
+      })
+    );
+
+    showToast(
+      newPaid ? `Status pembayaran ${target.profile?.full_name || 'umat'} ditandai LUNAS.` : `Status pembayaran ${target.profile?.full_name || 'umat'} diubah ke Belum Lunas.`,
+      newPaid ? 'success' : 'info',
+      'Update Pelunasan'
+    );
+
+    try {
+      await toggleRegistrationPayment(regId, targetAmount, newPaid);
+    } catch (err) {
+      setRegistrations(prev =>
+        prev.map(r => (r.id === regId ? target : r))
+      );
+      showToast('Gagal mengubah status pelunasan di server.', 'error', 'Kesalahan Jaringan');
+    }
   };
 
   const handleToggleExtraFeeForReg = async (regId: string, feeId: string, newSelectedIds: string[], newTotalAmount: number) => {
-    await updateRegistrationExtraFees(regId, newSelectedIds, newTotalAmount);
-    loadData();
+    const target = registrations.find(r => r.id === regId);
+    if (!target) return;
+
+    // Instant optimistic update (0ms)
+    setRegistrations(prev =>
+      prev.map(r => {
+        if (r.id === regId) {
+          return {
+            ...r,
+            selected_extra_fee_ids: newSelectedIds,
+            amount_paid: r.is_paid ? newTotalAmount : r.amount_paid
+          };
+        }
+        return r;
+      })
+    );
+
+    try {
+      await updateRegistrationExtraFees(regId, newSelectedIds, newTotalAmount);
+    } catch (err) {
+      setRegistrations(prev =>
+        prev.map(r => (r.id === regId ? target : r))
+      );
+      showToast('Gagal memperbarui biaya ekstra di server.', 'error', 'Kesalahan Jaringan');
+    }
   };
 
   const openAddSubModal = (type: 'sub_acara' | 'sub_umum') => {
@@ -230,16 +338,54 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
 
   const handleAddSubSection = async (e: React.FormEvent) => {
     e.preventDefault();
-    await addSubSectionToOrg(event.id, subSectionType, subRoleName, subPicName);
+    const newSub = {
+      id: `sub_${Date.now()}`,
+      role_name: subRoleName,
+      pic_name: subPicName
+    };
+    setEvent(prev => {
+      if (!prev) return null;
+      const currentOrg: EventOrgStructure = prev.org_structure || {
+        ketua_name: '',
+        sekretaris_name: '',
+        bendahara_name: '',
+        pj_acara_name: '',
+        pj_umum_name: '',
+        sub_acara: [],
+        sub_umum: [],
+        vip_list: []
+      };
+      const list = subSectionType === 'sub_acara' ? (currentOrg.sub_acara || []) : (currentOrg.sub_umum || []);
+      return {
+        ...prev,
+        org_structure: {
+          ...currentOrg,
+          [subSectionType]: [...list, newSub]
+        }
+      };
+    });
     setIsAddSubModalOpen(false);
     setSubRoleName('');
     setSubPicName('');
-    loadData();
+    showToast('Anggota panitia berhasil ditambahkan.', 'success', 'Panitia');
+
+    await addSubSectionToOrg(event.id, subSectionType, newSub.role_name, newSub.pic_name);
   };
 
   const handleDeleteSubSection = async (type: 'sub_acara' | 'sub_umum', subId: string) => {
+    setEvent(prev => {
+      if (!prev || !prev.org_structure) return prev;
+      const list = type === 'sub_acara' ? (prev.org_structure.sub_acara || []) : (prev.org_structure.sub_umum || []);
+      return {
+        ...prev,
+        org_structure: {
+          ...prev.org_structure,
+          [type]: list.filter(item => item.id !== subId)
+        }
+      };
+    });
+    showToast('Anggota panitia berhasil dihapus.', 'info', 'Panitia');
     await deleteSubSectionFromOrg(event.id, type, subId);
-    loadData();
   };
 
   const openEditSubModal = (type: 'sub_acara' | 'sub_umum', sub: { id: string; role_name: string; pic_name: string }) => {
@@ -252,9 +398,20 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
 
   const handleUpdateSubSection = async (e: React.FormEvent) => {
     e.preventDefault();
-    await updateSubSectionInOrg(event.id, editSubType, editSubId, editSubRoleName, editSubPicName);
+    setEvent(prev => {
+      if (!prev || !prev.org_structure) return prev;
+      const list = editSubType === 'sub_acara' ? (prev.org_structure.sub_acara || []) : (prev.org_structure.sub_umum || []);
+      return {
+        ...prev,
+        org_structure: {
+          ...prev.org_structure,
+          [editSubType]: list.map(item => item.id === editSubId ? { ...item, role_name: editSubRoleName, pic_name: editSubPicName } : item)
+        }
+      };
+    });
     setIsEditSubModalOpen(false);
-    loadData();
+    showToast('Anggota panitia berhasil diperbarui.', 'success', 'Panitia');
+    await updateSubSectionInOrg(event.id, editSubType, editSubId, editSubRoleName, editSubPicName);
   };
 
   const handleOpenBudgetModal = (initialName?: string, initialType?: 'rab' | 'realisasi' | 'pemasukan') => {
@@ -276,40 +433,75 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
   const handleSaveEditBudget = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingGroupedBudget) return;
-    await updateGroupedBudget(event.id, {
-      itemName: editBudgetName,
-      rabId: editingGroupedBudget.rabId,
-      rabAmount: Number(editRabAmount) || 0,
-      realisasiId: editingGroupedBudget.realisasiId,
-      realisasiAmount: Number(editRealisasiAmount) || 0,
-      pemasukanId: editingGroupedBudget.pemasukanId,
-      pemasukanAmount: Number(editPemasukanAmount) || 0,
+    const name = editBudgetName;
+    const rabAmt = Number(editRabAmount) || 0;
+    const reaAmt = Number(editRealisasiAmount) || 0;
+    const pemAmt = Number(editPemasukanAmount) || 0;
+
+    setEvent(prev => {
+      if (!prev) return null;
+      let budgets = [...(prev.budgets || [])];
+      if (editingGroupedBudget.rabId) {
+        budgets = budgets.map(b => b.id === editingGroupedBudget.rabId ? { ...b, item_name: name, amount: rabAmt } : b);
+      } else if (rabAmt > 0) {
+        budgets.push({ id: `b_rab_${Date.now()}`, event_id: prev.id, item_name: name, budget_type: 'rab', amount: rabAmt });
+      }
+      if (editingGroupedBudget.realisasiId) {
+        budgets = budgets.map(b => b.id === editingGroupedBudget.realisasiId ? { ...b, item_name: name, amount: reaAmt } : b);
+      } else if (reaAmt > 0) {
+        budgets.push({ id: `b_rea_${Date.now()}`, event_id: prev.id, item_name: name, budget_type: 'realisasi', amount: reaAmt });
+      }
+      if (editingGroupedBudget.pemasukanId) {
+        budgets = budgets.map(b => b.id === editingGroupedBudget.pemasukanId ? { ...b, item_name: name, amount: pemAmt } : b);
+      } else if (pemAmt > 0) {
+        budgets.push({ id: `b_pem_${Date.now()}`, event_id: prev.id, item_name: name, budget_type: 'pemasukan', amount: pemAmt });
+      }
+      return { ...prev, budgets };
     });
+
     showToast('Perubahan item keuangan berhasil disimpan.', 'success', 'Item Keuangan Diperbarui');
     setIsEditBudgetModalOpen(false);
     setEditingGroupedBudget(null);
-    loadData();
+
+    await updateGroupedBudget(event.id, {
+      itemName: name,
+      rabId: editingGroupedBudget.rabId,
+      rabAmount: rabAmt,
+      realisasiId: editingGroupedBudget.realisasiId,
+      realisasiAmount: reaAmt,
+      pemasukanId: editingGroupedBudget.pemasukanId,
+      pemasukanAmount: pemAmt,
+    });
   };
 
   const handleDeleteBudgetItems = async (ids: string[]) => {
-    await deleteBudgetItems(ids, event.id);
+    setEvent(prev => prev ? { ...prev, budgets: (prev.budgets || []).filter(b => !ids.includes(b.id)) } : null);
     showToast('Item keuangan berhasil dihapus secara total.', 'success', 'Item Dihapus');
-    loadData();
+    await deleteBudgetItems(ids, event.id);
   };
 
   const handleAddBudget = async (e: React.FormEvent) => {
     e.preventDefault();
-    await addBudgetItem({
+    const newBudget: EventBudget = {
+      id: `b_${Date.now()}`,
       event_id: event.id,
       item_name: budgetItem,
       budget_type: budgetType,
       amount: parseFloat(budgetAmount) || 0
-    });
+    };
 
+    setEvent(prev => prev ? { ...prev, budgets: [...(prev.budgets || []), newBudget] } : null);
     setIsBudgetModalOpen(false);
     setBudgetItem('');
     setBudgetAmount('');
-    loadData();
+    showToast('Item keuangan berhasil ditambahkan.', 'success', 'Keuangan');
+
+    await addBudgetItem({
+      event_id: event.id,
+      item_name: newBudget.item_name,
+      budget_type: newBudget.budget_type,
+      amount: newBudget.amount
+    });
   };
 
   // Proposal Rundown Handlers
@@ -342,6 +534,19 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
     const formattedTime = `${prStartTime} - ${prEndTime}`;
 
     if (editingProposalRundown) {
+      setEvent(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          proposal_rundowns: (prev.proposal_rundowns || []).map(r =>
+            r.id === editingProposalRundown.id
+              ? { ...r, day_date: formattedDate, time_slot: formattedTime, activity: prActivity, notes: prNotes }
+              : r
+          )
+        };
+      });
+      setIsProposalRundownModalOpen(false);
+      showToast('Susunan rundown berhasil diperbarui.', 'success', 'Proposal Rundown');
       await updateProposalRundown(event.id, editingProposalRundown.id, {
         day_date: formattedDate,
         time_slot: formattedTime,
@@ -349,6 +554,17 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
         notes: prNotes
       });
     } else {
+      const newItem: EventProposalRundown = {
+        id: `pr_${Date.now()}`,
+        event_id: event.id,
+        day_date: formattedDate,
+        time_slot: formattedTime,
+        activity: prActivity,
+        notes: prNotes
+      };
+      setEvent(prev => prev ? { ...prev, proposal_rundowns: [...(prev.proposal_rundowns || []), newItem] } : null);
+      setIsProposalRundownModalOpen(false);
+      showToast('Acara berhasil ditambahkan ke susunan rundown.', 'success', 'Proposal Rundown');
       await addProposalRundown(event.id, {
         day_date: formattedDate,
         time_slot: formattedTime,
@@ -356,13 +572,12 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
         notes: prNotes
       });
     }
-    setIsProposalRundownModalOpen(false);
-    loadData();
   };
 
   const handleDeleteProposalRundown = async (itemId: string) => {
+    setEvent(prev => prev ? { ...prev, proposal_rundowns: (prev.proposal_rundowns || []).filter(r => r.id !== itemId) } : null);
+    showToast('Acara rundown berhasil dihapus.', 'info', 'Proposal Rundown');
     await deleteProposalRundown(event.id, itemId);
-    loadData();
   };
 
   // Skenario Kerja Handlers
@@ -405,45 +620,76 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
       : '';
     const formattedPhase = `${skPhaseTag} (${formattedDateStr})`;
     const formattedTime = `${skStartTime} - ${skEndTime}`;
+    const execBidang = skExecutorBidangPj || (org?.pj_acara_name ? `PJ Acara Utama - ${org.pj_acara_name}` : 'Bidang Acara');
+    const interBidang = skInterbidBidangPj || (org?.pj_umum_name ? `PJ Bidang Umum Utama - ${org.pj_umum_name}` : 'Bidang Umum');
 
     if (editingSkenarioKerja) {
+      setEvent(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          skenario_kerja: (prev.skenario_kerja || []).map(item =>
+            item.id === editingSkenarioKerja.id
+              ? { ...item, day_phase: formattedPhase, time_slot: formattedTime, executor_bidang_pj: execBidang, activity: skActivity, interbid_bidang_pj: interBidang, notes: skNotes }
+              : item
+          )
+        };
+      });
+      setIsSkenarioKerjaModalOpen(false);
+      showToast('Skenario kerja berhasil diperbarui.', 'success', 'Skenario Kerja');
       await updateSkenarioKerja(event.id, editingSkenarioKerja.id, {
         day_phase: formattedPhase,
         time_slot: formattedTime,
-        executor_bidang_pj: skExecutorBidangPj || (org?.pj_acara_name ? `PJ Acara Utama - ${org.pj_acara_name}` : 'Bidang Acara'),
+        executor_bidang_pj: execBidang,
         activity: skActivity,
-        interbid_bidang_pj: skInterbidBidangPj || (org?.pj_umum_name ? `PJ Bidang Umum Utama - ${org.pj_umum_name}` : 'Bidang Umum'),
+        interbid_bidang_pj: interBidang,
         notes: skNotes
       });
     } else {
+      const newSk: EventSkenarioKerja = {
+        id: `sk_${Date.now()}`,
+        event_id: event.id,
+        day_phase: formattedPhase,
+        time_slot: formattedTime,
+        executor_bidang_pj: execBidang,
+        activity: skActivity,
+        interbid_bidang_pj: interBidang,
+        notes: skNotes
+      };
+      setEvent(prev => prev ? { ...prev, skenario_kerja: [...(prev.skenario_kerja || []), newSk] } : null);
+      setIsSkenarioKerjaModalOpen(false);
+      showToast('Skenario kerja berhasil ditambahkan.', 'success', 'Skenario Kerja');
       await addSkenarioKerja(event.id, {
         day_phase: formattedPhase,
         time_slot: formattedTime,
-        executor_bidang_pj: skExecutorBidangPj || (org?.pj_acara_name ? `PJ Acara Utama - ${org.pj_acara_name}` : 'Bidang Acara'),
+        executor_bidang_pj: execBidang,
         activity: skActivity,
-        interbid_bidang_pj: skInterbidBidangPj || (org?.pj_umum_name ? `PJ Bidang Umum Utama - ${org.pj_umum_name}` : 'Bidang Umum'),
+        interbid_bidang_pj: interBidang,
         notes: skNotes
       });
     }
-    setIsSkenarioKerjaModalOpen(false);
-    loadData();
   };
 
   const handleDeleteSkenarioKerja = async (itemId: string) => {
+    setEvent(prev => prev ? { ...prev, skenario_kerja: (prev.skenario_kerja || []).filter(r => r.id !== itemId) } : null);
+    showToast('Item skenario kerja berhasil dihapus.', 'info', 'Skenario Kerja');
     await deleteSkenarioKerja(event.id, itemId);
-    loadData();
   };
 
   const handleTogglePublish = async () => {
     if (!event) return;
+    const nextPublished = !event.is_published;
+    setEvent(prev => prev ? { ...prev, is_published: nextPublished } : null);
+    showToast(nextPublished ? 'Event berhasil dipublikasikan.' : 'Publikasi event ditarik.', 'success', 'Status Publikasi');
     await togglePublishEvent(event.id);
-    loadData();
   };
 
   const handleToggleComplete = async () => {
     if (!event) return;
+    const nextCompleted = !event.is_completed;
+    setEvent(prev => prev ? { ...prev, is_completed: nextCompleted } : null);
+    showToast(nextCompleted ? 'Event ditandai telah selesai.' : 'Event dikembalikan ke status aktif.', 'success', 'Status Event');
     await toggleCompleteEvent(event.id);
-    loadData();
   };
 
   const isPastEvent = new Date(event.event_date) < new Date();
@@ -831,7 +1077,14 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
         isOpen={isPricingModalOpen}
         event={event}
         onClose={() => setIsPricingModalOpen(false)}
-        onSaved={loadData}
+        onSaved={(pricing, extraFees) => {
+          if (pricing && extraFees) {
+            setEvent(prev => prev ? { ...prev, pricing_per_bagian: pricing, extra_fees: extraFees } : null);
+            showToast('Pengaturan tarif & biaya ekstra berhasil disimpan.', 'success', 'Tarif Disimpan');
+          } else {
+            loadData();
+          }
+        }}
       />
     </div>
   );

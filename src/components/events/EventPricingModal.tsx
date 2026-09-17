@@ -7,7 +7,7 @@ interface EventPricingModalProps {
   isOpen: boolean;
   event: ViharaEvent;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (pricing?: Record<string, number>, extraFees?: EventExtraFee[]) => void;
 }
 
 const BAGIAN_LIST: UmatBagian[] = ['Bintang', 'GM', 'Pro-M 40s', 'Pro-M Progresif', 'Pria', 'Wanita', 'Inspirasi'];
@@ -63,9 +63,9 @@ export const EventPricingModal: React.FC<EventPricingModalProps> = ({
       formattedPricing[bgKey] = parseFloat(valStr) || 0;
     });
 
-    await updateEventPricing(event.id, formattedPricing, extraFees);
-    onSaved();
+    onSaved(formattedPricing, extraFees);
     onClose();
+    await updateEventPricing(event.id, formattedPricing, extraFees);
   };
 
   return (

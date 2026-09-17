@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CalendarDays, MapPin, Clock, CheckCircle2, UserCheck, Sparkles, Calendar as CalendarIcon, XCircle } from 'lucide-react';
-import { getEvents, registerForEvent, cancelRegistration, getRegistrationsForEvent } from '@/lib/actions/vihara-actions';
+import { getEvents, registerForEvent, cancelRegistration, getRegistrationsForEvent, getUserRegisteredEventIds } from '@/lib/actions/vihara-actions';
 import { ViharaEvent } from '@/types/database';
 
 import { useToast } from '@/components/ui/ToastNotification';
@@ -18,18 +18,13 @@ export default function PublicEventCatalogPage() {
   const currentUmatId = 'p2'; // Simulated logged-in Umat (Suryani Dewi)
 
   const loadCatalog = async () => {
-    const data = await getEvents();
+    const [data, myRegisteredIds] = await Promise.all([
+      getEvents(),
+      getUserRegisteredEventIds(currentUmatId)
+    ]);
     const publishedEvents = data.filter(ev => ev.is_published === true || ev.is_published === undefined);
     setEvents(publishedEvents);
-
-    const registeredIds: string[] = [];
-    for (const ev of data) {
-      const regs = await getRegistrationsForEvent(ev.id);
-      if (regs.some(r => r.profile_id === currentUmatId)) {
-        registeredIds.push(ev.id);
-      }
-    }
-    setRegisteredEventIds(registeredIds);
+    setRegisteredEventIds(myRegisteredIds);
   };
 
   useEffect(() => {
@@ -40,10 +35,21 @@ export default function PublicEventCatalogPage() {
     setLoadingId(eventId);
     setMessage(null);
 
-    const res = await registerForEvent(eventId, undefined, currentUmatId);
+    // Instant optimistic update (0ms)
+    setRegisteredEventIds(prev => [...prev, eventId]);
+    setEvents(prev =>
+      prev.map(ev => ev.id === eventId ? { ...ev, registrations_count: (ev.registrations_count || 0) + 1 } : ev)
+    );
+    showToast('Anda telah berhasil mendaftar pada event ini!', 'success', 'Pendaftaran Berhasil');
 
+    const res = await registerForEvent(eventId, undefined, currentUmatId);
     setLoadingId(null);
+
     if (res.error) {
+      setRegisteredEventIds(prev => prev.filter(id => id !== eventId));
+      setEvents(prev =>
+        prev.map(ev => ev.id === eventId ? { ...ev, registrations_count: Math.max(0, (ev.registrations_count || 1) - 1) } : ev)
+      );
       setMessage({ text: res.error, type: 'error' });
       showToast(res.error, 'error', 'Pendaftaran Gagal');
     } else {
@@ -51,8 +57,6 @@ export default function PublicEventCatalogPage() {
         text: '✓ Berhasil mendaftar event! Pendaftaran Anda dicatat otomatis (Self-Registration)', 
         type: 'success' 
       });
-      showToast('Anda telah berhasil mendaftar pada event ini!', 'success', 'Pendaftaran Berhasil');
-      loadCatalog();
     }
   };
 
@@ -60,13 +64,22 @@ export default function PublicEventCatalogPage() {
     if (!confirm('Apakah Anda yakin ingin membatalkan pendaftaran event ini?')) return;
     setLoadingId(eventId);
     setMessage(null);
-    const regs = await getRegistrationsForEvent(eventId);
-    const myReg = regs.find(r => r.profile_id === currentUmatId);
-    if (myReg) {
-      await cancelRegistration(myReg.id);
-      setMessage({ text: '✓ Pendaftaran event berhasil dibatalkan.', type: 'success' });
-      showToast('Pendaftaran Anda pada event ini berhasil dibatalkan.', 'info', 'Pembatalan Event');
-      loadCatalog();
+
+    // Instant optimistic update (0ms)
+    setRegisteredEventIds(prev => prev.filter(id => id !== eventId));
+    setEvents(prev =>
+      prev.map(ev => ev.id === eventId ? { ...ev, registrations_count: Math.max(0, (ev.registrations_count || 1) - 1) } : ev)
+    );
+    showToast('Pendaftaran Anda pada event ini berhasil dibatalkan.', 'info', 'Pembatalan Event');
+
+    try {
+      const regs = await getRegistrationsForEvent(eventId);
+      const myReg = regs.find(r => r.profile_id === currentUmatId);
+      if (myReg) {
+        await cancelRegistration(myReg.id);
+      }
+    } catch (e) {
+      console.error(e);
     }
     setLoadingId(null);
   };

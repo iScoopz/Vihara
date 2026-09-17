@@ -68,8 +68,12 @@ export default function InventoryPage() {
   }, []);
 
   const handleStockAdjust = async (id: string, delta: number) => {
+    setItems(prev =>
+      prev.map(item =>
+        item.id === id ? { ...item, stock_quantity: Math.max(0, item.stock_quantity + delta) } : item
+      )
+    );
     await updateStockQuantity(id, delta);
-    loadData();
   };
 
   const handleAddItem = async (e: React.FormEvent) => {

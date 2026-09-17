@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { UserCheck, MapPin, Building, Phone, Calendar, History, CheckCircle2, Edit2, Compass, Home } from 'lucide-react';
-import { getProfiles, getEvents, getRegistrationsForEvent, updateProfile } from '@/lib/actions/vihara-actions';
+import { getProfiles, getEvents, getRegistrationsForEvent, updateProfile, getUserRegistrationHistory } from '@/lib/actions/vihara-actions';
 import { Profile, ViharaEvent } from '@/types/database';
 
 export default function MemberProfilePage() {
@@ -30,7 +30,10 @@ export default function MemberProfilePage() {
 
   const loadProfileData = async (userId: string) => {
     setLoading(true);
-    const profs = await getProfiles();
+    const [profs, history] = await Promise.all([
+      getProfiles(),
+      getUserRegistrationHistory(userId)
+    ]);
     const me = profs.find(p => p.id === userId);
     if (!me) {
       setLoading(false);
@@ -38,21 +41,6 @@ export default function MemberProfilePage() {
     }
 
     setProfile(me);
-
-    const allEvents = await getEvents();
-    const history: { event: ViharaEvent; method: string; isAttended: boolean }[] = [];
-
-    for (const ev of allEvents) {
-      const regs = await getRegistrationsForEvent(ev.id);
-      const myReg = regs.find(r => r.profile_id === userId);
-      if (myReg) {
-        history.push({
-          event: ev,
-          method: myReg.registration_method,
-          isAttended: myReg.is_attended
-        });
-      }
-    }
     setUserRegistrations(history);
     setLoading(false);
   };
@@ -116,6 +104,25 @@ export default function MemberProfilePage() {
     e.preventDefault();
     if (!profile) return;
 
+    const updatedProfile: Profile = {
+      ...profile,
+      full_name: editFullName,
+      email: editEmail.trim() || undefined,
+      phone: editPhone,
+      birth_date: editBirthDate,
+      address: editAddress,
+      sentra: editSentra,
+      cetya: editCetya,
+      han: editHan,
+      emergency_contact: editEmergencyContact
+    };
+
+    // Instant optimistic update (0ms)
+    setProfile(updatedProfile);
+    setSaveSuccessMsg('✓ Profil berhasil diperbarui!');
+    setTimeout(() => setSaveSuccessMsg(''), 3000);
+    setIsEditModalOpen(false);
+
     await updateProfile(profile.id, {
       full_name: editFullName,
       email: editEmail.trim() || undefined,
@@ -127,11 +134,6 @@ export default function MemberProfilePage() {
       han: editHan,
       emergency_contact: editEmergencyContact
     });
-
-    setSaveSuccessMsg('✓ Profil berhasil diperbarui!');
-    setTimeout(() => setSaveSuccessMsg(''), 3000);
-    setIsEditModalOpen(false);
-    loadProfileData(profile.id);
   };
 
   if (loading) {
