@@ -91,122 +91,123 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
   });
 
   return (
-    <div id="printable-pdf-document-wrapper" className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 overflow-y-auto p-4 md:p-8">
+    <div id="printable-pdf-document-wrapper" className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 overflow-y-auto p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-4">
-        {/* Modal Controls (Hidden when printed) */}
-        <div className="bg-slate-900 p-4 rounded-2xl border border-purple-800 flex justify-between items-center text-white print:hidden">
-          <div className="flex items-center gap-2 text-xs font-bold">
-            <Printer size={16} className="text-purple-400" />
-            <span>Dokumen Siap Cetak: <strong className="text-amber-300 uppercase">
-              {pdfMode === 'proposal' ? 'Proposal Event' : pdfMode === 'lpj' ? 'LPJ Event' : 'Daftar Peserta (Ketua Acara)'}
-            </strong></span>
+        {/* Apple-style Minimal Floating Action Bar (Hidden when printed) */}
+        <div className="bg-[#1c1c1e] text-white px-5 py-3 rounded-full border border-white/10 shadow-xl flex justify-between items-center print:hidden">
+          <div className="flex items-center gap-2.5 text-xs font-medium">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+            <span className="text-[#a1a1a6]">
+              Dokumen: <strong className="text-white font-semibold">{pdfMode === 'proposal' ? 'Proposal Event' : pdfMode === 'lpj' ? 'LPJ Event' : 'Daftar Peserta'}</strong>
+            </span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {pdfMode === 'lpj' && (
               <button
                 onClick={() => exportLPJToExcel(event, registrations)}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-black shadow-lg transition cursor-pointer flex items-center gap-1.5"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-full text-xs font-semibold shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
               >
-                <FileSpreadsheet size={14} />
-                <span>Download Excel (LPJ)</span>
+                <FileSpreadsheet size={13} />
+                <span className="hidden sm:inline">Download Excel</span>
               </button>
             )}
             <button
               onClick={() => window.print()}
-              className="gradient-mnsbdi px-4 py-2 rounded-xl text-xs font-black shadow-lg hover:opacity-90 transition cursor-pointer flex items-center gap-1.5"
+              className="bg-white hover:bg-neutral-200 text-black px-4 py-1.5 rounded-full text-xs font-semibold shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
             >
-              <Printer size={14} />
-              <span>Cetak / Download PDF</span>
+              <Printer size={13} />
+              <span>Cetak / PDF</span>
             </button>
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white transition cursor-pointer"
+              className="p-1.5 text-[#86868b] hover:text-white rounded-full transition-colors cursor-pointer"
+              title="Tutup Pratinjau"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
         </div>
 
-        {/* PRINT PAPER CONTAINER (A4 FORMATTED FOR PRINT) */}
-        <div id="printable-pdf-document" className="bg-white text-slate-900 p-8 md:p-12 rounded-2xl shadow-2xl space-y-6 print:p-0 print:shadow-none print:bg-transparent">
+        {/* PRINT PAPER CONTAINER (Clean, Legible, Professional A4 Document) */}
+        <div id="printable-pdf-document" className="bg-white text-slate-900 p-8 sm:p-12 rounded-2xl shadow-xl space-y-6 print:p-0 print:shadow-none print:rounded-none">
           
-          {/* KOP SURAT OFFISIAL MNSBDI */}
-          <div className="text-center border-b-4 border-double border-purple-950 pb-4 space-y-1">
-            <h2 className="text-lg font-black text-purple-950 tracking-wider uppercase">
-              MAJELIS NICHREN SHOSHU BUDDHA DHARMA INDONESIA (MNSBDI)
+          {/* KOP SURAT OFFISIAL (Clean, Professional, Institutional Header) */}
+          <div className="text-center border-b-2 border-slate-900 pb-3 space-y-1">
+            <h2 className="text-base font-bold text-slate-950 tracking-wider uppercase">
+              MAJELIS NICHIREN SHOSHU BUDDHA DHARMA INDONESIA (MNSBDI)
             </h2>
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">
-              SENTRA MAKASSAR: PANITIA PELAKSANA EVENT
+            <h3 className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
+              SENTRA MAKASSAR &bull; PANITIA PELAKSANA KEGIATAN
             </h3>
-            <p className="text-[10px] text-slate-500 font-semibold">
-              Alamat Sekretariat: Jl. Sulawesi No. 88, Makassar | Email: info@mnsbdi-makassar.or.id
+            <p className="text-[10px] text-slate-500">
+              Sekretariat: Jl. Sungai Cenrana No. 39, Makassar &bull; Email: info@mnsbdi-makassar.or.id
             </p>
           </div>
 
           {/* DOKUMEN TITLE */}
-          <div className="text-center space-y-1">
-            <h3 className="text-base font-black uppercase tracking-wide text-purple-950 border-b-2 border-purple-900 inline-block pb-0.5">
+          <div className="text-center space-y-1 pt-1">
+            <h1 className="text-sm font-bold uppercase tracking-wider text-slate-900">
               {pdfMode === 'proposal' 
                 ? 'PROPOSAL PELAKSANAAN KEGIATAN' 
                 : pdfMode === 'lpj' 
                   ? 'LAPORAN PERTANGGUNGJAWABAN (LPJ) KEGIATAN' 
                   : 'DAFTAR PESERTA & HASIL REGISTRASI UMAT'}
-            </h3>
-            <p className="text-sm font-extrabold text-slate-800">{event.title}</p>
-            <p className="text-xs text-slate-500 font-semibold">
-              Tanggal Kegiatan: {new Date(event.event_date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} | Lokasi: {event.location}
+            </h1>
+            <p className="text-base font-bold text-slate-900">{event.title}</p>
+            <p className="text-xs text-slate-600">
+              Hari & Tanggal: {new Date(event.event_date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} &bull; Lokasi: {event.location}
             </p>
           </div>
 
           {/* DOKUMEN CONTENT */}
           {pdfMode === 'peserta' ? (
-            /* SPECIAL CLEAN PARTICIPANT ROSTER FOR KETUA ACARA (NO FEES) */
-            <div className="space-y-6 text-xs text-slate-800 leading-relaxed">
-              <div className="flex justify-between items-center bg-purple-50 p-3 rounded-xl border border-purple-200 text-xs">
+            /* SPECIAL CLEAN PARTICIPANT ROSTER FOR KETUA ACARA */
+            <div className="space-y-5 text-xs text-slate-800 leading-relaxed">
+              <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs">
                 <div>
-                  <span className="font-extrabold text-purple-950 block">Total Umat Terdaftar: {sortedRegistrations.length} Umat</span>
-                  <span className="text-[11px] text-slate-500">Laporan Resmi Khusus Ketua Acara & Seksi Ritual Pelaksana</span>
+                  <span className="font-semibold text-slate-900">Total Umat Terdaftar: {sortedRegistrations.length} Umat</span>
+                  <span className="text-[11px] text-slate-500 block">Daftar presensi kehadiran dan paraf kegiatan</span>
                 </div>
-                <div className="text-right text-[11px] font-bold text-slate-600">
-                  Dicetak pada: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                <div className="text-right text-[11px] text-slate-500">
+                  Dicetak: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </div>
               </div>
 
               <table className="w-full text-left text-xs border-collapse border border-slate-300">
                 <thead>
-                  <tr className="bg-purple-950 text-white font-bold text-[11px]">
-                    <th className="p-2.5 border border-slate-300 text-center w-8">No</th>
-                    <th className="p-2.5 border border-slate-300">Nama Lengkap Umat</th>
-                    <th className="p-2.5 border border-slate-300 text-center w-12">L/P</th>
-                    <th className="p-2.5 border border-slate-300 text-center">Bagian Umat</th>
-                    <th className="p-2.5 border border-slate-300">Cetya & HAN Naungan</th>
-                    <th className="p-2.5 border border-slate-300 text-center">Status Pelunasan</th>
-                    <th className="p-2.5 border border-slate-300 text-center w-28">Paraf / TTD</th>
+                  <tr className="bg-slate-100 text-slate-800 font-semibold text-[11px]">
+                    <th className="p-2 border border-slate-300 text-center w-8">No</th>
+                    <th className="p-2 border border-slate-300">Nama Lengkap Umat</th>
+                    <th className="p-2 border border-slate-300 text-center w-12">L/P</th>
+                    <th className="p-2 border border-slate-300 text-center">Bagian</th>
+                    <th className="p-2 border border-slate-300">Cetya & HAN</th>
+                    <th className="p-2 border border-slate-300 text-center">Status Bayar</th>
+                    <th className="p-2 border border-slate-300 text-center w-28">Paraf Presensi</th>
                   </tr>
                 </thead>
                 <tbody>
                   {sortedRegistrations.length > 0 ? (
                     sortedRegistrations.map((reg, i) => (
-                      <tr key={reg.id} className={i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
-                        <td className="p-2 border border-slate-300 text-center font-bold text-slate-500">{i + 1}</td>
-                        <td className="p-2 border border-slate-300 font-extrabold text-slate-900">
+                      <tr key={reg.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'}>
+                        <td className="p-2 border border-slate-300 text-center text-slate-500">{i + 1}</td>
+                        <td className="p-2 border border-slate-300 font-semibold text-slate-900">
                           {reg.profile?.full_name || 'Umat Vihara'}
                         </td>
-                        <td className="p-2 border border-slate-300 text-center font-bold">
+                        <td className="p-2 border border-slate-300 text-center text-slate-600">
                           {reg.profile?.gender || '-'}
                         </td>
-                        <td className="p-2 border border-slate-300 text-center font-extrabold text-purple-900">
+                        <td className="p-2 border border-slate-300 text-center font-medium text-slate-800">
                           {reg.profile?.bagian || 'Inspirasi'}
                         </td>
                         <td className="p-2 border border-slate-300 text-slate-600">
                           {reg.profile?.cetya || '-'} / {reg.profile?.han || '-'}
                         </td>
-                        <td className="p-2 border border-slate-300 text-center font-bold">
+                        <td className="p-2 border border-slate-300 text-center font-medium">
                           {reg.is_paid ? (
-                            <span className="text-emerald-700 font-extrabold">✓ Lunas</span>
+                            <span className="text-emerald-700 font-semibold">Lunas</span>
                           ) : (
-                            ''
+                            <span className="text-slate-400">Belum</span>
                           )}
                         </td>
                         <td className="p-2 border border-slate-300 text-center text-slate-300 text-[10px]">
@@ -225,20 +226,20 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
               </table>
 
               {/* SIGNATURE BLOCK */}
-              <div className="pt-8 grid grid-cols-2 text-center text-xs print-avoid-break">
+              <div className="pt-6 grid grid-cols-2 text-center text-xs print-avoid-break">
                 <div>
-                  <p className="text-slate-500">Mengetahui / Penanggung Jawab,</p>
-                  <p className="font-extrabold text-slate-900 mt-1">Ketua Acara / Panitia Utama</p>
+                  <p className="text-slate-500">Mengetahui,</p>
+                  <p className="font-semibold text-slate-900 mt-0.5">Ketua Panitia Pelaksana</p>
                   <div className="h-16 flex items-end justify-center">
-                    <span className="font-black text-purple-950 underline">{org?.ketua_name || 'Upasaka Hendra Kurniawan'}</span>
+                    <span className="font-bold text-slate-950 underline">{org?.ketua_name || 'Upasaka Hendra Kurniawan'}</span>
                   </div>
                 </div>
 
                 <div>
                   <p className="text-slate-500">Makassar, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                  <p className="font-extrabold text-slate-900 mt-1">PJ Seksi Ritual / Acara</p>
+                  <p className="font-semibold text-slate-900 mt-0.5">PJ Seksi Ritual / Acara</p>
                   <div className="h-16 flex items-end justify-center">
-                    <span className="font-black text-purple-950 underline">{org?.pj_acara_name || 'Suryani Dewi'}</span>
+                    <span className="font-bold text-slate-950 underline">{org?.pj_acara_name || 'Suryani Dewi'}</span>
                   </div>
                 </div>
               </div>
@@ -248,50 +249,50 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
             <div className="space-y-6 text-xs text-slate-800 leading-relaxed">
               
               {/* SECTION 1: STRUKTUR KEPANITIAAN */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-black uppercase text-purple-950 border-b border-purple-200 pb-1">
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold uppercase text-slate-900 border-b border-slate-300 pb-1">
                   I. Susunan Panitia Pelaksana Kegiatan
                 </h4>
                 
-                <div className="grid grid-cols-3 gap-3 text-center">
-                  <div className="p-2.5 rounded-xl border border-purple-200 bg-purple-50/50">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase block">Ketua Panitia</span>
-                    <strong className="text-slate-900 font-extrabold">{org?.ketua_name}</strong>
+                <div className="grid grid-cols-3 gap-3 text-center pt-1">
+                  <div className="p-2.5 rounded-lg border border-slate-200 bg-slate-50/70">
+                    <span className="text-[10px] text-slate-500 uppercase block font-medium">Ketua Panitia</span>
+                    <strong className="text-slate-900 font-bold text-xs">{org?.ketua_name || '-'}</strong>
                   </div>
-                  <div className="p-2.5 rounded-xl border border-purple-200 bg-purple-50/50">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase block">Sekretaris</span>
-                    <strong className="text-slate-900 font-extrabold">{org?.sekretaris_name}</strong>
+                  <div className="p-2.5 rounded-lg border border-slate-200 bg-slate-50/70">
+                    <span className="text-[10px] text-slate-500 uppercase block font-medium">Sekretaris</span>
+                    <strong className="text-slate-900 font-bold text-xs">{org?.sekretaris_name || '-'}</strong>
                   </div>
-                  <div className="p-2.5 rounded-xl border border-purple-200 bg-purple-50/50">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase block">Bendahara</span>
-                    <strong className="text-slate-900 font-extrabold">{org?.bendahara_name}</strong>
+                  <div className="p-2.5 rounded-lg border border-slate-200 bg-slate-50/70">
+                    <span className="text-[10px] text-slate-500 uppercase block font-medium">Bendahara</span>
+                    <strong className="text-slate-900 font-bold text-xs">{org?.bendahara_name || '-'}</strong>
                   </div>
                 </div>
               </div>
 
               {/* SECTION 2: RUNDOWN PROPOSAL */}
               {event.proposal_rundowns && event.proposal_rundowns.length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="text-xs font-black uppercase text-purple-950 border-b border-purple-200 pb-1">
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold uppercase text-slate-900 border-b border-slate-300 pb-1">
                     II. Rundown & Jadwal Pelaksanaan Acara
                   </h4>
                   <table className="w-full text-left text-xs border-collapse border border-slate-300">
                     <thead>
-                      <tr className="bg-purple-950 text-white font-bold">
+                      <tr className="bg-slate-100 text-slate-800 font-semibold text-[11px]">
                         <th className="p-2 border border-slate-300 text-center w-8">No</th>
                         <th className="p-2 border border-slate-300">Hari & Tanggal</th>
-                        <th className="p-2 border border-slate-300 text-center">Jam / Waktu</th>
+                        <th className="p-2 border border-slate-300 text-center">Waktu</th>
                         <th className="p-2 border border-slate-300">Kegiatan / Agenda</th>
                         <th className="p-2 border border-slate-300">Keterangan</th>
                       </tr>
                     </thead>
                     <tbody>
                       {event.proposal_rundowns.map((r, i) => (
-                        <tr key={r.id} className={i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
-                          <td className="p-2 border border-slate-300 text-center font-bold">{i + 1}</td>
-                          <td className="p-2 border border-slate-300 font-semibold">{r.day_date}</td>
-                          <td className="p-2 border border-slate-300 text-center font-mono font-bold text-purple-900">{r.time_slot}</td>
-                          <td className="p-2 border border-slate-300 font-bold">{r.activity}</td>
+                        <tr key={r.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'}>
+                          <td className="p-2 border border-slate-300 text-center text-slate-500">{i + 1}</td>
+                          <td className="p-2 border border-slate-300 font-medium text-slate-800">{r.day_date}</td>
+                          <td className="p-2 border border-slate-300 text-center font-mono text-slate-800">{r.time_slot}</td>
+                          <td className="p-2 border border-slate-300 font-medium text-slate-900">{r.activity}</td>
                           <td className="p-2 border border-slate-300 text-slate-500">{r.notes || '-'}</td>
                         </tr>
                       ))}
@@ -300,16 +301,19 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                 </div>
               )}
 
-              {/* SECTION 3 (FOR LPJ): UNIFIED PARTICIPANT TABLE SORTED BY BAGIAN ORDER */}
+              {/* SECTION 3 (FOR LPJ): UNIFIED PARTICIPANT TABLE */}
               {pdfMode === 'lpj' && (
-                <div className="space-y-3">
-                  <h4 className="text-xs font-black uppercase text-purple-950 border-b border-purple-200 pb-1">
-                    III. Daftar Umat Terdaftar
-                  </h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-baseline border-b border-slate-300 pb-1">
+                    <h4 className="text-xs font-bold uppercase text-slate-900">
+                      III. Rekapitulasi Umat Terdaftar
+                    </h4>
+                    <span className="text-[11px] text-slate-500 font-medium">Total: {lpjSortedRegistrations.length} Umat</span>
+                  </div>
 
                   <table className="w-full text-left text-xs border-collapse border border-slate-300">
                     <thead>
-                      <tr className="bg-slate-800 text-white font-bold text-[11px]">
+                      <tr className="bg-slate-100 text-slate-800 font-semibold text-[11px]">
                         <th className="p-2 border border-slate-300 text-center w-8">No</th>
                         <th className="p-2 border border-slate-300">Nama Lengkap Umat</th>
                         <th className="p-2 border border-slate-300 text-center">Bagian</th>
@@ -319,10 +323,10 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                     <tbody>
                       {lpjSortedRegistrations.length > 0 ? (
                         lpjSortedRegistrations.map((reg, idx) => (
-                          <tr key={reg.id} className={idx % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
-                            <td className="p-2 border border-slate-300 text-center font-bold text-slate-500">{idx + 1}</td>
-                            <td className="p-2 border border-slate-300 font-extrabold text-slate-900">{reg.profile?.full_name || 'Umat Vihara'}</td>
-                            <td className="p-2 border border-slate-300 text-center font-bold text-purple-900">
+                          <tr key={reg.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'}>
+                            <td className="p-2 border border-slate-300 text-center text-slate-500">{idx + 1}</td>
+                            <td className="p-2 border border-slate-300 font-semibold text-slate-900">{reg.profile?.full_name || 'Umat Vihara'}</td>
+                            <td className="p-2 border border-slate-300 text-center font-medium text-slate-800">
                               {reg.profile?.bagian || 'Inspirasi'}
                             </td>
                             <td className="p-2 border border-slate-300 text-slate-600">
@@ -342,40 +346,40 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                 </div>
               )}
 
-              {/* SECTION 4: KEUANGAN LPJ & PROPOSAL (RINCIAN BIAYA PER BAGIAN & REALISASI) */}
+              {/* SECTION 4: KEUANGAN LPJ & PROPOSAL */}
               <div className="space-y-4">
-                <h4 className="text-xs font-black uppercase text-purple-950 border-b border-purple-200 pb-1">
+                <h4 className="text-xs font-bold uppercase text-slate-900 border-b border-slate-300 pb-1">
                   {pdfMode === 'proposal' ? 'III. Rencana Anggaran Biaya (RAB) & Proyeksi Pemasukan' : 'IV. Laporan Keuangan, Pemasukan & Realisasi Pengeluaran'}
                 </h4>
 
                 {pdfMode === 'lpj' && (
-                  <div className="space-y-2">
-                    <h5 className="text-[11px] font-bold text-slate-800 uppercase tracking-wide">
-                      A. Rincian Pemasukan Biaya Pendaftaran Umat Per Bagian
+                  <div className="space-y-1.5">
+                    <h5 className="text-[11px] font-semibold text-slate-800 uppercase tracking-wide">
+                      A. Rincian Pemasukan Pendaftaran per Bagian Umat
                     </h5>
                     <table className="w-full text-left text-xs border-collapse border border-slate-300">
                       <thead>
-                        <tr className="bg-purple-950 text-white font-bold">
+                        <tr className="bg-slate-100 text-slate-800 font-semibold text-[11px]">
                           <th className="p-2 border border-slate-300 text-center w-8">No</th>
-                          <th className="p-2 border border-slate-300">Nama Bagian Umat</th>
-                          <th className="p-2 border border-slate-300 text-right">Tarif Pokok (Rp)</th>
-                          <th className="p-2 border border-slate-300 text-center">Jumlah Umat Terdaftar</th>
+                          <th className="p-2 border border-slate-300">Bagian Umat</th>
+                          <th className="p-2 border border-slate-300 text-right">Tarif (Rp)</th>
+                          <th className="p-2 border border-slate-300 text-center">Jumlah Umat</th>
                           <th className="p-2 border border-slate-300 text-right">Subtotal Pemasukan (Rp)</th>
                         </tr>
                       </thead>
                       <tbody>
                         {bagianBreakdown.length > 0 ? (
                           bagianBreakdown.map((item, idx) => (
-                            <tr key={item.bagian} className={idx % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
-                              <td className="p-2 border border-slate-300 text-center font-bold text-slate-500">{idx + 1}</td>
-                              <td className="p-2 border border-slate-300 font-extrabold text-slate-900">{item.bagian}</td>
-                              <td className="p-2 border border-slate-300 text-right font-semibold">Rp {item.basePrice.toLocaleString('id-ID')}</td>
-                              <td className="p-2 border border-slate-300 text-center font-bold text-purple-900">{item.count} Umat</td>
-                              <td className="p-2 border border-slate-300 text-right font-bold text-emerald-700">
+                            <tr key={item.bagian} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'}>
+                              <td className="p-2 border border-slate-300 text-center text-slate-500">{idx + 1}</td>
+                              <td className="p-2 border border-slate-300 font-semibold text-slate-900">{item.bagian}</td>
+                              <td className="p-2 border border-slate-300 text-right font-mono">Rp {item.basePrice.toLocaleString('id-ID')}</td>
+                              <td className="p-2 border border-slate-300 text-center font-medium">{item.count} Umat</td>
+                              <td className="p-2 border border-slate-300 text-right font-mono font-medium text-slate-900">
                                 Rp {item.totalPemasukanBagian.toLocaleString('id-ID')}
                                 {item.subtotalExtra > 0 && (
-                                  <span className="block text-[9px] font-normal text-slate-500">
-                                    (termasuk Ekstra: Rp {item.subtotalExtra.toLocaleString('id-ID')})
+                                  <span className="block text-[9px] text-slate-500 font-normal">
+                                    (termasuk ekstra: Rp {item.subtotalExtra.toLocaleString('id-ID')})
                                   </span>
                                 )}
                               </td>
@@ -390,9 +394,9 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                         )}
                       </tbody>
                       <tfoot>
-                        <tr className="bg-emerald-100 font-black text-emerald-950">
-                          <td colSpan={4} className="p-2 border border-slate-300 text-right uppercase">TOTAL PEMASUKAN PENDAFTARAN UMAT</td>
-                          <td className="p-2 border border-slate-300 text-right text-emerald-900 font-black">
+                        <tr className="bg-slate-100/80 font-bold text-slate-900">
+                          <td colSpan={4} className="p-2 border border-slate-300 text-right uppercase">TOTAL PEMASUKAN PENDAFTARAN</td>
+                          <td className="p-2 border border-slate-300 text-right font-mono font-bold text-slate-900">
                             Rp {totalUmatRegistrationFees.toLocaleString('id-ID')}
                           </td>
                         </tr>
@@ -402,38 +406,36 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                 )}
 
                 {/* Table B / Main Financial Table */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {pdfMode === 'lpj' && (
-                    <h5 className="text-[11px] font-bold text-slate-800 uppercase tracking-wide">
-                      B. Pemasukan Lainnya (Sumbangan/Dana Paramita), Target RAB & Realisasi Pengeluaran
+                    <h5 className="text-[11px] font-semibold text-slate-800 uppercase tracking-wide">
+                      B. Rekapitulasi Pemasukan, Anggaran RAB & Realisasi Pengeluaran
                     </h5>
                   )}
                   <table className="w-full text-left text-xs border-collapse border border-slate-300">
                     <thead>
-                      <tr className="bg-purple-900 text-white font-bold">
+                      <tr className="bg-slate-100 text-slate-800 font-semibold text-[11px]">
                         <th className="p-2 border border-slate-300 text-center w-8">No</th>
-                        <th className="p-2 border border-slate-300">Nama Item / Keterangan</th>
+                        <th className="p-2 border border-slate-300">Uraian / Keterangan</th>
                         <th className="p-2 border border-slate-300 text-right">Pemasukan (Rp)</th>
-                        <th className="p-2 border border-slate-300 text-right">Anggaran RAB (Rp)</th>
+                        <th className="p-2 border border-slate-300 text-right">Target RAB (Rp)</th>
                         {pdfMode === 'lpj' && <th className="p-2 border border-slate-300 text-right">Realisasi (Rp)</th>}
-                        <th className="p-2 border border-slate-300 text-right">
-                          Selisih (Rp)
-                        </th>
+                        <th className="p-2 border border-slate-300 text-right">Selisih (Rp)</th>
                       </tr>
                     </thead>
                     <tbody>
                       {/* Baris Utama: Total Biaya Pendaftaran Kegiatan Umat */}
-                      <tr className="bg-emerald-50 font-bold">
-                        <td className="p-2 border border-slate-300 text-center font-bold text-emerald-800">1</td>
-                        <td className="p-2 border border-slate-300 font-extrabold text-emerald-950">
-                          Total Biaya Pendaftaran Kegiatan Umat ({registrations.length} Umat)
+                      <tr className="bg-white font-medium">
+                        <td className="p-2 border border-slate-300 text-center text-slate-500">1</td>
+                        <td className="p-2 border border-slate-300 font-semibold text-slate-900">
+                          Total Biaya Pendaftaran Umat ({registrations.length} Peserta)
                         </td>
-                        <td className="p-2 border border-slate-300 text-right font-black text-emerald-700">
+                        <td className="p-2 border border-slate-300 text-right font-mono text-slate-900">
                           + Rp {totalUmatRegistrationFees.toLocaleString('id-ID')}
                         </td>
                         <td className="p-2 border border-slate-300 text-right text-slate-400">-</td>
                         {pdfMode === 'lpj' && <td className="p-2 border border-slate-300 text-right text-slate-400">-</td>}
-                        <td className="p-2 border border-slate-300 text-right font-black text-emerald-700">
+                        <td className="p-2 border border-slate-300 text-right font-mono text-slate-900">
                           + Rp {totalUmatRegistrationFees.toLocaleString('id-ID')}
                         </td>
                       </tr>
@@ -463,51 +465,40 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                         return groupedPdfItems.map((item, i) => {
                           const hasRAB = item.rab > 0;
                           const hasRealisasi = item.realisasi > 0;
-                          const hasPemasukan = item.pemasukan > 0;
 
                           let displayedSelisih: number | null = null;
                           let isOverBudget = false;
-                          let isSurplus = false;
 
                           if (pdfMode === 'lpj') {
                             if (hasRAB && hasRealisasi) {
                               displayedSelisih = item.rab - item.realisasi;
                               if (displayedSelisih < 0) isOverBudget = true;
-                              else if (displayedSelisih > 0) isSurplus = true;
                             } else if (hasRAB) {
                               displayedSelisih = item.rab;
-                              isSurplus = true;
                             } else {
-                              // Jika tidak ada target RAB (misal pengeluaran langsung / sumbangan), tidak perlu masuk selisih
                               displayedSelisih = null;
                             }
                           } else {
-                            // Mode proposal
                             displayedSelisih = item.pemasukan - item.rab;
-                            if (displayedSelisih > 0) isSurplus = true;
                           }
 
                           return (
-                            <tr key={item.key} className={i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
-                              <td className="p-2 border border-slate-300 text-center font-bold">{i + 2}</td>
-                              <td className="p-2 border border-slate-300 font-extrabold text-slate-900">{item.itemName}</td>
-                              <td className="p-2 border border-slate-300 text-right font-bold text-emerald-700">
+                            <tr key={item.key} className={i % 2 === 0 ? 'bg-slate-50/50' : 'bg-white'}>
+                              <td className="p-2 border border-slate-300 text-center text-slate-500">{i + 2}</td>
+                              <td className="p-2 border border-slate-300 font-medium text-slate-900">{item.itemName}</td>
+                              <td className="p-2 border border-slate-300 text-right font-mono">
                                 {item.pemasukan > 0 ? `+ Rp ${item.pemasukan.toLocaleString('id-ID')}` : '-'}
                               </td>
-                              <td className="p-2 border border-slate-300 text-right font-semibold">
+                              <td className="p-2 border border-slate-300 text-right font-mono">
                                 {item.rab > 0 ? `Rp ${item.rab.toLocaleString('id-ID')}` : '-'}
                               </td>
                               {pdfMode === 'lpj' && (
-                                <td className="p-2 border border-slate-300 text-right font-semibold text-amber-900">
+                                <td className="p-2 border border-slate-300 text-right font-mono">
                                   {item.realisasi > 0 ? `Rp ${item.realisasi.toLocaleString('id-ID')}` : '-'}
                                 </td>
                               )}
-                              <td className={`p-2 border border-slate-300 text-right ${
-                                isOverBudget 
-                                  ? 'text-rose-700 font-bold' 
-                                  : isSurplus 
-                                    ? 'text-emerald-700 font-bold' 
-                                    : 'text-slate-400'
+                              <td className={`p-2 border border-slate-300 text-right font-mono ${
+                                isOverBudget ? 'text-rose-700 font-semibold' : 'text-slate-800'
                               }`}>
                                 {displayedSelisih !== null
                                   ? displayedSelisih > 0 
@@ -528,17 +519,16 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                         const selisihTotalLpj = totalRAB - totalRealisasi;
                         const displayedTotalSelisih = pdfMode === 'lpj' ? selisihTotalLpj : selisihTotalProposal;
                         const isTotalOver = pdfMode === 'lpj' ? (totalRAB > 0 && totalRealisasi > totalRAB) : false;
-                        const isTotalSurplus = displayedTotalSelisih > 0;
 
                         return (
                           <>
-                            <tr className="bg-purple-100 font-extrabold">
-                              <td colSpan={2} className="p-2 border border-slate-300 text-right uppercase">TOTAL KESELURUHAN</td>
-                              <td className="p-2 border border-slate-300 text-right text-emerald-800 font-black">Rp {totalPemasukanGlobal.toLocaleString('id-ID')}</td>
-                              <td className="p-2 border border-slate-300 text-right text-purple-950 font-black">Rp {totalRAB.toLocaleString('id-ID')}</td>
-                              {pdfMode === 'lpj' && <td className="p-2 border border-slate-300 text-right text-amber-950 font-black">Rp {totalRealisasi.toLocaleString('id-ID')}</td>}
-                              <td className={`p-2 border border-slate-300 text-right font-black ${
-                                isTotalOver ? 'text-rose-800' : isTotalSurplus ? 'text-emerald-800' : 'text-slate-800'
+                            <tr className="bg-slate-100 font-bold text-slate-900">
+                              <td colSpan={2} className="p-2 border border-slate-300 text-right uppercase">TOTAL</td>
+                              <td className="p-2 border border-slate-300 text-right font-mono">Rp {totalPemasukanGlobal.toLocaleString('id-ID')}</td>
+                              <td className="p-2 border border-slate-300 text-right font-mono">Rp {totalRAB.toLocaleString('id-ID')}</td>
+                              {pdfMode === 'lpj' && <td className="p-2 border border-slate-300 text-right font-mono">Rp {totalRealisasi.toLocaleString('id-ID')}</td>}
+                              <td className={`p-2 border border-slate-300 text-right font-mono ${
+                                isTotalOver ? 'text-rose-700 font-bold' : 'text-slate-900 font-bold'
                               }`}>
                                 {displayedTotalSelisih >= 0 
                                   ? `+ Rp ${displayedTotalSelisih.toLocaleString('id-ID')}` 
@@ -546,11 +536,13 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                               </td>
                             </tr>
                             {pdfMode === 'lpj' && (
-                              <tr className="bg-purple-900 text-white font-black text-xs">
-                                <td colSpan={5} className="p-2 border border-slate-300 text-right uppercase">
-                                  SALDO KEUANGAN KEGIATAN (PEMASUKAN - REALISASI)
+                              <tr className="bg-slate-200/80 font-bold text-slate-900 text-xs">
+                                <td colSpan={5} className="p-2.5 border border-slate-300 text-right uppercase tracking-wide">
+                                  SALDO KEUANGAN AKHIR (PEMASUKAN - REALISASI)
                                 </td>
-                                <td className={`p-2 border border-slate-300 text-right ${saldoKasGlobal >= 0 ? 'text-amber-300' : 'text-rose-300'}`}>
+                                <td className={`p-2.5 border border-slate-300 text-right font-mono font-bold ${
+                                  saldoKasGlobal >= 0 ? 'text-emerald-800' : 'text-rose-800'
+                                }`}>
                                   Rp {saldoKasGlobal.toLocaleString('id-ID')} {saldoKasGlobal >= 0 ? '(SURPLUS)' : '(DEFISIT)'}
                                 </td>
                               </tr>
@@ -564,20 +556,20 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
               </div>
 
               {/* SIGNATURE BLOCK */}
-              <div className="pt-8 grid grid-cols-2 text-center text-xs print-avoid-break">
+              <div className="pt-6 grid grid-cols-2 text-center text-xs print-avoid-break">
                 <div>
-                  <p className="text-slate-500">Mengetahui / Menyetujui,</p>
-                  <p className="font-extrabold text-slate-900 mt-1">Ketua Panitia Pelaksana</p>
+                  <p className="text-slate-500">Mengetahui,</p>
+                  <p className="font-semibold text-slate-900 mt-0.5">Ketua Panitia Pelaksana</p>
                   <div className="h-16 flex items-end justify-center">
-                    <span className="font-black text-purple-950 underline">{org?.ketua_name || 'Upasaka Hendra Kurniawan'}</span>
+                    <span className="font-bold text-slate-950 underline">{org?.ketua_name || 'Upasaka Hendra Kurniawan'}</span>
                   </div>
                 </div>
 
                 <div>
                   <p className="text-slate-500">Makassar, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                  <p className="font-extrabold text-slate-900 mt-1">Sekretaris Panitia</p>
+                  <p className="font-semibold text-slate-900 mt-0.5">Sekretaris Panitia</p>
                   <div className="h-16 flex items-end justify-center">
-                    <span className="font-black text-purple-950 underline">{org?.sekretaris_name || 'Suryani Dewi'}</span>
+                    <span className="font-bold text-slate-950 underline">{org?.sekretaris_name || 'Suryani Dewi'}</span>
                   </div>
                 </div>
               </div>

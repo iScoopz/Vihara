@@ -1,5 +1,5 @@
 import React from 'react';
-import { Printer, FileSpreadsheet, FileText, Users, Download } from 'lucide-react';
+import { Printer, FileSpreadsheet, FileText, Users, ArrowUpRight } from 'lucide-react';
 import { ViharaEvent, EventRegistration } from '@/types/database';
 import { exportSkenarioKerjaToExcel, exportLPJToExcel } from '@/lib/export-utils';
 
@@ -15,63 +15,128 @@ export const EventLaporanTab: React.FC<EventLaporanTabProps> = ({
   onOpenPdfModal 
 }) => {
   return (
-    <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4 print:hidden">
-      <h3 className="text-base font-black text-slate-900 dark:text-white border-b border-purple-100 dark:border-purple-900/60 pb-3">
-        Pusat Cetak & Export Laporan Event
-      </h3>
-      <p className="text-xs text-slate-600 dark:text-slate-300">
-        Gunakan tombol di bawah untuk mencetak List Peserta (Ketua Acara), Proposal Event, Laporan Pertanggungjawaban (LPJ PDF / Excel), atau mengunduh Skenario Kerja dalam format Excel.
-      </p>
+    <div className="p-7 sm:p-8 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-6 print:hidden">
+      <div className="border-b border-black/[0.04] dark:border-white/[0.06] pb-4 space-y-1">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-[#86868b] block">
+          Pusat Dokumen & Pelaporan
+        </span>
+        <h2 className="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">
+          Cetak & Export Laporan Event
+        </h2>
+        <p className="text-xs text-[#86868b] dark:text-[#a1a1a6]">
+          Pilih dokumen yang ingin dicetak dalam format PDF resmi atau diunduh sebagai lembar kerja Excel.
+        </p>
+      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+        {/* Card 1: List Peserta */}
         <button
           onClick={() => onOpenPdfModal('peserta')}
-          className="p-5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-left space-y-2 hover:border-emerald-500 cursor-pointer transition shadow-sm"
+          className="p-6 rounded-3xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] text-left space-y-4 hover:border-black/20 dark:hover:border-white/20 transition-all cursor-pointer group flex flex-col justify-between"
         >
-          <Users className="text-emerald-600" size={24} />
-          <h4 className="font-extrabold text-slate-900 dark:text-white text-sm">List Peserta (Ketua Acara)</h4>
-          <p className="text-[11px] text-slate-500">Mencetak daftar nama peserta terdaftar, status pelunasan & lembar paraf presensi.</p>
+          <div className="space-y-3">
+            <div className="w-10 h-10 rounded-2xl bg-black/[0.04] dark:bg-white/[0.08] flex items-center justify-center text-neutral-800 dark:text-neutral-200">
+              <Users size={18} />
+            </div>
+            <div>
+              <h3 className="font-bold text-neutral-900 dark:text-white text-sm">List Peserta (Ketua Acara)</h3>
+              <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] mt-1 leading-relaxed">
+                Daftar nama peserta terdaftar, status pelunasan, dan lembar paraf presensi fisik.
+              </p>
+            </div>
+          </div>
+          <div className="pt-2 flex items-center justify-between text-xs font-semibold text-neutral-900 dark:text-white group-hover:gap-1.5 transition-all">
+            <span>Buka Dokumen</span>
+            <ArrowUpRight size={14} className="text-[#86868b]" />
+          </div>
         </button>
 
+        {/* Card 2: Proposal Event */}
         <button
           onClick={() => onOpenPdfModal('proposal')}
-          className="p-5 rounded-2xl bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 text-left space-y-2 hover:border-purple-500 cursor-pointer transition shadow-sm"
+          className="p-6 rounded-3xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] text-left space-y-4 hover:border-black/20 dark:hover:border-white/20 transition-all cursor-pointer group flex flex-col justify-between"
         >
-          <Printer className="text-purple-600" size={24} />
-          <h4 className="font-extrabold text-slate-900 dark:text-white text-sm">Proposal Event (PDF)</h4>
-          <p className="text-[11px] text-slate-500">Mencetak dokumen proposal lengkap beserta Struktur Panitia, Rundown Proposal, dan RAB.</p>
+          <div className="space-y-3">
+            <div className="w-10 h-10 rounded-2xl bg-purple-500/10 text-[#5e35b1] dark:text-purple-300 flex items-center justify-center">
+              <Printer size={18} />
+            </div>
+            <div>
+              <h3 className="font-bold text-neutral-900 dark:text-white text-sm">Proposal Event (PDF)</h3>
+              <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] mt-1 leading-relaxed">
+                Dokumen proposal lengkap dengan Struktur Panitia, Rundown Acara, dan Rencana Anggaran (RAB).
+              </p>
+            </div>
+          </div>
+          <div className="pt-2 flex items-center justify-between text-xs font-semibold text-[#5e35b1] dark:text-purple-300 group-hover:gap-1.5 transition-all">
+            <span>Buka Dokumen</span>
+            <ArrowUpRight size={14} className="text-[#86868b]" />
+          </div>
         </button>
 
+        {/* Card 3: Skenario Kerja Excel */}
         <button
           onClick={() => exportSkenarioKerjaToExcel(event.title, event.skenario_kerja || [])}
-          className="p-5 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-left space-y-2 hover:border-blue-500 cursor-pointer transition shadow-sm"
+          className="p-6 rounded-3xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] text-left space-y-4 hover:border-black/20 dark:hover:border-white/20 transition-all cursor-pointer group flex flex-col justify-between"
         >
-          <FileSpreadsheet className="text-blue-600" size={24} />
-          <h4 className="font-extrabold text-slate-900 dark:text-white text-sm">Skenario Kerja (Excel)</h4>
-          <p className="text-[11px] text-slate-500">Mengunduh file Excel (.xls) berdesain rapi khas MNSBDI untuk alur operasional tim lapangan.</p>
+          <div className="space-y-3">
+            <div className="w-10 h-10 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+              <FileSpreadsheet size={18} />
+            </div>
+            <div>
+              <h3 className="font-bold text-neutral-900 dark:text-white text-sm">Skenario Kerja (Excel)</h3>
+              <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] mt-1 leading-relaxed">
+                Unduh file Excel (.xls) berdesain rapi untuk alur operasional tim lapangan dan panitia.
+              </p>
+            </div>
+          </div>
+          <div className="pt-2 flex items-center justify-between text-xs font-semibold text-blue-600 dark:text-blue-400 group-hover:gap-1.5 transition-all">
+            <span>Download .XLS</span>
+            <ArrowUpRight size={14} className="text-[#86868b]" />
+          </div>
         </button>
 
+        {/* Card 4: Cetak LPJ Event (PDF) */}
         <button
           onClick={() => onOpenPdfModal('lpj')}
-          className="p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-left space-y-2 hover:border-amber-500 cursor-pointer transition shadow-sm"
+          className="p-6 rounded-3xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] text-left space-y-4 hover:border-black/20 dark:hover:border-white/20 transition-all cursor-pointer group flex flex-col justify-between"
         >
-          <FileText className="text-amber-600" size={24} />
-          <h4 className="font-extrabold text-slate-900 dark:text-white text-sm">Cetak LPJ Event (PDF)</h4>
-          <p className="text-[11px] text-slate-500">Mencetak Laporan Pertanggungjawaban LENGKAP dengan Rekap Presensi Umat & Realisasi Biaya (PDF Siap Cetak).</p>
+          <div className="space-y-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-700 dark:text-amber-400 flex items-center justify-center">
+              <FileText size={18} />
+            </div>
+            <div>
+              <h3 className="font-bold text-neutral-900 dark:text-white text-sm">Cetak LPJ Event (PDF)</h3>
+              <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] mt-1 leading-relaxed">
+                Laporan Pertanggungjawaban resmi dengan Rekap Presensi Umat dan Realisasi Biaya siap cetak A4.
+              </p>
+            </div>
+          </div>
+          <div className="pt-2 flex items-center justify-between text-xs font-semibold text-amber-700 dark:text-amber-400 group-hover:gap-1.5 transition-all">
+            <span>Buka Dokumen</span>
+            <ArrowUpRight size={14} className="text-[#86868b]" />
+          </div>
         </button>
 
+        {/* Card 5: Download LPJ Event (Excel) */}
         <button
           onClick={() => exportLPJToExcel(event, registrations)}
-          className="p-5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 text-left space-y-2 hover:border-emerald-500 cursor-pointer transition shadow-sm"
+          className="p-6 rounded-3xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] text-left space-y-4 hover:border-black/20 dark:hover:border-white/20 transition-all cursor-pointer group flex flex-col justify-between"
         >
-          <div className="flex items-center justify-between">
-            <FileSpreadsheet className="text-emerald-700 dark:text-emerald-400" size={24} />
-            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200">
-              Download .XLS
-            </span>
+          <div className="space-y-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 flex items-center justify-center">
+              <FileSpreadsheet size={18} />
+            </div>
+            <div>
+              <h3 className="font-bold text-neutral-900 dark:text-white text-sm">Download LPJ Event (Excel)</h3>
+              <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] mt-1 leading-relaxed">
+                Unduh Laporan Pertanggungjawaban lengkap berformat Excel (.xls) beserta Rekapitulasi Keuangan.
+              </p>
+            </div>
           </div>
-          <h4 className="font-extrabold text-slate-900 dark:text-white text-sm">Download LPJ Event (Excel)</h4>
-          <p className="text-[11px] text-slate-500">Mengunduh Laporan Pertanggungjawaban LENGKAP berformat Excel (.xls) beserta Rekap Keuangan & Kehadiran.</p>
+          <div className="pt-2 flex items-center justify-between text-xs font-semibold text-emerald-700 dark:text-emerald-400 group-hover:gap-1.5 transition-all">
+            <span>Download .XLS</span>
+            <ArrowUpRight size={14} className="text-[#86868b]" />
+          </div>
         </button>
       </div>
     </div>
