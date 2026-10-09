@@ -18,9 +18,9 @@ export const EventProposalRundownTab: React.FC<EventProposalRundownTabProps> = (
       <div className="flex justify-between items-center border-b border-purple-100 dark:border-purple-900/60 pb-3">
         <div>
           <h3 className="text-base font-black text-slate-900 dark:text-white">
-            Rundown Acara (Khusus Proposal Event)
+            Susunan Acara (Proposal Kegiatan)
           </h3>
-          <p className="text-xs text-slate-500">Jadwal acara resmi yang otomatis dicetak masuk ke dalam Dokumen Proposal Event.</p>
+          <p className="text-xs text-slate-500">Jadwal susunan acara resmi yang dicetak pada dokumen proposal kegiatan.</p>
         </div>
 
         <button
@@ -28,7 +28,7 @@ export const EventProposalRundownTab: React.FC<EventProposalRundownTabProps> = (
           className="px-3.5 py-2 rounded-xl gradient-mnsbdi text-white font-extrabold text-xs flex items-center gap-1.5 shadow-md cursor-pointer"
         >
           <Plus size={14} />
-          <span>Tambah Rundown Proposal</span>
+          <span>Tambah Susunan Acara</span>
         </button>
       </div>
 
@@ -80,7 +80,7 @@ export const EventProposalRundownTab: React.FC<EventProposalRundownTabProps> = (
             ) : (
               <tr>
                 <td colSpan={6} className="py-6 text-center text-slate-400 text-xs italic">
-                  Belum ada rundown acara proposal. Klik tombol "Tambah Rundown Proposal" di atas.
+                  Belum ada susunan acara proposal. Klik tombol &quot;Tambah Susunan Acara&quot; di atas.
                 </td>
               </tr>
             )}

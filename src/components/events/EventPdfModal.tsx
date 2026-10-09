@@ -166,8 +166,8 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
             <div className="space-y-5 text-xs text-slate-800 leading-relaxed">
               <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs">
                 <div>
-                  <span className="font-semibold text-slate-900">Total Umat Terdaftar: {sortedRegistrations.length} Umat</span>
-                  <span className="text-[11px] text-slate-500 block">Daftar presensi kehadiran dan paraf kegiatan</span>
+                  <span className="font-semibold text-slate-900">Total Peserta: {sortedRegistrations.length} Orang</span>
+                  <span className="text-[11px] text-slate-500 block">Daftar kehadiran dan tanda tangan peserta kegiatan</span>
                 </div>
                 <div className="text-right text-[11px] text-slate-500">
                   Dicetak: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -178,12 +178,12 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                 <thead>
                   <tr className="bg-slate-100 text-slate-800 font-semibold text-[11px]">
                     <th className="p-2 border border-slate-300 text-center w-8">No</th>
-                    <th className="p-2 border border-slate-300">Nama Lengkap Umat</th>
+                    <th className="p-2 border border-slate-300">Nama Lengkap Peserta</th>
                     <th className="p-2 border border-slate-300 text-center w-12">L/P</th>
                     <th className="p-2 border border-slate-300 text-center">Bagian</th>
                     <th className="p-2 border border-slate-300">Cetya & HAN</th>
                     <th className="p-2 border border-slate-300 text-center">Status Bayar</th>
-                    <th className="p-2 border border-slate-300 text-center w-28">Paraf Presensi</th>
+                    <th className="p-2 border border-slate-300 text-center w-28">Tanda Tangan</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -409,7 +409,7 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                 <div className="space-y-1.5">
                   {pdfMode === 'lpj' && (
                     <h5 className="text-[11px] font-semibold text-slate-800 uppercase tracking-wide">
-                      B. Rekapitulasi Pemasukan, Anggaran RAB & Realisasi Pengeluaran
+                      B. Rekapitulasi Pemasukan, Anggaran RAB & Pengeluaran Aktual
                     </h5>
                   )}
                   <table className="w-full text-left text-xs border-collapse border border-slate-300">
@@ -418,17 +418,17 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                         <th className="p-2 border border-slate-300 text-center w-8">No</th>
                         <th className="p-2 border border-slate-300">Uraian / Keterangan</th>
                         <th className="p-2 border border-slate-300 text-right">Pemasukan (Rp)</th>
-                        <th className="p-2 border border-slate-300 text-right">Target RAB (Rp)</th>
-                        {pdfMode === 'lpj' && <th className="p-2 border border-slate-300 text-right">Realisasi (Rp)</th>}
+                        <th className="p-2 border border-slate-300 text-right">Anggaran RAB (Rp)</th>
+                        {pdfMode === 'lpj' && <th className="p-2 border border-slate-300 text-right">Pengeluaran Aktual (Rp)</th>}
                         <th className="p-2 border border-slate-300 text-right">Selisih (Rp)</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {/* Baris Utama: Total Biaya Pendaftaran Kegiatan Umat */}
+                      {/* Baris Utama: Total Biaya Pendaftaran Kegiatan */}
                       <tr className="bg-white font-medium">
                         <td className="p-2 border border-slate-300 text-center text-slate-500">1</td>
                         <td className="p-2 border border-slate-300 font-semibold text-slate-900">
-                          Total Biaya Pendaftaran Umat ({registrations.length} Peserta)
+                          Pemasukan Pendaftaran ({registrations.length} Peserta)
                         </td>
                         <td className="p-2 border border-slate-300 text-right font-mono text-slate-900">
                           + Rp {totalUmatRegistrationFees.toLocaleString('id-ID')}
@@ -538,7 +538,7 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                             {pdfMode === 'lpj' && (
                               <tr className="bg-slate-200/80 font-bold text-slate-900 text-xs">
                                 <td colSpan={5} className="p-2.5 border border-slate-300 text-right uppercase tracking-wide">
-                                  SALDO KEUANGAN AKHIR (PEMASUKAN - REALISASI)
+                                  SISA KAS KEGIATAN (PEMASUKAN - PENGELUARAN)
                                 </td>
                                 <td className={`p-2.5 border border-slate-300 text-right font-mono font-bold ${
                                   saldoKasGlobal >= 0 ? 'text-emerald-800' : 'text-rose-800'

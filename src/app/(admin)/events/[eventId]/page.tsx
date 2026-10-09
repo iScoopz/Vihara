@@ -85,10 +85,10 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
       year: 'numeric'
     });
 
-    let waText = `*DAFTAR PESERTA EVENT: ${event.title.toUpperCase()}*\n`;
+    let waText = `*DAFTAR PESERTA: ${event.title.toUpperCase()}*\n`;
     waText += `📅 Tanggal: ${dateStr}\n`;
     waText += `📍 Lokasi: ${event.location}\n`;
-    waText += `👥 Total: ${registrations.length} Umat\n\n`;
+    waText += `👥 Total: ${registrations.length} Orang\n\n`;
 
     const sortedRegs = [...registrations].sort((a, b) => {
       const nameA = a.profile?.full_name || '';
@@ -97,7 +97,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
     });
 
     sortedRegs.forEach((r, idx) => {
-      waText += `${idx + 1}. ${r.profile?.full_name || 'Umat Vihara'}\n`;
+      waText += `${idx + 1}. ${r.profile?.full_name || 'Peserta'}\n`;
     });
 
     if (navigator.clipboard) {
@@ -223,16 +223,16 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
     }));
 
     showToast(
-      nextAttended ? 'Presensi kehadiran umat ditandai HADIR.' : 'Presensi kehadiran ditandai ABSEN.',
+      nextAttended ? 'Status peserta ditandai HADIR.' : 'Status peserta ditandai BELUM HADIR.',
       'success',
-      'Update Presensi'
+      'Status Kehadiran'
     );
 
     try {
       await toggleAttendance(regId);
     } catch (e) {
       setRegistrations(prev => prev.map(r => r.id === regId ? { ...r, is_attended: !r.is_attended } : r));
-      showToast('Gagal memperbarui presensi.', 'error', 'Galat Presensi');
+      showToast('Gagal memperbarui status kehadiran.', 'error', 'Galat');
     }
   };
 
@@ -699,7 +699,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
               }`}
             >
               <Clock size={15} />
-              <span>Rundown Proposal ({event.proposal_rundowns?.length || 0})</span>
+              <span>Susunan Acara ({event.proposal_rundowns?.length || 0})</span>
             </button>
 
             <button
@@ -711,7 +711,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
               }`}
             >
               <ListTodo size={15} />
-              <span>Skenario Kerja ({event.skenario_kerja?.length || 0})</span>
+              <span>Jadwal Tim ({event.skenario_kerja?.length || 0})</span>
             </button>
           </>
         )}
@@ -725,7 +725,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
           }`}
         >
           <UserCheck size={15} />
-          <span>Presensi & Peserta ({registrations.length})</span>
+          <span>Daftar Peserta & Kehadiran ({registrations.length})</span>
         </button>
 
         {(event.is_complex ?? true) && (
@@ -744,14 +744,14 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
 
         <button
           onClick={() => setActiveTab('laporan')}
-          className={`pb-3 px-3 font-extrabold text-xs transition flex items-center gap-2 border-b-2 whitespace-nowrap cursor-pointer ${
+          className={`py-2 px-3.5 rounded-xl text-xs transition flex items-center gap-2 whitespace-nowrap cursor-pointer active:scale-95 ${
             activeTab === 'laporan'
-              ? 'border-purple-600 text-purple-700 dark:text-purple-300'
-              : 'border-transparent text-slate-400 hover:text-slate-700'
+              ? 'bg-white dark:bg-[#1f1338] text-purple-950 dark:text-amber-300 font-black shadow-xs border border-slate-200/80 dark:border-purple-700/60'
+              : 'text-slate-600 dark:text-purple-300/80 font-bold hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-purple-900/30'
           }`}
         >
-          <FileText size={16} />
-          <span>Cetak Report</span>
+          <FileText size={15} />
+          <span>Dokumen & Laporan</span>
         </button>
       </div>
 

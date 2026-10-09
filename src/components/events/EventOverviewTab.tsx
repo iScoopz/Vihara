@@ -15,7 +15,7 @@ export const EventOverviewTab: React.FC<EventOverviewTabProps> = ({ event, regis
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 print:hidden">
       <div className="md:col-span-2 p-7 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-4 text-xs text-neutral-700 dark:text-neutral-300">
         <h2 className="text-sm font-bold text-neutral-900 dark:text-white border-b border-black/[0.04] dark:border-white/[0.06] pb-3">
-          Informasi Event
+          Informasi Kegiatan
         </h2>
         <p className="leading-relaxed text-[#86868b] dark:text-[#a1a1a6]">{event.description}</p>
         
@@ -31,21 +31,21 @@ export const EventOverviewTab: React.FC<EventOverviewTabProps> = ({ event, regis
 
       <div className="p-7 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-4">
         <h2 className="text-sm font-bold text-neutral-900 dark:text-white border-b border-black/[0.04] dark:border-white/[0.06] pb-3">
-          Status Kuota Event
+          Kuota Peserta
         </h2>
         <div className="space-y-3 text-xs">
           <div className="flex justify-between items-center">
             <span className="text-[#86868b]">Kapasitas Maksimal:</span>
-            <strong className="text-neutral-900 dark:text-white">{quota} Umat</strong>
+            <strong className="text-neutral-900 dark:text-white">{quota} Orang</strong>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-[#86868b]">Terdaftar Saat Ini:</span>
-            <strong className="text-neutral-900 dark:text-white">{registrations.length} Umat</strong>
+            <strong className="text-neutral-900 dark:text-white">{registrations.length} Orang</strong>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-[#86868b]">Hadir Presensi:</span>
+            <span className="text-[#86868b]">Peserta Hadir:</span>
             <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">
-              {attendedCount} Umat
+              {attendedCount} Orang
             </strong>
           </div>
 

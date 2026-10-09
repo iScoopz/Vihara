@@ -78,10 +78,10 @@ export const EventPricingModal: React.FC<EventPricingModalProps> = ({
             </div>
             <div>
               <h3 className="font-extrabold text-base text-slate-900 dark:text-white">
-                Kelola Tarif & Biaya Tambahan Event
+                Kelola Tarif & Biaya Tambahan
               </h3>
               <p className="text-[11px] text-slate-500">
-                Atur tarif pendaftaran per Bagian Umat dan sesuaikan komponen biaya tambahan sewaktu-waktu.
+                Atur tarif pendaftaran per bagian dan kelola biaya tambahan sesuai kebutuhan.
               </p>
             </div>
           </div>
@@ -97,7 +97,7 @@ export const EventPricingModal: React.FC<EventPricingModalProps> = ({
           {/* SECTION 1: TARIF BIASA PER BAGIAN UMAT */}
           <div className="space-y-3">
             <h4 className="font-extrabold text-xs text-purple-950 dark:text-purple-200 uppercase tracking-wider flex items-center gap-1.5">
-              <span>1. Tarif Biaya Pendaftaran Pokok (per Bagian Umat)</span>
+              <span>1. Tarif Biaya Pendaftaran Pokok (per Bagian)</span>
             </h4>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -120,10 +120,10 @@ export const EventPricingModal: React.FC<EventPricingModalProps> = ({
             </div>
           </div>
 
-          {/* SECTION 2: BIAYA TAMBAHAN INSIDENTAL / DINAMIS */}
+          {/* SECTION 2: BIAYA TAMBAHAN PILIHAN */}
           <div className="space-y-3 border-t border-purple-100 dark:border-purple-900/60 pt-4">
             <h4 className="font-extrabold text-xs text-purple-950 dark:text-purple-200 uppercase tracking-wider flex items-center gap-1.5">
-              <span>2. Biaya Tambahan Insidental (Transportasi, Penginapan, Buku, dll)</span>
+              <span>2. Biaya Tambahan Pilihan (Transportasi, Buku, dll)</span>
             </h4>
 
             {/* List Existing Extra Fees */}
@@ -151,7 +151,7 @@ export const EventPricingModal: React.FC<EventPricingModalProps> = ({
                   </div>
                 ))
               ) : (
-                <p className="text-slate-400 italic text-[11px] py-1">Belum ada komponen biaya tambahan insidental yang dimasukkan.</p>
+                <p className="text-slate-400 italic text-[11px] py-1">Belum ada komponen biaya tambahan yang dimasukkan.</p>
               )}
             </div>
 

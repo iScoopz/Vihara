@@ -1,8 +1,8 @@
 import { EventBudget, EventSkenarioKerja, ViharaEvent, EventRegistration, UmatBagian } from '@/types/database';
 
 /**
- * Generates an institutional, clean Microsoft Excel (.xls) spreadsheet for RAB & Realisasi.
- * All numeric/amount columns contain pure numeric values with mso-number-format for native Excel calculations.
+ * Generates an executive, professionally styled Microsoft Excel (.xls) spreadsheet for RAB & Realisasi.
+ * All numeric/amount columns contain strictly pure numeric values with mso-number-format for native Excel calculations.
  */
 export function exportRABToExcel(
   eventTitle: string, 
@@ -18,12 +18,12 @@ export function exportRABToExcel(
 
   // Insert Umat Registration Fee Income if present
   if (totalUmatRegistrationFees > 0 || registrationsCount > 0) {
-    const label = `Biaya Pendaftaran Kegiatan Umat (${registrationsCount} Peserta)`;
+    const label = `Penerimaan Pendaftaran Peserta (${registrationsCount} Orang)`;
     itemMap[label] = {
       pemasukan: Number(totalUmatRegistrationFees) || 0,
       rab: 0,
       realisasi: 0,
-      notes: `Total penerimaan biaya pendaftaran ${registrationsCount} umat terdaftar`
+      notes: `Total penerimaan biaya pendaftaran ${registrationsCount} peserta terdaftar`
     };
   }
 
@@ -69,7 +69,7 @@ export function exportRABToExcel(
         <x:ExcelWorkbook>
           <x:ExcelWorksheets>
             <x:ExcelWorksheet>
-              <x:Name>Laporan Anggaran RAB</x:Name>
+              <x:Name>Laporan Anggaran & Realisasi</x:Name>
               <x:WorksheetOptions>
                 <x:DisplayGridlines/>
               </x:WorksheetOptions>
@@ -79,52 +79,54 @@ export function exportRABToExcel(
       </xml>
       <![endif]-->
       <style>
-        body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 11pt; color: #1e293b; }
-        .doc-title { font-size: 14pt; font-weight: bold; text-align: center; background-color: #f8fafc; border: 1px solid #cbd5e1; padding: 10px; }
-        .doc-sub { font-size: 10pt; text-align: center; color: #64748b; background-color: #f8fafc; border: 1px solid #cbd5e1; padding: 4px; }
-        .meta-label { font-weight: bold; background-color: #f1f5f9; border: 1px solid #cbd5e1; padding: 5px 8px; }
-        .meta-val { background-color: #ffffff; border: 1px solid #cbd5e1; padding: 5px 8px; }
-        th { background-color: #f1f5f9; color: #0f172a; font-weight: bold; text-align: center; padding: 8px 10px; border: 1px solid #94a3b8; font-size: 10.5pt; }
-        td { border: 1px solid #cbd5e1; padding: 6px 8px; vertical-align: middle; }
+        body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 11pt; color: #0f172a; }
+        .doc-title { font-size: 14pt; font-weight: bold; text-align: center; background-color: #0f172a; color: #ffffff; padding: 12px; }
+        .doc-sub { font-size: 10.5pt; text-align: center; background-color: #1e293b; color: #fbbf24; font-weight: bold; padding: 6px; }
+        .meta-label { font-weight: bold; background-color: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1; padding: 6px 10px; }
+        .meta-val { background-color: #ffffff; border: 1px solid #cbd5e1; padding: 6px 10px; }
+        th { background-color: #1e293b; color: #ffffff; font-weight: bold; text-align: center; padding: 9px 10px; border: 1px solid #0f172a; font-size: 10.5pt; }
+        td { border: 1px solid #cbd5e1; padding: 6px 9px; vertical-align: middle; }
         .row-even { background-color: #f8fafc; }
         .row-odd { background-color: #ffffff; }
+        .row-highlight { background-color: #f0fdf4; font-weight: bold; }
         .num { mso-number-format:"\\#\\,\\#\\#0"; text-align: right; }
         .num-bold { mso-number-format:"\\#\\,\\#\\#0"; text-align: right; font-weight: bold; }
-        .num-green { mso-number-format:"\\#\\,\\#\\#0"; text-align: right; color: #166534; }
-        .num-red { mso-number-format:"\\#\\,\\#\\#0"; text-align: right; color: #991b1b; }
+        .num-green { mso-number-format:"\\#\\,\\#\\#0"; text-align: right; color: #166534; font-weight: bold; }
+        .num-red { mso-number-format:"\\#\\,\\#\\#0"; text-align: right; color: #b91c1c; font-weight: bold; }
         .num-int { mso-number-format:"0"; text-align: center; }
         .text-center { text-align: center; }
         .text-left { text-align: left; }
-        .footer-total { background-color: #f1f5f9; font-weight: bold; }
-        .footer-saldo { background-color: #e2e8f0; font-weight: bold; }
+        .badge-status { text-align: center; font-weight: bold; font-size: 10pt; }
+        .footer-total { background-color: #e2e8f0; font-weight: bold; border-top: 2px solid #0f172a; }
+        .footer-saldo { background-color: #0f172a; color: #ffffff; font-weight: bold; font-size: 11pt; }
       </style>
     </head>
     <body>
       <table>
         <tr>
-          <td colspan="8" class="doc-title">LAPORAN KEUANGAN & RENCANA ANGGARAN BIAYA (RAB)</td>
+          <td colspan="8" class="doc-title">LAPORAN RENCANA ANGGARAN BIAYA (RAB) & PENGELUARAN KEGIATAN</td>
         </tr>
         <tr>
-          <td colspan="8" class="doc-sub">MAJELIS NICHIREN SHOSHU BUDDHA DHARMA INDONESIA (MNSBDI)</td>
+          <td colspan="8" class="doc-sub">MAJELIS NICHIREN SHOSHU BUDDHA DHARMA INDONESIA (MNSBDI) - SENTRA MAKASSAR</td>
         </tr>
         <tr><td colspan="8"></td></tr>
         <tr>
           <td class="meta-label">Nama Kegiatan:</td>
           <td colspan="4" class="meta-val"><b>${eventTitle}</b></td>
-          <td class="meta-label">Tanggal Export:</td>
+          <td class="meta-label">Tanggal Laporan:</td>
           <td colspan="2" class="meta-val">${exportDate}</td>
         </tr>
         <tr><td colspan="8"></td></tr>
         <thead>
           <tr>
             <th style="width: 45px;">No</th>
-            <th style="width: 260px;">Nama Item / Deskripsi</th>
+            <th style="width: 270px;">Uraian Kegiatan / Item</th>
             <th style="width: 150px;">Pemasukan (Rp)</th>
-            <th style="width: 150px;">Target RAB (Rp)</th>
-            <th style="width: 150px;">Realisasi (Rp)</th>
-            <th style="width: 150px;">Selisih (Rp)</th>
-            <th style="width: 120px;">Status</th>
-            <th style="width: 220px;">Catatan</th>
+            <th style="width: 150px;">Anggaran (RAB) (Rp)</th>
+            <th style="width: 150px;">Pengeluaran (Rp)</th>
+            <th style="width: 140px;">Selisih (Rp)</th>
+            <th style="width: 130px;">Status</th>
+            <th style="width: 200px;">Catatan</th>
           </tr>
         </thead>
         <tbody>
@@ -138,7 +140,7 @@ export function exportRABToExcel(
   if (Object.keys(itemMap).length === 0) {
     htmlContent += `
       <tr>
-        <td colspan="8" class="text-center" style="color:#94a3b8; padding:12px;">Belum ada data anggaran keuangan.</td>
+        <td colspan="8" class="text-center" style="color:#94a3b8; padding:14px;">Belum ada data anggaran kegiatan.</td>
       </tr>
     `;
   } else {
@@ -157,17 +159,18 @@ export function exportRABToExcel(
       } else if (hasRAB && hasRealisasi) {
         selisih = data.rab - data.realisasi;
         if (selisih > 0) statusStr = 'Hemat';
-        else if (selisih < 0) statusStr = 'Over Budget';
-        else statusStr = 'Sesuai';
+        else if (selisih < 0) statusStr = 'Lebih Anggaran';
+        else statusStr = 'Sesuai Anggaran';
       } else if (hasRAB) {
         selisih = data.rab;
-        statusStr = 'Target RAB';
+        statusStr = 'Belum Terpakai';
       } else if (hasRealisasi) {
         selisih = -data.realisasi;
-        statusStr = 'Realisasi Langsung';
+        statusStr = 'Pengeluaran Tambahan';
       }
 
-      const rowClass = index % 2 === 0 ? 'row-even' : 'row-odd';
+      const isFirstIncomeRow = index === 1 && data.pemasukan > 0;
+      const rowClass = isFirstIncomeRow ? 'row-highlight' : (index % 2 === 0 ? 'row-even' : 'row-odd');
       const selisihClass = selisih < 0 ? 'num-red' : selisih > 0 ? 'num-green' : 'num';
 
       htmlContent += `
@@ -178,7 +181,7 @@ export function exportRABToExcel(
           <td class="num">${data.rab}</td>
           <td class="num">${data.realisasi}</td>
           <td class="${selisihClass}">${selisih}</td>
-          <td class="text-center">${statusStr}</td>
+          <td class="badge-status">${statusStr}</td>
           <td>${data.notes}</td>
         </tr>
       `;
@@ -193,7 +196,7 @@ export function exportRABToExcel(
         </tbody>
         <tfoot>
           <tr class="footer-total">
-            <td colspan="2" class="text-left" style="font-weight:bold;">TOTAL KESELURUHAN</td>
+            <td colspan="2" class="text-left">TOTAL KESELURUHAN</td>
             <td class="num-bold">${totalPemasukan}</td>
             <td class="num-bold">${totalRAB}</td>
             <td class="num-bold">${totalRealisasi}</td>
@@ -202,9 +205,11 @@ export function exportRABToExcel(
             <td></td>
           </tr>
           <tr class="footer-saldo">
-            <td colspan="2" class="text-left" style="font-weight:bold;">SALDO KAS (PEMASUKAN - REALISASI)</td>
-            <td colspan="4" class="num-bold">${saldoKas}</td>
-            <td class="text-center" style="font-weight:bold;">${saldoKas >= 0 ? 'SURPLUS' : 'DEFISIT'}</td>
+            <td colspan="2" class="text-left" style="color:#ffffff;">SISA KAS (PEMASUKAN - PENGELUARAN)</td>
+            <td colspan="4" class="num-bold" style="color:#ffffff; font-size:11.5pt;">${saldoKas}</td>
+            <td class="text-center" style="color:${saldoKas >= 0 ? '#4ade80' : '#f87171'}; font-weight:bold;">
+              ${saldoKas >= 0 ? 'Surplus' : 'Defisit'}
+            </td>
             <td></td>
           </tr>
         </tfoot>
@@ -225,7 +230,7 @@ export function exportRABToExcel(
 
 
 /**
- * Generates an institutional, clean Microsoft Excel (.xls) document for Skenario Kerja (SK Operasional).
+ * Generates an executive, clean Microsoft Excel (.xls) document for Jadwal Kerja Tim Lapangan.
  */
 export function exportSkenarioKerjaToExcel(eventTitle: string, skenarioList: EventSkenarioKerja[]) {
   const exportDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -239,7 +244,7 @@ export function exportSkenarioKerjaToExcel(eventTitle: string, skenarioList: Eve
         <x:ExcelWorkbook>
           <x:ExcelWorksheets>
             <x:ExcelWorksheet>
-              <x:Name>Skenario Kerja Lapangan</x:Name>
+              <x:Name>Jadwal Kerja Tim Lapangan</x:Name>
               <x:WorksheetOptions>
                 <x:DisplayGridlines/>
               </x:WorksheetOptions>
@@ -249,44 +254,44 @@ export function exportSkenarioKerjaToExcel(eventTitle: string, skenarioList: Eve
       </xml>
       <![endif]-->
       <style>
-        body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 11pt; color: #1e293b; }
-        .doc-title { font-size: 14pt; font-weight: bold; text-align: center; background-color: #f8fafc; border: 1px solid #cbd5e1; padding: 10px; }
-        .doc-sub { font-size: 10pt; text-align: center; color: #64748b; background-color: #f8fafc; border: 1px solid #cbd5e1; padding: 4px; }
-        .meta-label { font-weight: bold; background-color: #f1f5f9; border: 1px solid #cbd5e1; padding: 5px 8px; }
-        .meta-val { background-color: #ffffff; border: 1px solid #cbd5e1; padding: 5px 8px; }
-        th { background-color: #f1f5f9; color: #0f172a; font-weight: bold; text-align: center; padding: 8px 10px; border: 1px solid #94a3b8; font-size: 10.5pt; }
-        td { border: 1px solid #cbd5e1; padding: 6px 8px; vertical-align: top; }
+        body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 11pt; color: #0f172a; }
+        .doc-title { font-size: 14pt; font-weight: bold; text-align: center; background-color: #0f172a; color: #ffffff; padding: 12px; }
+        .doc-sub { font-size: 10.5pt; text-align: center; background-color: #1e293b; color: #fbbf24; font-weight: bold; padding: 6px; }
+        .meta-label { font-weight: bold; background-color: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1; padding: 6px 10px; }
+        .meta-val { background-color: #ffffff; border: 1px solid #cbd5e1; padding: 6px 10px; }
+        th { background-color: #1e293b; color: #ffffff; font-weight: bold; text-align: center; padding: 9px 10px; border: 1px solid #0f172a; font-size: 10.5pt; }
+        td { border: 1px solid #cbd5e1; padding: 6px 9px; vertical-align: top; }
         .row-even { background-color: #f8fafc; }
         .row-odd { background-color: #ffffff; }
-        .num-int { mso-number-format:"0"; text-align: center; }
+        .num-int { mso-number-format:"0"; text-align: center; font-weight: bold; }
         .text-center { text-align: center; }
       </style>
     </head>
     <body>
       <table>
         <tr>
-          <td colspan="7" class="doc-title">MATRIKS SKENARIO KERJA (SK OPERASIONAL LAPANGAN)</td>
+          <td colspan="7" class="doc-title">JADWAL KERJA TIM & ALUR LAPANGAN KEGIATAN</td>
         </tr>
         <tr>
-          <td colspan="7" class="doc-sub">MAJELIS NICHIREN SHOSHU BUDDHA DHARMA INDONESIA (MNSBDI)</td>
+          <td colspan="7" class="doc-sub">MAJELIS NICHIREN SHOSHU BUDDHA DHARMA INDONESIA (MNSBDI) - SENTRA MAKASSAR</td>
         </tr>
         <tr><td colspan="7"></td></tr>
         <tr>
           <td class="meta-label">Nama Kegiatan:</td>
           <td colspan="4" class="meta-val"><b>${eventTitle}</b></td>
-          <td class="meta-label">Tanggal Export:</td>
+          <td class="meta-label">Tanggal Laporan:</td>
           <td class="meta-val">${exportDate}</td>
         </tr>
         <tr><td colspan="7"></td></tr>
         <thead>
           <tr>
             <th style="width: 45px;">No</th>
-            <th style="width: 160px;">Hari / Tanggal / Tahap</th>
-            <th style="width: 110px;">Waktu / Jam</th>
-            <th style="width: 200px;">Bidang & PJ Pelaksana</th>
-            <th style="width: 280px;">Detail Persiapan / Kegiatan</th>
-            <th style="width: 220px;">Interbid (Tujuan Koordinasi)</th>
-            <th style="width: 240px;">Catatan Lapangan</th>
+            <th style="width: 170px;">Tahap / Hari</th>
+            <th style="width: 110px;">Waktu</th>
+            <th style="width: 210px;">Seksi & Penanggung Jawab</th>
+            <th style="width: 290px;">Uraian Tugas / Kegiatan</th>
+            <th style="width: 210px;">Koordinasi Terkait</th>
+            <th style="width: 230px;">Catatan Lapangan</th>
           </tr>
         </thead>
         <tbody>
@@ -295,7 +300,7 @@ export function exportSkenarioKerjaToExcel(eventTitle: string, skenarioList: Eve
   if (skenarioList.length === 0) {
     htmlContent += `
       <tr>
-        <td colspan="7" class="text-center" style="color:#94a3b8; padding:12px;">Belum ada data Skenario Kerja.</td>
+        <td colspan="7" class="text-center" style="color:#94a3b8; padding:14px;">Belum ada data jadwal alur kerja tim.</td>
       </tr>
     `;
   } else {
@@ -326,15 +331,15 @@ export function exportSkenarioKerjaToExcel(eventTitle: string, skenarioList: Eve
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.setAttribute('href', url);
-  link.setAttribute('download', `Skenario_Kerja_${eventTitle.replace(/[^a-zA-Z0-9_]/g, '_')}.xls`);
+  link.setAttribute('download', `Jadwal_Kerja_Tim_${eventTitle.replace(/[^a-zA-Z0-9_]/g, '_')}.xls`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
 }
 
 /**
- * Generates an institutional, clean Microsoft Excel (.xls) document for LAPORAN PERTANGGUNGJAWABAN (LPJ).
- * All numeric/amount columns contain strictly pure numbers without concatenated text for seamless calculation.
+ * Generates an executive, institutional Microsoft Excel (.xls) document for LAPORAN PERTANGGUNGJAWABAN (LPJ).
+ * All numeric/amount columns contain strictly pure numeric values without concatenated text for seamless calculation.
  */
 export function exportLPJToExcel(event: ViharaEvent, registrations: EventRegistration[]) {
   const eventTitle = event.title;
@@ -444,25 +449,27 @@ export function exportLPJToExcel(event: ViharaEvent, registrations: EventRegistr
       </xml>
       <![endif]-->
       <style>
-        body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 11pt; color: #1e293b; }
-        .doc-title { font-size: 14pt; font-weight: bold; text-align: center; background-color: #f8fafc; border: 1px solid #cbd5e1; padding: 10px; }
-        .doc-sub { font-size: 10pt; text-align: center; color: #64748b; background-color: #f8fafc; border: 1px solid #cbd5e1; padding: 4px; }
-        .section-header { background-color: #f1f5f9; color: #0f172a; font-size: 11pt; font-weight: bold; padding: 7px 10px; border: 1px solid #94a3b8; }
-        .meta-label { font-weight: bold; background-color: #f1f5f9; border: 1px solid #cbd5e1; padding: 5px 8px; }
-        .meta-val { background-color: #ffffff; border: 1px solid #cbd5e1; padding: 5px 8px; }
-        th { background-color: #f1f5f9; color: #0f172a; font-weight: bold; text-align: center; padding: 7px 9px; border: 1px solid #94a3b8; font-size: 10.5pt; }
-        td { border: 1px solid #cbd5e1; padding: 6px 8px; vertical-align: middle; }
+        body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 11pt; color: #0f172a; }
+        .doc-title { font-size: 14pt; font-weight: bold; text-align: center; background-color: #0f172a; color: #ffffff; padding: 12px; }
+        .doc-sub { font-size: 10.5pt; text-align: center; background-color: #1e293b; color: #fbbf24; font-weight: bold; padding: 6px; }
+        .section-header { background-color: #1e293b; color: #ffffff; font-size: 11pt; font-weight: bold; padding: 8px 10px; border: 1px solid #0f172a; }
+        .meta-label { font-weight: bold; background-color: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1; padding: 6px 10px; }
+        .meta-val { background-color: #ffffff; border: 1px solid #cbd5e1; padding: 6px 10px; }
+        th { background-color: #334155; color: #ffffff; font-weight: bold; text-align: center; padding: 8px 10px; border: 1px solid #1e293b; font-size: 10.5pt; }
+        td { border: 1px solid #cbd5e1; padding: 6px 9px; vertical-align: middle; }
         .row-even { background-color: #f8fafc; }
         .row-odd { background-color: #ffffff; }
+        .row-highlight { background-color: #f0fdf4; font-weight: bold; }
         .num { mso-number-format:"\\#\\,\\#\\#0"; text-align: right; }
         .num-bold { mso-number-format:"\\#\\,\\#\\#0"; text-align: right; font-weight: bold; }
-        .num-green { mso-number-format:"\\#\\,\\#\\#0"; text-align: right; color: #166534; }
-        .num-red { mso-number-format:"\\#\\,\\#\\#0"; text-align: right; color: #991b1b; }
+        .num-green { mso-number-format:"\\#\\,\\#\\#0"; text-align: right; color: #166534; font-weight: bold; }
+        .num-red { mso-number-format:"\\#\\,\\#\\#0"; text-align: right; color: #b91c1c; font-weight: bold; }
         .num-int { mso-number-format:"0"; text-align: center; }
         .text-center { text-align: center; }
         .text-left { text-align: left; }
-        .footer-total { background-color: #f1f5f9; font-weight: bold; }
-        .footer-saldo { background-color: #e2e8f0; font-weight: bold; }
+        .badge-status { text-align: center; font-weight: bold; }
+        .footer-total { background-color: #e2e8f0; font-weight: bold; border-top: 2px solid #0f172a; }
+        .footer-saldo { background-color: #0f172a; color: #ffffff; font-weight: bold; font-size: 11pt; }
       </style>
     </head>
     <body>
@@ -486,28 +493,28 @@ export function exportLPJToExcel(event: ViharaEvent, registrations: EventRegistr
         <tr>
           <td class="meta-label">Lokasi:</td>
           <td colspan="4" class="meta-val">${event.location || '-'}</td>
-          <td class="meta-label">Tanggal Export:</td>
+          <td class="meta-label">Tanggal Dokumen:</td>
           <td colspan="2" class="meta-val">${exportDate}</td>
         </tr>
         <tr>
           <td class="meta-label">Total Peserta:</td>
           <td colspan="4" class="meta-val">${registrations.length} Peserta Terdaftar</td>
-          <td class="meta-label">Status Keuangan:</td>
-          <td colspan="2" class="meta-val" style="font-weight:bold; color:${saldoKasGlobal >= 0 ? '#166534' : '#991b1b'};">
-            ${saldoKasGlobal >= 0 ? 'SURPLUS' : 'DEFISIT'}
+          <td class="meta-label">Status Kas:</td>
+          <td colspan="2" class="meta-val" style="font-weight:bold; color:${saldoKasGlobal >= 0 ? '#166534' : '#b91c1c'};">
+            ${saldoKasGlobal >= 0 ? 'Surplus' : 'Defisit'}
           </td>
         </tr>
         <tr><td colspan="8"></td></tr>
 
         <!-- BAGIAN I: SUSUNAN PANITIA -->
         <tr>
-          <td colspan="8" class="section-header">I. SUSUNAN STRUKTUR PANITIA PELAKSANA KEGIATAN</td>
+          <td colspan="8" class="section-header">I. SUSUNAN PANITIA PELAKSANA KEGIATAN</td>
         </tr>
         <thead>
           <tr>
             <th style="width: 45px;">No</th>
             <th colspan="3" style="width: 300px;">Jabatan / Seksi Panitia</th>
-            <th colspan="4" style="width: 350px;">Nama Penanggung Jawab (PJ)</th>
+            <th colspan="4" style="width: 360px;">Nama Penanggung Jawab</th>
           </tr>
         </thead>
         <tbody>
@@ -528,42 +535,42 @@ export function exportLPJToExcel(event: ViharaEvent, registrations: EventRegistr
           </tr>
           <tr class="row-even">
             <td class="num-int">4</td>
-            <td colspan="3"><b>PJ Acara & Ritual</b></td>
+            <td colspan="3"><b>Seksi Acara & Ritual</b></td>
             <td colspan="4">${org?.pj_acara_name || '-'}</td>
           </tr>
           ${(org?.sub_acara || []).map((s, idx) => `
             <tr class="${idx % 2 === 0 ? 'row-odd' : 'row-even'}">
               <td class="num-int">4.${idx + 1}</td>
-              <td colspan="3" style="padding-left: 20px;">└ Seksi Acara: ${s.role_name}</td>
+              <td colspan="3" style="padding-left: 20px;">└ Sub-seksi Acara: ${s.role_name}</td>
               <td colspan="4">${s.pic_name}</td>
             </tr>
           `).join('')}
           <tr class="row-odd">
             <td class="num-int">5</td>
-            <td colspan="3"><b>PJ Bidang Umum & Logistik</b></td>
+            <td colspan="3"><b>Seksi Logistik & Perlengkapan</b></td>
             <td colspan="4">${org?.pj_umum_name || '-'}</td>
           </tr>
           ${(org?.sub_umum || []).map((s, idx) => `
             <tr class="${idx % 2 === 0 ? 'row-even' : 'row-odd'}">
               <td class="num-int">5.${idx + 1}</td>
-              <td colspan="3" style="padding-left: 20px;">└ Seksi Umum: ${s.role_name}</td>
+              <td colspan="3" style="padding-left: 20px;">└ Sub-seksi Perlengkapan: ${s.role_name}</td>
               <td colspan="4">${s.pic_name}</td>
             </tr>
           `).join('')}
         </tbody>
         <tr><td colspan="8"></td></tr>
 
-        <!-- BAGIAN II: REKAP PEMASUKAN PENDAFTARAN UMAT PER BAGIAN -->
+        <!-- BAGIAN II: REKAP PEMASUKAN PENDAFTARAN PESERTA PER BAGIAN -->
         <tr>
-          <td colspan="8" class="section-header">II. RINCIAN PENERIMAAN BIAYA PENDAFTARAN UMAT PER BAGIAN</td>
+          <td colspan="8" class="section-header">II. RINCIAN BIAYA PENDAFTARAN PESERTA PER BAGIAN</td>
         </tr>
         <thead>
           <tr>
             <th style="width: 45px;">No</th>
-            <th colspan="3" style="width: 250px;">Nama Bagian Umat</th>
+            <th colspan="3" style="width: 250px;">Bagian Umat</th>
             <th style="width: 140px;">Tarif Pokok (Rp)</th>
-            <th style="width: 120px;">Jumlah Umat</th>
-            <th colspan="2" style="width: 200px;">Subtotal Pemasukan (Rp)</th>
+            <th style="width: 120px;">Jumlah Peserta</th>
+            <th colspan="2" style="width: 200px;">Total Pemasukan (Rp)</th>
           </tr>
         </thead>
         <tbody>
@@ -576,12 +583,12 @@ export function exportLPJToExcel(event: ViharaEvent, registrations: EventRegistr
               <td colspan="2" class="num">${item.totalPemasukanBagian}</td>
             </tr>
           `).join('') : `
-            <tr><td colspan="8" class="text-center" style="color:#94a3b8; padding:10px;">Belum ada data pendaftaran bagian.</td></tr>
+            <tr><td colspan="8" class="text-center" style="color:#94a3b8; padding:12px;">Belum ada data pendaftaran bagian.</td></tr>
           `}
         </tbody>
         <tfoot>
           <tr class="footer-total">
-            <td colspan="4" class="text-left" style="font-weight:bold;">TOTAL PEMASUKAN PENDAFTARAN UMAT:</td>
+            <td colspan="4" class="text-left">TOTAL BIAYA PENDAFTARAN PESERTA:</td>
             <td class="num-bold">-</td>
             <td class="num-int" style="font-weight:bold;">${registrations.length}</td>
             <td colspan="2" class="num-bold">${totalUmatRegistrationFees}</td>
@@ -591,31 +598,31 @@ export function exportLPJToExcel(event: ViharaEvent, registrations: EventRegistr
 
         <!-- BAGIAN III: REKAP KEUANGAN, RAB & REALISASI -->
         <tr>
-          <td colspan="8" class="section-header">III. LAPORAN KEUANGAN, TARGET RAB & REALISASI PENGELUARAN</td>
+          <td colspan="8" class="section-header">III. EVALUASI ANGGARAN & PENGELUARAN KEGIATAN</td>
         </tr>
         <thead>
           <tr>
             <th style="width: 45px;">No</th>
-            <th style="width: 250px;">Nama Item / Keterangan</th>
+            <th style="width: 260px;">Uraian Kebutuhan / Item</th>
             <th style="width: 140px;">Pemasukan (Rp)</th>
-            <th style="width: 140px;">Target RAB (Rp)</th>
-            <th style="width: 140px;">Realisasi (Rp)</th>
+            <th style="width: 140px;">Anggaran (RAB) (Rp)</th>
+            <th style="width: 140px;">Pengeluaran (Rp)</th>
             <th style="width: 140px;">Selisih (Rp)</th>
-            <th style="width: 120px;">Status</th>
+            <th style="width: 130px;">Status</th>
             <th style="width: 180px;">Catatan</th>
           </tr>
         </thead>
         <tbody>
           <!-- Row 1: Biaya Pendaftaran Umat -->
-          <tr class="row-odd">
+          <tr class="row-highlight">
             <td class="num-int">1</td>
-            <td><b>Biaya Pendaftaran Kegiatan Umat (${registrations.length} Peserta)</b></td>
+            <td><b>Penerimaan Pendaftaran Peserta (${registrations.length} Orang)</b></td>
             <td class="num">${totalUmatRegistrationFees}</td>
             <td class="num">0</td>
             <td class="num">0</td>
             <td class="num">0</td>
-            <td class="text-center">Pemasukan</td>
-            <td>Penerimaan biaya pendaftaran umat</td>
+            <td class="badge-status">Pemasukan</td>
+            <td>Penerimaan biaya pendaftaran peserta</td>
           </tr>
           ${groupedPdfItems.map((item, idx) => {
             const hasRAB = item.rab > 0;
@@ -628,14 +635,14 @@ export function exportLPJToExcel(event: ViharaEvent, registrations: EventRegistr
             } else if (hasRAB && hasRealisasi) {
               selisihVal = item.rab - item.realisasi;
               if (selisihVal > 0) statusText = 'Hemat';
-              else if (selisihVal < 0) statusText = 'Over Budget';
-              else statusText = 'Sesuai';
+              else if (selisihVal < 0) statusText = 'Lebih Anggaran';
+              else statusText = 'Sesuai Anggaran';
             } else if (hasRAB) {
               selisihVal = item.rab;
-              statusText = 'Target RAB';
+              statusText = 'Belum Terpakai';
             } else if (hasRealisasi) {
               selisihVal = -item.realisasi;
-              statusText = 'Realisasi Langsung';
+              statusText = 'Pengeluaran Tambahan';
             }
 
             const selisihClass = selisihVal < 0 ? 'num-red' : selisihVal > 0 ? 'num-green' : 'num';
@@ -648,7 +655,7 @@ export function exportLPJToExcel(event: ViharaEvent, registrations: EventRegistr
                 <td class="num">${item.rab || 0}</td>
                 <td class="num">${item.realisasi || 0}</td>
                 <td class="${selisihClass}">${selisihVal}</td>
-                <td class="text-center">${statusText}</td>
+                <td class="badge-status">${statusText}</td>
                 <td>${item.notes || '-'}</td>
               </tr>
             `;
@@ -656,7 +663,7 @@ export function exportLPJToExcel(event: ViharaEvent, registrations: EventRegistr
         </tbody>
         <tfoot>
           <tr class="footer-total">
-            <td colspan="2" class="text-left" style="font-weight:bold;">TOTAL KESELURUHAN:</td>
+            <td colspan="2" class="text-left">TOTAL KESELURUHAN:</td>
             <td class="num-bold">${totalPemasukanGlobal}</td>
             <td class="num-bold">${totalRAB}</td>
             <td class="num-bold">${totalRealisasi}</td>
@@ -665,9 +672,11 @@ export function exportLPJToExcel(event: ViharaEvent, registrations: EventRegistr
             <td></td>
           </tr>
           <tr class="footer-saldo">
-            <td colspan="2" class="text-left" style="font-weight:bold;">SALDO KAS (PEMASUKAN - REALISASI):</td>
-            <td colspan="4" class="num-bold">${saldoKasGlobal}</td>
-            <td class="text-center" style="font-weight:bold;">${saldoKasGlobal >= 0 ? 'SURPLUS' : 'DEFISIT'}</td>
+            <td colspan="2" class="text-left" style="color:#ffffff;">SISA KAS (PEMASUKAN - PENGELUARAN):</td>
+            <td colspan="4" class="num-bold" style="color:#ffffff; font-size:11.5pt;">${saldoKasGlobal}</td>
+            <td class="text-center" style="color:${saldoKasGlobal >= 0 ? '#4ade80' : '#f87171'}; font-weight:bold;">
+              ${saldoKasGlobal >= 0 ? 'Surplus' : 'Defisit'}
+            </td>
             <td></td>
           </tr>
         </tfoot>
@@ -675,18 +684,18 @@ export function exportLPJToExcel(event: ViharaEvent, registrations: EventRegistr
 
         <!-- BAGIAN IV: REKAPITULASI PESERTA UMAT -->
         <tr>
-          <td colspan="8" class="section-header">IV. REKAPITULASI PESERTA UMAT & BIAYA KEGIATAN</td>
+          <td colspan="8" class="section-header">IV. DAFTAR PESERTA & STATUS KEHADIRAN</td>
         </tr>
         <thead>
           <tr>
             <th style="width: 45px;">No</th>
-            <th style="width: 220px;">Nama Lengkap Umat</th>
-            <th style="width: 120px;">Bagian Umat</th>
+            <th style="width: 220px;">Nama Lengkap Peserta</th>
+            <th style="width: 120px;">Bagian</th>
             <th style="width: 160px;">Cetya & HAN</th>
-            <th style="width: 110px;">Status Pelunasan</th>
-            <th style="width: 110px;">Status Presensi</th>
-            <th style="width: 140px;">Biaya Kegiatan (Rp)</th>
-            <th style="width: 160px;">Catatan Tambahan</th>
+            <th style="width: 110px;">Status Pembayaran</th>
+            <th style="width: 110px;">Kehadiran</th>
+            <th style="width: 140px;">Biaya Pendaftaran (Rp)</th>
+            <th style="width: 160px;">Biaya Tambahan</th>
           </tr>
         </thead>
         <tbody>
@@ -704,26 +713,26 @@ export function exportLPJToExcel(event: ViharaEvent, registrations: EventRegistr
             return `
               <tr class="${idx % 2 === 0 ? 'row-odd' : 'row-even'}">
                 <td class="num-int">${idx + 1}</td>
-                <td><b>${reg.profile?.full_name || 'Umat Vihara'}</b></td>
+                <td><b>${reg.profile?.full_name || 'Peserta'}</b></td>
                 <td class="text-center">${userBagian}</td>
                 <td>${reg.profile?.cetya || '-'} / ${reg.profile?.han || '-'}</td>
                 <td class="text-center" style="font-weight:bold; color:${reg.is_paid ? '#166534' : '#64748b'};">
                   ${reg.is_paid ? 'Lunas' : 'Belum Lunas'}
                 </td>
                 <td class="text-center" style="font-weight:bold; color:${reg.is_attended ? '#166534' : '#64748b'};">
-                  ${reg.is_attended ? 'Hadir' : 'Belum Presensi'}
+                  ${reg.is_attended ? 'Hadir' : 'Belum Hadir'}
                 </td>
                 <td class="num">${userTotalFee}</td>
                 <td>${extraNote}</td>
               </tr>
             `;
           }).join('') : `
-            <tr><td colspan="8" class="text-center" style="color:#94a3b8; padding:10px;">Belum ada data pendaftar umat.</td></tr>
+            <tr><td colspan="8" class="text-center" style="color:#94a3b8; padding:12px;">Belum ada data peserta terdaftar.</td></tr>
           `}
         </tbody>
         <tfoot>
           <tr class="footer-total">
-            <td colspan="6" class="text-left" style="font-weight:bold;">TOTAL BIAYA KEGIATAN PESERTA (${registrations.length} UMAT):</td>
+            <td colspan="6" class="text-left">TOTAL BIAYA PENDAFTARAN PESERTA (${registrations.length} ORANG):</td>
             <td class="num-bold">${totalUmatRegistrationFees}</td>
             <td></td>
           </tr>
@@ -732,13 +741,13 @@ export function exportLPJToExcel(event: ViharaEvent, registrations: EventRegistr
 
         <!-- LEMBAR TANDA TANGAN -->
         <tr>
-          <td colspan="3" class="text-center" style="border:none; padding-top:20px;">
-            Mengetahui / Menyetujui,<br>
+          <td colspan="3" class="text-center" style="border:none; padding-top:24px;">
+            Mengetahui,<br>
             <b>Ketua Panitia Pelaksana</b><br><br><br><br>
-            <u><b>${org?.ketua_name || 'Upasaka Hendra Kurniawan'}</b></u>
+            <u><b>${org?.ketua_name || 'Hendra Kurniawan'}</b></u>
           </td>
           <td colspan="2" style="border:none;"></td>
-          <td colspan="3" class="text-center" style="border:none; padding-top:20px;">
+          <td colspan="3" class="text-center" style="border:none; padding-top:24px;">
             Makassar, ${exportDate}<br>
             <b>Sekretaris Panitia</b><br><br><br><br>
             <u><b>${org?.sekretaris_name || 'Suryani Dewi'}</b></u>

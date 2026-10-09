@@ -20,9 +20,9 @@ export const EventSkenarioKerjaTab: React.FC<EventSkenarioKerjaTabProps> = ({
         <div>
           <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
             <ListTodo className="text-amber-500" size={18} />
-            <span>Matriks Skenario Kerja (SK Operasional Lapangan)</span>
+            <span>Jadwal Kerja Tim & Alur Lapangan</span>
           </h3>
-          <p className="text-xs text-slate-500">Alur kerja detail persiapan tim dari H-2, H-1, hingga Hari-H beserta Interbid Bidang/PJ Pelaksana & Tujuan.</p>
+          <p className="text-xs text-slate-500">Alur kerja persiapan tim lapangan beserta penanggung jawab dan koordinasi tugas.</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -31,7 +31,7 @@ export const EventSkenarioKerjaTab: React.FC<EventSkenarioKerjaTabProps> = ({
             className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1.5 shadow cursor-pointer transition"
           >
             <FileSpreadsheet size={14} />
-            <span>Export SK ke Excel (.xls)</span>
+            <span>Export Excel (.xls)</span>
           </button>
 
           <button
@@ -39,7 +39,7 @@ export const EventSkenarioKerjaTab: React.FC<EventSkenarioKerjaTabProps> = ({
             className="px-3.5 py-2 rounded-xl gradient-mnsbdi text-white font-extrabold text-xs flex items-center gap-1.5 shadow-md cursor-pointer"
           >
             <Plus size={14} />
-            <span>Tambah Agenda SK</span>
+            <span>Tambah Jadwal Kerja</span>
           </button>
         </div>
       </div>
@@ -51,10 +51,10 @@ export const EventSkenarioKerjaTab: React.FC<EventSkenarioKerjaTabProps> = ({
               <th className="pb-3 w-10 text-center">No</th>
               <th className="pb-3">Hari / Tanggal / Tahap</th>
               <th className="pb-3 text-center">Waktu / Jam</th>
-              <th className="pb-3">Bidang & PJ Pelaksana</th>
-              <th className="pb-3">Detail Persiapan / Kegiatan</th>
-              <th className="pb-3">Interbid (Bidang & PJ Tujuan)</th>
-              <th className="pb-3">Notes Lapangan</th>
+              <th className="pb-3">Bidang & Penanggung Jawab</th>
+              <th className="pb-3">Detail Kegiatan</th>
+              <th className="pb-3">Koordinasi Tugas</th>
+              <th className="pb-3">Catatan</th>
               <th className="pb-3 text-right">Aksi</th>
             </tr>
           </thead>
@@ -82,14 +82,14 @@ export const EventSkenarioKerjaTab: React.FC<EventSkenarioKerjaTabProps> = ({
                       <button
                         onClick={() => onOpenSkenarioKerjaModal(sk)}
                         className="p-1 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950 rounded cursor-pointer"
-                        title="Edit Agenda SK"
+                        title="Edit Jadwal Kerja"
                       >
                         <Edit2 size={14} />
                       </button>
                       <button
                         onClick={() => onDeleteSkenarioKerja(sk.id)}
                         className="p-1 text-slate-400 hover:text-rose-500 rounded cursor-pointer"
-                        title="Hapus Agenda SK"
+                        title="Hapus Jadwal Kerja"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -100,7 +100,7 @@ export const EventSkenarioKerjaTab: React.FC<EventSkenarioKerjaTabProps> = ({
             ) : (
               <tr>
                 <td colSpan={8} className="py-6 text-center text-slate-400 text-xs italic">
-                  Belum ada agenda skenario kerja. Klik "Tambah Agenda SK" di atas.
+                  Belum ada jadwal kerja tim. Klik tombol &quot;Tambah Jadwal Kerja&quot; di atas.
                 </td>
               </tr>
             )}

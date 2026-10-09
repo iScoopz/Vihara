@@ -103,9 +103,9 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
           <div>
             <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
               <Wallet size={18} className="text-purple-600" />
-              <span>RAB, Realisasi & Keuangan Kegiatan</span>
+              <span>Anggaran & Pengeluaran Kegiatan</span>
             </h3>
-            <p className="text-xs text-slate-500">Pencatatan Pemasukan Kegiatan, Biaya Pendaftaran Umat, Target Anggaran RAB, dan Realisasi Pengeluaran Kegiatan.</p>
+            <p className="text-xs text-slate-500">Pencatatan penerimaan pendaftaran, rencana anggaran (RAB), dan pengeluaran kegiatan.</p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -114,7 +114,7 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
               className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1 shadow cursor-pointer"
             >
               <FileSpreadsheet size={14} />
-              <span>Export RAB Excel</span>
+              <span>Unduh RAB (Excel)</span>
             </button>
 
             <button
@@ -122,7 +122,7 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
               className="px-3 py-1.5 rounded-xl gradient-mnsbdi text-white font-extrabold text-xs flex items-center gap-1 shadow-md cursor-pointer"
             >
               <Plus size={14} />
-              <span>Tambah Item Keuangan</span>
+              <span>Tambah Item Anggaran</span>
             </button>
           </div>
         </div>
@@ -132,39 +132,39 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
           {/* Card Total Pemasukan Global */}
           <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60">
             <div className="flex items-center justify-between text-emerald-800 dark:text-emerald-300 font-bold mb-1">
-              <span className="text-[11px]">Proyeksi Pemasukan Total:</span>
+              <span className="text-[11px]">Total Pemasukan:</span>
               <TrendingUp size={14} />
             </div>
             <strong className="text-base font-black text-emerald-950 dark:text-emerald-100 block">
               Rp {totalPemasukanGlobal.toLocaleString('id-ID')}
             </strong>
             <span className="text-[10px] text-slate-500 block mt-0.5 leading-tight">
-              (Total {registrations.length} Umat: Rp {totalUmatRegistrationFees.toLocaleString('id-ID')} + Pemasukan Lain: Rp {totalPemasukanManual.toLocaleString('id-ID')})
+              ({registrations.length} Peserta: Rp {totalUmatRegistrationFees.toLocaleString('id-ID')} + Pemasukan Lain: Rp {totalPemasukanManual.toLocaleString('id-ID')})
             </span>
           </div>
 
           {/* Card Target RAB */}
           <div className="p-3.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/60">
             <div className="flex items-center justify-between text-purple-800 dark:text-purple-300 font-bold mb-1">
-              <span className="text-[11px]">Target RAB (Rencana):</span>
+              <span className="text-[11px]">Anggaran (RAB):</span>
               <DollarSign size={14} />
             </div>
             <strong className="text-base font-black text-purple-950 dark:text-purple-100 block">
               Rp {totalRAB.toLocaleString('id-ID')}
             </strong>
-            <span className="text-[10px] text-slate-500 block mt-0.5">Total Rencana Pengeluaran</span>
+            <span className="text-[10px] text-slate-500 block mt-0.5">Rencana Alokasi Dana</span>
           </div>
 
           {/* Card Realisasi */}
           <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60">
             <div className="flex items-center justify-between text-amber-800 dark:text-amber-300 font-bold mb-1">
-              <span className="text-[11px]">Realisasi (Pengeluaran):</span>
+              <span className="text-[11px]">Pengeluaran Aktual:</span>
               <TrendingDown size={14} />
             </div>
             <strong className="text-base font-black text-amber-950 dark:text-amber-100 block">
               Rp {totalRealisasi.toLocaleString('id-ID')}
             </strong>
-            <span className="text-[10px] text-slate-500 block mt-0.5">Pengeluaran Terpakai</span>
+            <span className="text-[10px] text-slate-500 block mt-0.5">Total Dana Terpakai</span>
           </div>
 
           {/* Card Saldo Kas */}
@@ -174,14 +174,14 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
               : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/60 text-rose-950 dark:text-rose-100'
           }`}>
             <div className="flex items-center justify-between font-bold mb-1">
-              <span className="text-[11px]">Saldo Keuangan Kegiatan:</span>
+              <span className="text-[11px]">Sisa Kas Kegiatan:</span>
               <Wallet size={14} />
             </div>
             <strong className="text-base font-black block">
               Rp {saldoKasGlobal.toLocaleString('id-ID')}
             </strong>
             <span className="text-[10px] opacity-80 block mt-0.5">
-              {saldoKasGlobal >= 0 ? 'Surplus Anggaran' : 'Defisit Anggaran'}
+              {saldoKasGlobal >= 0 ? 'Surplus' : 'Defisit'}
             </span>
           </div>
         </div>
@@ -192,10 +192,10 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
             <thead>
               <tr className="border-b border-purple-100 dark:border-purple-900/60 text-slate-400 font-extrabold">
                 <th className="pb-3 w-10 text-center">No</th>
-                <th className="pb-3">Nama Item / Deskripsi</th>
-                <th className="pb-3 text-right text-emerald-600 dark:text-emerald-400">Total Pemasukan (Rp)</th>
-                <th className="pb-3 text-right text-purple-600 dark:text-purple-400">Target RAB (Rencana)</th>
-                <th className="pb-3 text-right text-amber-600 dark:text-amber-400">Realisasi Pengeluaran</th>
+                <th className="pb-3">Uraian Kebutuhan / Item</th>
+                <th className="pb-3 text-right text-emerald-600 dark:text-emerald-400">Pemasukan (Rp)</th>
+                <th className="pb-3 text-right text-purple-600 dark:text-purple-400">Anggaran (RAB)</th>
+                <th className="pb-3 text-right text-amber-600 dark:text-amber-400">Pengeluaran</th>
                 <th className="pb-3 text-center">Status / Selisih</th>
                 <th className="pb-3 text-center w-36">Aksi</th>
               </tr>
@@ -206,19 +206,19 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
                 <td className="py-3 text-center text-emerald-700 dark:text-emerald-300">1</td>
                 <td className="py-3 text-emerald-950 dark:text-emerald-100 font-extrabold flex items-center gap-1.5">
                   <Users size={14} className="text-emerald-600 dark:text-emerald-400" />
-                  <span>Biaya Pendaftaran Kegiatan Umat ({registrations.length} Umat)</span>
+                  <span>Penerimaan Pendaftaran Peserta ({registrations.length} Orang)</span>
                 </td>
                 <td className="py-3 text-right text-emerald-700 dark:text-emerald-300 font-black text-sm">
-                  + Rp {totalUmatRegistrationFees.toLocaleString('id-ID')}
+                  Rp {totalUmatRegistrationFees.toLocaleString('id-ID')}
                 </td>
                 <td className="py-3 text-right text-slate-400">-</td>
                 <td className="py-3 text-right text-slate-400">-</td>
                 <td className="py-3 text-center">
-                  <span className="px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase bg-emerald-200 text-emerald-950 dark:bg-emerald-900 dark:text-emerald-100">
-                    👥 Biaya Umat
+                  <span className="px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-emerald-200 text-emerald-950 dark:bg-emerald-900 dark:text-emerald-100">
+                    Pemasukan Pendaftaran
                   </span>
                 </td>
-                <td className="py-3 text-center text-slate-400 text-[10px] italic">Otomatis</td>
+                <td className="py-3 text-center text-slate-400 text-[10px] italic">Sistem</td>
               </tr>
 
               {groupedItems.length > 0 ? (
@@ -236,7 +236,7 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
                       
                       {/* Pemasukan */}
                       <td className="py-3 text-right font-black text-emerald-600 dark:text-emerald-400">
-                        {hasPemasukan ? `+ Rp ${item.pemasukan.toLocaleString('id-ID')}` : '-'}
+                        {hasPemasukan ? `Rp ${item.pemasukan.toLocaleString('id-ID')}` : '-'}
                       </td>
 
                       {/* Target RAB */}
@@ -258,11 +258,11 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
                         ) : hasRab && hasRealisasi ? (
                           diff === 0 ? (
                             <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 inline-flex items-center gap-1">
-                              <CheckCircle2 size={12} /> Sesuai RAB (Rp 0)
+                              <CheckCircle2 size={12} /> Sesuai Anggaran
                             </span>
                           ) : diff > 0 ? (
                             <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-300 inline-flex items-center gap-1">
-                              <AlertTriangle size={12} /> + Rp {diff.toLocaleString('id-ID')}
+                              <AlertTriangle size={12} /> Lebih Rp {diff.toLocaleString('id-ID')}
                             </span>
                           ) : (
                             <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 inline-flex items-center gap-1">
@@ -271,11 +271,11 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
                           )
                         ) : hasRab && !hasRealisasi ? (
                           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-300">
-                            📊 Target RAB
+                            Belum Terpakai
                           </span>
                         ) : (
                           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300">
-                            💸 Realisasi Langsung
+                            Pengeluaran Tambahan
                           </span>
                         )}
                       </td>
@@ -287,10 +287,10 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
                             <button
                               onClick={() => onOpenBudgetModal(item.itemName, 'realisasi')}
                               className="px-2 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-[10px] flex items-center gap-1 shadow cursor-pointer"
-                              title="Tambah Realisasi Pengeluaran untuk item ini"
+                              title="Catat pengeluaran untuk item ini"
                             >
                               <Plus size={11} />
-                              <span>+ Realisasi</span>
+                              <span>+ Pengeluaran</span>
                             </button>
                           )}
 

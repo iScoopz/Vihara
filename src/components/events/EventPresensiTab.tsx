@@ -131,7 +131,7 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
         <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-0.5">
             <span className="font-extrabold uppercase tracking-wide text-[10px] text-amber-600 dark:text-amber-400">
-              📌 Komponen Biaya Tambahan Insidental (Opsional Per Umat):
+              📌 Komponen Biaya Tambahan (Pilihan):
             </span>
             <div className="flex flex-wrap gap-2 pt-1">
               {extraFees.map((fee) => (
@@ -228,14 +228,14 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
         /* SIMPLE STATS CARDS FOR IBADAH RUTIN (NO FEES) */
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="p-4 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-1">
-            <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Total Umat Terdaftar</span>
+            <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Total Peserta Terdaftar</span>
             <p className="text-2xl font-black text-purple-950 dark:text-white">
-              {registrations.length} Umat
+              {registrations.length} Orang
             </p>
           </div>
 
           <div className="p-4 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-1">
-            <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Umat Hadir Presensi</span>
+            <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Jumlah Hadir</span>
             <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
               {countHadir} <span className="text-xs font-bold text-slate-500">/ {registrations.length} Hadir ({registrations.length > 0 ? Math.round((countHadir / registrations.length) * 100) : 0}%)</span>
             </p>
@@ -248,12 +248,12 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-purple-100 dark:border-purple-900/60 pb-3">
           <div>
             <h3 className="text-base font-black text-slate-900 dark:text-white">
-              {isComplex ? 'Daftar Presensi Umat & Pencatatan Pelunasan Event' : 'Daftar Presensi Umat Ibadah Rutin'}
+              {isComplex ? 'Daftar Peserta & Kehadiran' : 'Daftar Kehadiran Umat'}
             </h3>
             <p className="text-xs text-slate-500">
               {isComplex
-                ? 'Posisi baris nama umat dijamin stabil. Tandai kehadiran & pelunasan pendaftaran tanpa mengubah urutan baris.'
-                : 'Posisi baris nama umat dijamin stabil. Tandai kehadiran presensi umat tanpa kolom biaya.'}
+                ? 'Kelola status pembayaran dan kehadiran peserta kegiatan.'
+                : 'Tandai kehadiran umat yang hadir dalam kegiatan ibadah.'}
             </p>
           </div>
 
@@ -269,7 +269,7 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
               title="Salin daftar pendaftar event berbentuk teks siap kirim ke WhatsApp"
             >
               {copiedWa ? <Check size={14} /> : <Copy size={14} />}
-              <span>{copiedWa ? '✓ Copied List WA!' : 'Salin List WA'}</span>
+              <span>{copiedWa ? '✓ Berhasil Disalin!' : 'Salin List WA'}</span>
             </button>
 
             {isComplex && onOpenPricingModal && (
@@ -278,7 +278,7 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
                 className="px-3.5 py-2.5 rounded-xl bg-purple-100 dark:bg-purple-950 hover:bg-purple-200 text-purple-900 dark:text-purple-200 font-extrabold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer border border-purple-200 dark:border-purple-800"
               >
                 <Receipt size={14} />
-                <span>Kelola Tarif</span>
+                <span>Atur Biaya</span>
               </button>
             )}
 
@@ -288,7 +288,7 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
               className="px-4 py-2.5 rounded-xl bg-purple-900 hover:bg-purple-800 text-amber-300 font-black text-xs flex items-center justify-center gap-1.5 shadow-sm border border-purple-700/60 cursor-pointer whitespace-nowrap active:scale-95"
             >
               <PlusCircle size={15} />
-              <span>Daftarkan Umat (Admin)</span>
+              <span>Tambah Peserta</span>
             </button>
           </div>
         </div>
@@ -312,7 +312,7 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
               onChange={(e) => setAttendanceFilter(e.target.value as any)}
               className="flex-1 sm:flex-initial bg-slate-50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-900/60 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none"
             >
-              <option value="all">Semua Presensi</option>
+              <option value="all">Semua Kehadiran</option>
               <option value="attended">Sudah Hadir</option>
               <option value="absent">Belum Hadir</option>
             </select>
@@ -323,7 +323,7 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
                 onChange={(e) => setPaymentFilter(e.target.value as any)}
                 className="flex-1 sm:flex-initial bg-slate-50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-900/60 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none"
               >
-                <option value="all">Semua Status Pelunasan</option>
+                <option value="all">Semua Status Pembayaran</option>
                 <option value="paid">✓ Lunas</option>
                 <option value="unpaid">Belum Lunas</option>
               </select>
@@ -337,15 +337,15 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
             <thead>
               <tr className="bg-purple-900 text-white font-extrabold border-b border-purple-800">
                 <th className="py-3 px-2 text-center w-10">No</th>
-                <th className="py-3 px-3">Nama Lengkap Umat</th>
+                <th className="py-3 px-3">Nama Lengkap Peserta</th>
                 <th className="py-3 px-3">Bagian & HAN</th>
 
                 {/* Optional Extra Fees Column (Only Complex) */}
-                {isComplex && <th className="py-3 px-3">Biaya Ekstra Insidental</th>}
+                {isComplex && <th className="py-3 px-3">Biaya Tambahan</th>}
                 {isComplex && <th className="py-3 px-3 text-right">Total Biaya</th>}
-                {isComplex && <th className="py-3 px-3 text-center">Pelunasan</th>}
-                <th className="py-3 px-3 text-center">Presensi</th>
-                <th className="py-3 px-3 text-right">Tindakan Admin</th>
+                {isComplex && <th className="py-3 px-3 text-center">Pembayaran</th>}
+                <th className="py-3 px-3 text-center">Kehadiran</th>
+                <th className="py-3 px-3 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-purple-50 dark:divide-purple-950/40">
@@ -487,7 +487,7 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
                                 : 'bg-purple-700 hover:bg-purple-800 text-white font-extrabold shadow-sm'
                             }`}
                           >
-                            {reg.is_attended ? 'Batalkan Presensi' : 'Tandai Hadir'}
+                            {reg.is_attended ? 'Batalkan Hadir' : 'Tandai Hadir'}
                           </button>
 
                           {/* Cancel Registration Button (Fast Non-blocking Inline Confirmation) */}

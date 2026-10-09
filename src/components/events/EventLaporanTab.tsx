@@ -18,10 +18,10 @@ export const EventLaporanTab: React.FC<EventLaporanTabProps> = ({
     <div className="p-7 sm:p-8 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-6 print:hidden">
       <div className="border-b border-black/[0.04] dark:border-white/[0.06] pb-4 space-y-1">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-[#86868b] block">
-          Pusat Dokumen & Pelaporan
+          Pusat Dokumen & Laporan
         </span>
         <h2 className="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">
-          Cetak & Export Laporan Event
+          Cetak & Unduh Laporan Kegiatan
         </h2>
         <p className="text-xs text-[#86868b] dark:text-[#a1a1a6]">
           Pilih dokumen yang ingin dicetak dalam format PDF resmi atau diunduh sebagai lembar kerja Excel.
@@ -39,9 +39,9 @@ export const EventLaporanTab: React.FC<EventLaporanTabProps> = ({
               <Users size={18} />
             </div>
             <div>
-              <h3 className="font-bold text-neutral-900 dark:text-white text-sm">List Peserta (Ketua Acara)</h3>
+              <h3 className="font-bold text-neutral-900 dark:text-white text-sm">Daftar Hadir & Tanda Tangan</h3>
               <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] mt-1 leading-relaxed">
-                Daftar nama peserta terdaftar, status pelunasan, dan lembar paraf presensi fisik.
+                Daftar nama peserta terdaftar, status pembayaran, dan kolom tanda tangan kehadiran fisik.
               </p>
             </div>
           </div>
@@ -61,9 +61,9 @@ export const EventLaporanTab: React.FC<EventLaporanTabProps> = ({
               <Printer size={18} />
             </div>
             <div>
-              <h3 className="font-bold text-neutral-900 dark:text-white text-sm">Proposal Event (PDF)</h3>
+              <h3 className="font-bold text-neutral-900 dark:text-white text-sm">Proposal Kegiatan (PDF)</h3>
               <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] mt-1 leading-relaxed">
-                Dokumen proposal lengkap dengan Struktur Panitia, Rundown Acara, dan Rencana Anggaran (RAB).
+                Dokumen proposal lengkap dengan susunan panitia, jadwal susunan acara, dan rencana anggaran (RAB).
               </p>
             </div>
           </div>
@@ -83,14 +83,14 @@ export const EventLaporanTab: React.FC<EventLaporanTabProps> = ({
               <FileSpreadsheet size={18} />
             </div>
             <div>
-              <h3 className="font-bold text-neutral-900 dark:text-white text-sm">Skenario Kerja (Excel)</h3>
+              <h3 className="font-bold text-neutral-900 dark:text-white text-sm">Jadwal & Alur Lapangan (Excel)</h3>
               <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] mt-1 leading-relaxed">
-                Unduh file Excel (.xls) berdesain rapi untuk alur operasional tim lapangan dan panitia.
+                Unduh lembar kerja Excel (.xls) alur teknis operasional panitia dan penanggung jawab lapangan.
               </p>
             </div>
           </div>
           <div className="pt-2 flex items-center justify-between text-xs font-semibold text-blue-600 dark:text-blue-400 group-hover:gap-1.5 transition-all">
-            <span>Download .XLS</span>
+            <span>Unduh .XLS</span>
             <ArrowUpRight size={14} className="text-[#86868b]" />
           </div>
         </button>
@@ -105,9 +105,9 @@ export const EventLaporanTab: React.FC<EventLaporanTabProps> = ({
               <FileText size={18} />
             </div>
             <div>
-              <h3 className="font-bold text-neutral-900 dark:text-white text-sm">Cetak LPJ Event (PDF)</h3>
+              <h3 className="font-bold text-neutral-900 dark:text-white text-sm">Laporan Pertanggungjawaban (PDF)</h3>
               <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] mt-1 leading-relaxed">
-                Laporan Pertanggungjawaban resmi dengan Rekap Presensi Umat dan Realisasi Biaya siap cetak A4.
+                Format resmi LPJ dengan susunan panitia, daftar peserta kegiatan, dan pengeluaran aktual siap cetak.
               </p>
             </div>
           </div>
@@ -127,14 +127,14 @@ export const EventLaporanTab: React.FC<EventLaporanTabProps> = ({
               <FileSpreadsheet size={18} />
             </div>
             <div>
-              <h3 className="font-bold text-neutral-900 dark:text-white text-sm">Download LPJ Event (Excel)</h3>
+              <h3 className="font-bold text-neutral-900 dark:text-white text-sm">Laporan Pertanggungjawaban (Excel)</h3>
               <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] mt-1 leading-relaxed">
-                Unduh Laporan Pertanggungjawaban lengkap berformat Excel (.xls) beserta Rekapitulasi Keuangan.
+                Unduh rincian lengkap LPJ beserta tabel evaluasi anggaran berformat Excel (.xls).
               </p>
             </div>
           </div>
           <div className="pt-2 flex items-center justify-between text-xs font-semibold text-emerald-700 dark:text-emerald-400 group-hover:gap-1.5 transition-all">
-            <span>Download .XLS</span>
+            <span>Unduh .XLS</span>
             <ArrowUpRight size={14} className="text-[#86868b]" />
           </div>
         </button>
