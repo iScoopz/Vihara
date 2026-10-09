@@ -13,15 +13,15 @@ export const EventOverviewTab: React.FC<EventOverviewTabProps> = ({ event, regis
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 print:hidden">
-      <div className="md:col-span-2 p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4 text-xs text-slate-700 dark:text-slate-300">
-        <h3 className="text-base font-extrabold text-slate-900 dark:text-white border-b border-purple-100 dark:border-purple-900/60 pb-3">
+      <div className="md:col-span-2 p-7 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-4 text-xs text-neutral-700 dark:text-neutral-300">
+        <h2 className="text-sm font-bold text-neutral-900 dark:text-white border-b border-black/[0.04] dark:border-white/[0.06] pb-3">
           Informasi Event
-        </h3>
-        <p className="leading-relaxed">{event.description}</p>
+        </h2>
+        <p className="leading-relaxed text-[#86868b] dark:text-[#a1a1a6]">{event.description}</p>
         
-        <div className="p-4 rounded-xl bg-purple-50 dark:bg-purple-950/60 space-y-2 border border-purple-100 dark:border-purple-900/60">
-          <h4 className="font-bold text-slate-900 dark:text-white text-xs">Catatan & Ketentuan:</h4>
-          <ul className="list-disc list-inside space-y-1 text-slate-600 dark:text-slate-300">
+        <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] space-y-2 border border-black/[0.06] dark:border-white/[0.08]">
+          <h3 className="font-semibold text-neutral-900 dark:text-white text-xs">Catatan & Ketentuan:</h3>
+          <ul className="list-disc list-inside space-y-1 text-[#86868b] dark:text-[#a1a1a6]">
             <li>Umat diimbau berbusana rapi dan bersahaja.</li>
             <li>Harap hadir 15 menit sebelum pembacaan Paritta dimulai.</li>
             <li>Pendaftaran dapat dilakukan mandiri via Portal Umat atau di lokasi via Admin.</li>
@@ -29,29 +29,29 @@ export const EventOverviewTab: React.FC<EventOverviewTabProps> = ({ event, regis
         </div>
       </div>
 
-      <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4">
-        <h3 className="text-base font-extrabold text-slate-900 dark:text-white border-b border-purple-100 dark:border-purple-900/60 pb-3">
+      <div className="p-7 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-4">
+        <h2 className="text-sm font-bold text-neutral-900 dark:text-white border-b border-black/[0.04] dark:border-white/[0.06] pb-3">
           Status Kuota Event
-        </h3>
+        </h2>
         <div className="space-y-3 text-xs">
           <div className="flex justify-between items-center">
-            <span className="text-slate-500">Kapasitas Maksimal:</span>
-            <strong className="text-slate-900 dark:text-white">{quota} Umat</strong>
+            <span className="text-[#86868b]">Kapasitas Maksimal:</span>
+            <strong className="text-neutral-900 dark:text-white">{quota} Umat</strong>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-slate-500">Terdaftar Saat Ini:</span>
-            <strong className="text-purple-700 dark:text-purple-300">{registrations.length} Umat</strong>
+            <span className="text-[#86868b]">Terdaftar Saat Ini:</span>
+            <strong className="text-neutral-900 dark:text-white">{registrations.length} Umat</strong>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-slate-500">Hadir Presensi:</span>
-            <strong className="text-emerald-600 dark:text-emerald-400">
+            <span className="text-[#86868b]">Hadir Presensi:</span>
+            <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">
               {attendedCount} Umat
             </strong>
           </div>
 
-          <div className="w-full bg-slate-100 dark:bg-purple-950 h-2.5 rounded-full overflow-hidden">
+          <div className="w-full bg-black/[0.04] dark:bg-white/[0.08] h-2 rounded-full overflow-hidden mt-2">
             <div 
-              className="gradient-mnsbdi h-full transition-all duration-500" 
+              className="bg-[#5e35b1] dark:bg-purple-400 h-full rounded-full transition-all duration-300" 
               style={{ width: `${percentage}%` }}
             />
           </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, MapPin, ArrowLeft } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, MapPin, ArrowLeft, Bell } from 'lucide-react';
 import { getEvents } from '@/lib/actions/vihara-actions';
 import { ViharaEvent } from '@/types/database';
 
@@ -71,48 +71,62 @@ export default function UmatCalendarPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Top Bar */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-4 border-b border-black/[0.06] dark:border-white/[0.08]">
         <Link 
           href="/kegiatan"
-          className="inline-flex items-center gap-2 text-xs font-bold text-purple-700 dark:text-purple-300 hover:underline"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#86868b] hover:text-black dark:hover:text-white transition-colors"
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={14} />
           <span>Kembali ke Katalog Kegiatan</span>
         </Link>
 
-        <span className="text-xs bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 font-extrabold px-3 py-1 rounded-full border border-amber-200 dark:border-amber-800">
-          Kalender Umat MNSBDI
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-[#86868b] px-3 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.08]">
+          Kalender MNSBDI
         </span>
       </div>
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-            <CalendarIcon className="text-purple-600 dark:text-purple-400" size={28} />
-            <span>Kalender Jadwal Kensyu, Pertemuan, & Gongyo MNSBDI</span>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="space-y-1">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-[#86868b] block">
+            Agenda Bulanan
+          </span>
+          <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-neutral-900 dark:text-white flex items-center gap-2.5">
+            <CalendarIcon className="text-[#5e35b1] dark:text-amber-400" size={26} />
+            <span>Kalender Jadwal Kegiatan</span>
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Jadwal kegiatan MNSBDI tertandai dalam tampilan Kalender</p>
+          <p className="text-xs sm:text-sm text-[#86868b] dark:text-[#a1a1a6]">
+            Jadwal kegiatan MNSBDI tertandai dalam tampilan kalender bulanan.
+          </p>
         </div>
 
-        <div className="flex items-center gap-3 bg-white dark:bg-[#160e29] p-2 rounded-2xl border border-purple-100 dark:border-purple-900/60 shadow-sm">
+        {/* Apple Segmented Calendar Controls */}
+        <div className="flex items-center gap-2 bg-white dark:bg-[#161618] p-1.5 rounded-full border border-black/[0.06] dark:border-white/[0.08] shadow-xs">
           <button 
             onClick={goToday}
-            className="px-3 py-1.5 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-200 font-extrabold text-xs hover:bg-purple-200 transition cursor-pointer"
+            className="px-3.5 py-1.5 rounded-full bg-black/[0.04] dark:bg-white/[0.08] hover:bg-black/[0.08] dark:hover:bg-white/[0.14] text-neutral-900 dark:text-white font-semibold text-xs transition-all cursor-pointer"
           >
             Hari Ini
           </button>
           
-          <div className="flex items-center gap-1">
-            <button onClick={prevMonth} className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-purple-50 dark:hover:bg-purple-950 cursor-pointer">
-              <ChevronLeft size={18} />
+          <div className="flex items-center gap-1 px-1">
+            <button 
+              onClick={prevMonth} 
+              className="p-1.5 rounded-full text-[#86868b] hover:text-black dark:hover:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.08] transition-all cursor-pointer"
+              title="Bulan sebelumnya"
+            >
+              <ChevronLeft size={16} />
             </button>
-            <span className="text-sm font-extrabold text-slate-900 dark:text-white px-2">
+            <span className="text-xs font-semibold text-neutral-900 dark:text-white px-2 min-w-28 text-center">
               {monthNames[month]} {year}
             </span>
-            <button onClick={nextMonth} className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-purple-50 dark:hover:bg-purple-950 cursor-pointer">
-              <ChevronRight size={18} />
+            <button 
+              onClick={nextMonth} 
+              className="p-1.5 rounded-full text-[#86868b] hover:text-black dark:hover:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.08] transition-all cursor-pointer"
+              title="Bulan berikutnya"
+            >
+              <ChevronRight size={16} />
             </button>
           </div>
         </div>
@@ -120,34 +134,34 @@ export default function UmatCalendarPage() {
 
       {/* Reminder Banner H-3 Event Mendatang */}
       {upcomingH3Events.length > 0 && (
-        <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-indigo-500/10 border-2 border-amber-400 dark:border-amber-500 space-y-2 shadow-sm">
-          <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300 font-black text-xs">
-            <span className="animate-bounce">🔔</span>
-            <span>NOTIFIKASI REMINDER H-3 EVENT MENDATANG ({upcomingH3Events.length})</span>
+        <div className="p-6 rounded-3xl bg-white dark:bg-[#161618] border border-amber-500/25 space-y-4 shadow-xs">
+          <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-semibold text-xs tracking-wide">
+            <Bell size={15} />
+            <span>Agenda Mendatang H-3 ({upcomingH3Events.length})</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {upcomingH3Events.map(ev => (
               <div 
                 key={ev.id} 
                 onClick={() => setSelectedEventModal(ev)}
-                className="p-3 rounded-xl bg-white dark:bg-[#1f153a] border border-amber-300 dark:border-amber-600/60 shadow-sm flex items-center justify-between cursor-pointer hover:scale-[1.02] transition"
+                className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between cursor-pointer hover:border-black/20 dark:hover:border-white/20 transition-all"
               >
-                <div className="space-y-0.5">
-                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-200">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-500/10 text-[#5e35b1] dark:text-purple-300">
                     {ev.category}
                   </span>
-                  <h4 className="font-extrabold text-xs text-slate-900 dark:text-white line-clamp-1">{ev.title}</h4>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                  <h2 className="font-bold text-xs text-neutral-900 dark:text-white line-clamp-1">{ev.title}</h2>
+                  <p className="text-[11px] text-[#86868b]">
                     {new Date(ev.event_date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })} &bull; {ev.location}
                   </p>
                 </div>
 
-                <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase shadow ${
-                  ev.diffDays === 0 ? 'bg-rose-500 text-white animate-pulse' :
-                  ev.diffDays === 1 ? 'bg-amber-500 text-slate-950' :
-                  'bg-indigo-600 text-white'
+                <span className={`px-2.5 py-1 rounded-full text-[10px] font-semibold shrink-0 ml-2 ${
+                  ev.diffDays === 0 ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400' :
+                  ev.diffDays === 1 ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400' :
+                  'bg-black/[0.05] dark:bg-white/[0.08] text-neutral-800 dark:text-neutral-200'
                 }`}>
-                  {ev.diffDays === 0 ? 'Hari Ini!' : ev.diffDays === 1 ? 'H-1 (Besok)' : `H-${ev.diffDays}`}
+                  {ev.diffDays === 0 ? 'Hari Ini' : ev.diffDays === 1 ? 'Besok' : `H-${ev.diffDays}`}
                 </span>
               </div>
             ))}
@@ -155,17 +169,17 @@ export default function UmatCalendarPage() {
         </div>
       )}
 
-      {/* Calendar Grid Container */}
-      <div className="rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-xl overflow-hidden">
-        <div className="grid grid-cols-7 bg-purple-50 dark:bg-purple-950/60 border-b border-purple-100 dark:border-purple-900/60 text-center text-xs font-black text-purple-950 dark:text-purple-200 uppercase py-3">
+      {/* Apple-style Calendar Grid */}
+      <div className="rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs overflow-hidden">
+        <div className="grid grid-cols-7 border-b border-black/[0.06] dark:border-white/[0.08] text-center text-xs font-semibold text-[#86868b] py-3 bg-black/[0.01] dark:bg-white/[0.02]">
           {daysOfWeek.map(day => (
             <div key={day}>{day}</div>
           ))}
         </div>
 
-        <div className="grid grid-cols-7 border-collapse divide-x divide-y divide-purple-100 dark:divide-purple-900/60">
+        <div className="grid grid-cols-7 border-collapse divide-x divide-y divide-black/[0.06] dark:divide-white/[0.08]">
           {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-            <div key={`empty-${i}`} className="min-h-[110px] bg-slate-50/50 dark:bg-purple-950/20 p-2" />
+            <div key={`empty-${i}`} className="min-h-[110px] bg-black/[0.01] dark:bg-white/[0.02] p-2" />
           ))}
 
           {Array.from({ length: daysInMonth }).map((_, dayIdx) => {
@@ -176,19 +190,19 @@ export default function UmatCalendarPage() {
             return (
               <div 
                 key={`day-${dayNum}`}
-                className={`min-h-[110px] p-2 transition flex flex-col justify-between ${
+                className={`min-h-[110px] p-2.5 transition flex flex-col justify-between ${
                   isCurrentDay 
-                    ? 'bg-amber-500/10 dark:bg-amber-500/15 border-2 border-amber-500 rounded-xl shadow-md' 
-                    : 'bg-white dark:bg-[#160e29] hover:bg-purple-50/30 dark:hover:bg-purple-950/30'
+                    ? 'bg-amber-500/[0.06] dark:bg-amber-400/[0.08]' 
+                    : 'bg-white dark:bg-[#161618] hover:bg-black/[0.02] dark:hover:bg-white/[0.02]'
                 }`}
               >
-                <div className="flex justify-between items-center mb-1">
+                <div className="flex justify-between items-center mb-1.5">
                   {isCurrentDay ? (
-                    <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] shadow animate-pulse">
-                      Hari Ini ({dayNum})
+                    <span className="w-6 h-6 rounded-full bg-[#1d1d1f] dark:bg-white text-white dark:text-black font-semibold text-[11px] flex items-center justify-center">
+                      {dayNum}
                     </span>
                   ) : (
-                    <span className="text-xs font-black text-slate-700 dark:text-slate-300">
+                    <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
                       {dayNum}
                     </span>
                   )}
@@ -199,13 +213,13 @@ export default function UmatCalendarPage() {
                     <div
                       key={ev.id}
                       onClick={() => setSelectedEventModal(ev)}
-                      className={`p-1.5 rounded-lg text-[10px] font-extrabold cursor-pointer transition shadow-sm line-clamp-2 ${
-                        ev.category === 'Kensyu' ? 'bg-amber-500 text-slate-950 hover:bg-amber-400' :
-                        ev.category === 'Pertemuan' ? 'bg-emerald-600 text-white hover:bg-emerald-500' :
-                        'gradient-mnsbdi text-white hover:opacity-90'
+                      className={`p-1.5 rounded-xl text-[10px] font-semibold cursor-pointer transition line-clamp-2 ${
+                        ev.category === 'Kensyu' ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 hover:bg-amber-500/25' :
+                        ev.category === 'Pertemuan' ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/25' :
+                        'bg-purple-500/15 text-[#5e35b1] dark:text-purple-300 hover:bg-purple-500/25'
                       }`}
                     >
-                      [{ev.category}] {ev.title}
+                      {ev.title}
                     </div>
                   ))}
                 </div>
@@ -217,38 +231,47 @@ export default function UmatCalendarPage() {
 
       {/* Quick Event Popup Modal */}
       {selectedEventModal && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#160e29] border border-purple-200 dark:border-purple-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex justify-between items-start border-b border-purple-100 dark:border-purple-900/60 pb-3">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#1c1c1e] border border-black/[0.08] dark:border-white/[0.12] rounded-3xl max-w-md w-full p-7 shadow-xl space-y-4">
+            <div className="flex justify-between items-start border-b border-black/[0.04] dark:border-white/[0.06] pb-3">
               <div>
-                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-200">
+                <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-purple-500/10 text-[#5e35b1] dark:text-purple-300">
                   {selectedEventModal.category}
                 </span>
-                <h3 className="text-lg font-extrabold text-slate-900 dark:text-white mt-1">{selectedEventModal.title}</h3>
+                <h2 className="text-lg font-bold tracking-tight text-neutral-900 dark:text-white mt-1.5">
+                  {selectedEventModal.title}
+                </h2>
               </div>
-              <button onClick={() => setSelectedEventModal(null)} className="text-slate-400 hover:text-slate-600 text-xs font-bold cursor-pointer">Tutup ✕</button>
+              <button 
+                onClick={() => setSelectedEventModal(null)} 
+                className="text-[#86868b] hover:text-black dark:hover:text-white text-xs font-medium cursor-pointer p-1"
+              >
+                Tutup
+              </button>
             </div>
 
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">{selectedEventModal.description}</p>
+            <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] leading-relaxed">
+              {selectedEventModal.description}
+            </p>
 
-            <div className="space-y-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <div className="space-y-2 text-xs font-medium text-neutral-700 dark:text-neutral-300 pt-1">
               <div className="flex items-center gap-2">
-                <Clock size={14} className="text-purple-600 dark:text-purple-400" />
+                <Clock size={14} className="text-[#86868b]" />
                 <span>
                   {new Date(selectedEventModal.event_date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                 </span>
               </div>
 
               <div className="flex items-center gap-2">
-                <MapPin size={14} className="text-amber-500" />
+                <MapPin size={14} className="text-[#86868b]" />
                 <span>{selectedEventModal.location}</span>
               </div>
             </div>
 
-            <div className="pt-3 border-t border-purple-100 dark:border-purple-900/60 flex justify-end">
+            <div className="pt-3 border-t border-black/[0.04] dark:border-white/[0.06] flex justify-end">
               <Link
                 href="/kegiatan"
-                className="gradient-mnsbdi text-white font-extrabold px-4 py-2 rounded-xl text-xs shadow-md"
+                className="bg-[#1d1d1f] hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-semibold px-5 py-2 rounded-full text-xs shadow-xs transition-all"
               >
                 Daftar Mandiri di Katalog
               </Link>

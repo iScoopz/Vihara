@@ -34,16 +34,25 @@ export const SearchableUmatSelect: React.FC<SearchableUmatSelectProps> = ({
 
   const selectedProfile = profiles.find(p => p.id === value || p.full_name === value);
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside or pressing Escape
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
 
   // Focus search input when dropdown opens
   useEffect(() => {
@@ -87,10 +96,18 @@ export const SearchableUmatSelect: React.FC<SearchableUmatSelectProps> = ({
 
       {/* Trigger Button */}
       <div
+        role="button"
+        tabIndex={disabled ? -1 : 0}
         onClick={() => !disabled && setIsOpen(!isOpen)}
+        onKeyDown={(e) => {
+          if ((e.key === 'Enter' || e.key === ' ') && !disabled) {
+            e.preventDefault();
+            setIsOpen(!isOpen);
+          }
+        }}
         className={`w-full bg-slate-50 dark:bg-purple-950/80 border ${
           isOpen ? 'border-purple-600 ring-2 ring-purple-600/20' : 'border-purple-100 dark:border-purple-900/60'
-        } rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white flex items-center justify-between cursor-pointer transition-all duration-150 ${
+        } rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white flex items-center justify-between cursor-pointer transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-600 focus-visible:ring-offset-1 ${
           disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-purple-400'
         }`}
       >

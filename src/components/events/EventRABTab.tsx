@@ -253,7 +253,7 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
                       <td className="py-3 text-center">
                         {hasPemasukan ? (
                           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
-                            ✨ Pemasukan
+                            Pemasukan
                           </span>
                         ) : hasRab && hasRealisasi ? (
                           diff === 0 ? (

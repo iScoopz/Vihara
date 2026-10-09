@@ -2,29 +2,32 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { CalendarDays, MapPin, Clock, CheckCircle2, UserCheck, Sparkles, Calendar as CalendarIcon, XCircle } from 'lucide-react';
-import { getEvents, registerForEvent, cancelRegistration, getRegistrationsForEvent, getUserRegisteredEventIds } from '@/lib/actions/vihara-actions';
+import { CalendarDays, MapPin, Clock, CheckCircle2, UserCheck, Calendar as CalendarIcon, XCircle } from 'lucide-react';
+import { getEvents, registerForEvent, cancelRegistration, getUserRegisteredEventIds } from '@/lib/actions/vihara-actions';
 import { ViharaEvent } from '@/types/database';
-
 import { useToast } from '@/components/ui/ToastNotification';
 
 export default function PublicEventCatalogPage() {
   const { showToast } = useToast();
   const [events, setEvents] = useState<ViharaEvent[]>([]);
   const [registeredEventIds, setRegisteredEventIds] = useState<string[]>([]);
+  const [currentUmatId, setCurrentUmatId] = useState<string | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  const currentUmatId = 'p2'; // Simulated logged-in Umat (Suryani Dewi)
-
   const loadCatalog = async () => {
-    const [data, myRegisteredIds] = await Promise.all([
-      getEvents(),
-      getUserRegisteredEventIds(currentUmatId)
-    ]);
+    const data = await getEvents();
     const publishedEvents = data.filter(ev => ev.is_published === true || ev.is_published === undefined);
     setEvents(publishedEvents);
-    setRegisteredEventIds(myRegisteredIds);
+
+    const savedId = typeof window !== 'undefined' ? localStorage.getItem('vihara_umat_id') : null;
+    if (savedId) {
+      setCurrentUmatId(savedId);
+      const registeredIds = await getUserRegisteredEventIds(savedId);
+      setRegisteredEventIds(registeredIds);
+    } else {
+      setRegisteredEventIds([]);
+    }
   };
 
   useEffect(() => {
@@ -32,98 +35,89 @@ export default function PublicEventCatalogPage() {
   }, []);
 
   const handleSelfRegister = async (eventId: string) => {
-    setLoadingId(eventId);
-    setMessage(null);
+    if (!currentUmatId) {
+      setMessage({ 
+        text: 'Silakan pilih atau login ke akun profil Anda terlebih dahulu di menu Profil Saya untuk mendaftar.', 
+        type: 'error' 
+      });
+      showToast('Silakan buka Profil Saya terlebih dahulu untuk memilih akun Umat Anda.', 'info', 'Perlu Akun Profil');
+      return;
+    }
 
-    // Instant optimistic update (0ms)
+    // 1. Instant Optimistic UI Update (0ms)
     setRegisteredEventIds(prev => [...prev, eventId]);
-    setEvents(prev =>
-      prev.map(ev => ev.id === eventId ? { ...ev, registrations_count: (ev.registrations_count || 0) + 1 } : ev)
-    );
-    showToast('Anda telah berhasil mendaftar pada event ini!', 'success', 'Pendaftaran Berhasil');
+    showToast('Anda telah terdaftar pada event ini.', 'success', 'Pendaftaran Berhasil');
+    setLoadingId(eventId);
 
+    // 2. Background Sync
     const res = await registerForEvent(eventId, undefined, currentUmatId);
     setLoadingId(null);
-
     if (res.error) {
+      // Rollback
       setRegisteredEventIds(prev => prev.filter(id => id !== eventId));
-      setEvents(prev =>
-        prev.map(ev => ev.id === eventId ? { ...ev, registrations_count: Math.max(0, (ev.registrations_count || 1) - 1) } : ev)
-      );
       setMessage({ text: res.error, type: 'error' });
       showToast(res.error, 'error', 'Pendaftaran Gagal');
-    } else {
-      setMessage({ 
-        text: '✓ Berhasil mendaftar event! Pendaftaran Anda dicatat otomatis (Self-Registration)', 
-        type: 'success' 
-      });
     }
   };
 
   const handleSelfCancel = async (eventId: string) => {
-    if (!confirm('Apakah Anda yakin ingin membatalkan pendaftaran event ini?')) return;
-    setLoadingId(eventId);
-    setMessage(null);
+    if (!currentUmatId) return;
 
-    // Instant optimistic update (0ms)
+    // 1. Instant Optimistic UI Update (0ms)
     setRegisteredEventIds(prev => prev.filter(id => id !== eventId));
-    setEvents(prev =>
-      prev.map(ev => ev.id === eventId ? { ...ev, registrations_count: Math.max(0, (ev.registrations_count || 1) - 1) } : ev)
-    );
     showToast('Pendaftaran Anda pada event ini berhasil dibatalkan.', 'info', 'Pembatalan Event');
+    setLoadingId(eventId);
 
+    // 2. Background Sync
     try {
-      const regs = await getRegistrationsForEvent(eventId);
-      const myReg = regs.find(r => r.profile_id === currentUmatId);
-      if (myReg) {
-        await cancelRegistration(myReg.id);
-      }
+      await cancelRegistration(eventId);
     } catch (e) {
-      console.error(e);
+      // Rollback
+      setRegisteredEventIds(prev => [...prev, eventId]);
+      showToast('Gagal membatalkan pendaftaran.', 'error', 'Galat');
     }
     setLoadingId(null);
   };
 
   return (
-    <div className="space-y-6">
-      {/* Hero Banner */}
-      <div className="p-8 rounded-3xl bg-gradient-to-r from-purple-900 via-indigo-950 to-purple-950 text-white shadow-xl space-y-4 border border-purple-700/50 relative overflow-hidden">
-        <div className="flex justify-between items-start">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400 text-slate-950 text-xs font-black">
-            <Sparkles size={14} />
-            <span>Katalog Kegiatan MNSBDI 2568 BE</span>
-          </div>
-
-          <Link
-            href="/kegiatan/kalender"
-            className="inline-flex items-center gap-1.5 bg-purple-800 hover:bg-purple-700 text-amber-300 text-xs font-extrabold px-3.5 py-1.5 rounded-xl border border-purple-600 transition"
-          >
-            <CalendarIcon size={14} />
-            <span>Buka Kalender Kegiatan</span>
-          </Link>
+    <div className="space-y-8">
+      {/* Apple-style Clean Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-black/[0.06] dark:border-white/[0.08]">
+        <div className="space-y-1">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-[#86868b] block">
+            Jadwal & Agenda Umat
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900 dark:text-white">
+            Katalog Kegiatan Vihara
+          </h1>
+          <p className="text-xs sm:text-sm text-[#86868b] dark:text-[#a1a1a6]">
+            Jadwal pelaksanaan Kensyu, pertemuan rutin, dan pembacaan Gongyo bersama Sentra Makassar.
+          </p>
         </div>
 
-        <h1 className="text-3xl font-black tracking-tight">Jadwal Kensyu, Pertemuan, & Gongyo MNSBDI</h1>
-        <p className="text-purple-200 text-sm max-w-2xl leading-relaxed">
-          Ikuti pembacaan Gongyo, penataran Kensyu, dan pertemuan rutin umat. 
-          Anda dapat mendaftar mandiri (*Self-Registration*) langsung dari perangkat Anda.
-        </p>
+        <Link
+          href="/kegiatan/kalender"
+          className="inline-flex items-center gap-2 bg-black/[0.04] dark:bg-white/[0.08] hover:bg-black/[0.08] dark:hover:bg-white/[0.14] text-neutral-900 dark:text-white text-xs font-semibold px-4 py-2 rounded-full border border-black/[0.06] dark:border-white/[0.08] transition-all shrink-0 w-fit"
+        >
+          <CalendarIcon size={14} className="text-[#86868b]" />
+          <span>Kalender Lengkap</span>
+        </Link>
       </div>
 
       {/* Alert Notification */}
       {message && (
-        <div className={`p-4 rounded-xl text-xs font-extrabold border flex items-center gap-2 ${
+        <div className={`p-4 rounded-2xl text-xs font-medium border flex items-center gap-2.5 ${
           message.type === 'success' 
-            ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300' 
-            : 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border-rose-300'
+            ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/20' 
+            : 'bg-rose-500/10 text-rose-800 dark:text-rose-300 border-rose-500/20'
         }`}>
-          <CheckCircle2 size={18} />
+          <CheckCircle2 size={16} />
           <span>{message.text}</span>
         </div>
       )}
 
-      {/* Events Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Events Grid (Apple-style Bento Cards) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
         {events.map((ev) => {
           const isRegistered = registeredEventIds.includes(ev.id);
           const isPast = new Date(ev.event_date) < new Date();
@@ -131,58 +125,64 @@ export default function PublicEventCatalogPage() {
           return (
             <div 
               key={ev.id} 
-              className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm hover:shadow-md transition space-y-4 flex flex-col justify-between"
+              className="p-7 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs hover:border-black/15 dark:hover:border-white/20 transition-all duration-200 flex flex-col justify-between space-y-5"
             >
-              <div className="space-y-3">
+              <div className="space-y-3.5">
                 <div className="flex items-center justify-between">
-                  <span className={`text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full ${
-                    ev.category === 'Kensyu' ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-200' :
-                    ev.category === 'Pertemuan' ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200' :
-                    'bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-300 border border-purple-200'
+                  <span className={`text-[10px] font-semibold uppercase tracking-wider px-3 py-1 rounded-full border ${
+                    ev.category === 'Kensyu' 
+                      ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20' :
+                    ev.category === 'Pertemuan' 
+                      ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20' :
+                      'bg-purple-500/10 text-[#5e35b1] dark:text-purple-300 border-purple-500/20'
                   }`}>
                     {ev.category || 'Gongyo'}
                   </span>
 
                   {isRegistered && (
-                    <span className="inline-flex items-center gap-1 text-xs font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
-                      <CheckCircle2 size={14} /> Terdaftar (Self)
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                      <CheckCircle2 size={13} /> Terdaftar (Self)
                     </span>
                   )}
                 </div>
 
-                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white leading-snug">{ev.title}</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{ev.description}</p>
+                <h2 className="text-xl font-bold tracking-tight text-neutral-900 dark:text-white leading-snug">
+                  {ev.title}
+                </h2>
+                <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] leading-relaxed">
+                  {ev.description}
+                </p>
 
-                <div className="pt-2 border-t border-purple-100 dark:border-purple-900/60 space-y-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <div className="pt-3 border-t border-black/[0.04] dark:border-white/[0.06] space-y-2 text-xs font-medium text-neutral-700 dark:text-neutral-300">
                   <div className="flex items-center gap-2">
-                    <Clock size={14} className="text-purple-600 dark:text-purple-400" />
+                    <Clock size={14} className="text-[#86868b]" />
                     <span>{new Date(ev.event_date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <MapPin size={14} className="text-amber-500" />
+                    <MapPin size={14} className="text-[#86868b]" />
                     <span>{ev.location}</span>
                   </div>
                 </div>
               </div>
 
               {/* Registration Action */}
-              <div className="pt-4 border-t border-purple-100 dark:border-purple-900/60 flex items-center justify-between">
-                <span className="text-xs text-slate-400 font-semibold">
+              <div className="pt-4 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between">
+                <span className="text-xs text-[#86868b] font-medium">
                   {ev.registrations_count || 0} Umat Terdaftar
                 </span>
 
                 {isPast ? (
-                  <span className="text-xs text-slate-400 font-bold">Event Selesai</span>
+                  <span className="text-xs text-[#86868b] font-semibold">Event Selesai</span>
                 ) : isRegistered ? (
                   <div className="flex items-center gap-2">
-                    <span className="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs font-extrabold border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5">
-                      <UserCheck size={14} />
+                    <span className="px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-semibold border border-emerald-500/20 flex items-center gap-1.5">
+                      <UserCheck size={13} />
                       <span>Terdaftar</span>
                     </span>
                     <button
                       onClick={() => handleSelfCancel(ev.id)}
                       disabled={loadingId === ev.id}
-                      className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/80 text-rose-700 dark:text-rose-300 text-xs font-bold border border-rose-200 dark:border-rose-800 cursor-pointer transition"
+                      className="px-3.5 py-1.5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold border border-rose-500/20 cursor-pointer transition-all"
                     >
                       {loadingId === ev.id ? 'Memproses...' : 'Batal Daftar'}
                     </button>
@@ -191,7 +191,7 @@ export default function PublicEventCatalogPage() {
                   <button
                     onClick={() => handleSelfRegister(ev.id)}
                     disabled={loadingId === ev.id}
-                    className="px-5 py-2.5 rounded-xl gradient-mnsbdi text-white font-extrabold text-xs transition shadow-lg flex items-center gap-2 hover:opacity-95 cursor-pointer"
+                    className="px-5 py-2 rounded-full bg-[#1d1d1f] hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-semibold text-xs transition-all shadow-xs flex items-center gap-2 cursor-pointer"
                   >
                     {loadingId === ev.id ? 'Memproses...' : 'Daftar Event (Self)'}
                   </button>

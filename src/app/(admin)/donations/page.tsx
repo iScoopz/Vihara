@@ -54,17 +54,17 @@ export default function DonationsListPage() {
 
         <Link
           href="/donations/new"
-          className="inline-flex items-center gap-2 gradient-mnsbdi text-white font-extrabold px-4 py-2.5 rounded-xl transition shadow-lg shadow-purple-500/25 text-sm hover:opacity-95 cursor-pointer"
+          className="inline-flex items-center gap-2 bg-purple-900 hover:bg-purple-800 text-amber-300 font-black px-4 py-2.5 rounded-xl transition shadow-sm border border-purple-700/60 text-xs active:scale-95 cursor-pointer"
         >
-          <Plus size={18} />
+          <Plus size={16} />
           <span>Tambah Dana Paramita Baru</span>
         </Link>
       </div>
 
       {/* Stats Summary */}
-      <div className="p-6 rounded-3xl bg-gradient-to-r from-purple-900 via-indigo-950 to-slate-900 text-white shadow-xl border border-purple-700/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-6 rounded-2xl bg-slate-900 dark:bg-[#150d28] text-white shadow-md border border-purple-800/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-purple-200">Total Akumulasi Dana Paramita</span>
+          <span className="text-xs font-extrabold uppercase tracking-wider text-purple-300">Total Akumulasi Dana Paramita</span>
           <p className="text-3xl font-black text-amber-300">Rp {totalAmount.toLocaleString('id-ID')}</p>
         </div>
         <div className="text-xs text-purple-200 font-semibold">

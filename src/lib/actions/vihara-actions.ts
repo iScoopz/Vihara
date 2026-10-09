@@ -1091,34 +1091,24 @@ export async function getRegistrationsForEvent(eventId: string) {
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      const { data: regsData, error: regsError } = await supabase
-        .from('event_registrations')
-        .select('*')
-        .eq('event_id', eventId)
-        .order('created_at', { ascending: true });
+      const [regsRes, profilesRes] = await Promise.all([
+        supabase
+          .from('event_registrations')
+          .select('*')
+          .eq('event_id', eventId)
+          .order('created_at', { ascending: true }),
+        supabase.from('profiles').select('*')
+      ]);
 
-      if (regsError) {
-        console.error('Supabase getRegistrationsForEvent error:', regsError);
-      } else if (regsData && regsData.length > 0) {
-        const profileIds = Array.from(new Set(regsData.map(r => r.profile_id).filter(Boolean)));
-        let dbProfiles: Profile[] = [];
-        if (profileIds.length > 0) {
-          const { data: profs } = await supabase
-            .from('profiles')
-            .select('*')
-            .in('id', profileIds);
-          if (profs) dbProfiles = profs;
-        }
-
-        return regsData.map(r => {
+      if (regsRes.data && regsRes.data.length > 0) {
+        const dbProfiles = profilesRes.data || [];
+        return regsRes.data.map(r => {
           const foundProfile = dbProfiles.find(p => p.id === r.profile_id) || profilesStore.find(p => p.id === r.profile_id);
           return {
             ...r,
             profile: foundProfile
           };
         });
-      } else if (regsData && regsData.length === 0) {
-        return [];
       }
     } catch (e) {
       console.error('getRegistrationsForEvent exception:', e);
@@ -1135,6 +1125,7 @@ export async function getRegistrationsForEvent(eventId: string) {
 }
 
 export async function getUserRegisteredEventIds(profileId: string): Promise<string[]> {
+  if (!profileId) return [];
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
@@ -1142,56 +1133,51 @@ export async function getUserRegisteredEventIds(profileId: string): Promise<stri
         .from('event_registrations')
         .select('event_id')
         .eq('profile_id', profileId);
-      if (error) {
-        console.error('getUserRegisteredEventIds error:', error);
-      } else if (data) {
+      if (data && !error) {
         return data.map(r => r.event_id);
       }
     } catch (e) {
       console.error('getUserRegisteredEventIds exception:', e);
     }
   }
-  return registrationsStore.filter(r => r.profile_id === profileId).map(r => r.event_id);
+  return registrationsStore
+    .filter(r => r.profile_id === profileId)
+    .map(r => r.event_id);
 }
 
 export async function getUserRegistrationHistory(profileId: string): Promise<{ event: ViharaEvent; method: string; isAttended: boolean }[]> {
-  const allEvents = await getEvents();
-  if (isSupabaseConfigured()) {
-    try {
-      const supabase = await createClient();
-      const { data, error } = await supabase
-        .from('event_registrations')
-        .select('*')
-        .eq('profile_id', profileId);
-      if (error) {
-        console.error('getUserRegistrationHistory error:', error);
-      } else if (data) {
-        return data.map(reg => {
-          const ev = allEvents.find(e => e.id === reg.event_id);
-          if (!ev) return null;
-          return {
-            event: ev,
-            method: reg.registration_method || 'self',
-            isAttended: reg.is_attended || false
-          };
-        }).filter(Boolean) as { event: ViharaEvent; method: string; isAttended: boolean }[];
+  if (!profileId) return [];
+  const [eventsList, userRegs] = await Promise.all([
+    getEvents(),
+    (async () => {
+      if (isSupabaseConfigured()) {
+        try {
+          const supabase = await createClient();
+          const { data } = await supabase
+            .from('event_registrations')
+            .select('*')
+            .eq('profile_id', profileId);
+          if (data) return data;
+        } catch (e) {
+          console.error('getUserRegistrationHistory exception:', e);
+        }
       }
-    } catch (e) {
-      console.error('getUserRegistrationHistory exception:', e);
+      return registrationsStore.filter(r => r.profile_id === profileId);
+    })()
+  ]);
+
+  const history: { event: ViharaEvent; method: string; isAttended: boolean }[] = [];
+  for (const reg of userRegs) {
+    const ev = eventsList.find(e => e.id === reg.event_id);
+    if (ev) {
+      history.push({
+        event: ev,
+        method: reg.registration_method,
+        isAttended: reg.is_attended
+      });
     }
   }
-
-  return registrationsStore
-    .filter(r => r.profile_id === profileId)
-    .map(reg => {
-      const ev = allEvents.find(e => e.id === reg.event_id);
-      if (!ev) return null;
-      return {
-        event: ev,
-        method: reg.registration_method || 'self',
-        isAttended: reg.is_attended || false
-      };
-    }).filter(Boolean) as { event: ViharaEvent; method: string; isAttended: boolean }[];
+  return history;
 }
 
 export async function cancelRegistration(registrationId: string) {
@@ -1202,8 +1188,10 @@ export async function cancelRegistration(registrationId: string) {
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      const { data: dbReg } = await supabase.from('event_registrations').select('event_id').eq('id', registrationId).single();
-      if (dbReg) eventId = dbReg.event_id;
+      if (!eventId) {
+        const { data: dbReg } = await supabase.from('event_registrations').select('event_id').eq('id', registrationId).single();
+        if (dbReg) eventId = dbReg.event_id;
+      }
       const { error } = await supabase.from('event_registrations').delete().eq('id', registrationId);
       if (error) console.error('Supabase cancelRegistration error:', error);
     } catch (e) {
@@ -1211,10 +1199,7 @@ export async function cancelRegistration(registrationId: string) {
     }
   }
 
-  const idx = registrationsStore.findIndex(r => r.id === registrationId);
-  if (idx !== -1) {
-    registrationsStore.splice(idx, 1);
-  }
+  registrationsStore = registrationsStore.filter(r => r.id !== registrationId);
 
   revalidatePath('/events');
   if (eventId) revalidatePath(`/events/${eventId}`);
@@ -1223,31 +1208,19 @@ export async function cancelRegistration(registrationId: string) {
   return { success: true };
 }
 
-export async function toggleAttendance(registrationId: string, targetAttended?: boolean) {
+export async function toggleAttendance(registrationId: string) {
   let reg = registrationsStore.find(r => r.id === registrationId);
-  let newAttended: boolean;
-
-  if (targetAttended !== undefined) {
-    newAttended = targetAttended;
-  } else {
-    let currentAttended = reg?.is_attended ?? false;
-    if (isSupabaseConfigured()) {
-      try {
-        const supabase = await createClient();
-        const { data: dbReg } = await supabase.from('event_registrations').select('is_attended').eq('id', registrationId).single();
-        if (dbReg) currentAttended = dbReg.is_attended ?? false;
-      } catch (e) {
-        console.error('toggleAttendance check error:', e);
-      }
-    }
-    newAttended = !currentAttended;
-  }
-
-  const attendedAt = newAttended ? new Date().toISOString() : null;
+  let currentAttended = reg?.is_attended ?? false;
 
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
+      const { data: dbReg } = await supabase.from('event_registrations').select('is_attended').eq('id', registrationId).single();
+      if (dbReg) {
+        currentAttended = dbReg.is_attended ?? false;
+      }
+      const newAttended = !currentAttended;
+      const attendedAt = newAttended ? new Date().toISOString() : null;
       const { error } = await supabase.from('event_registrations').update({ is_attended: newAttended, attended_at: attendedAt }).eq('id', registrationId);
       if (error) console.error('Supabase toggleAttendance error:', error);
       if (reg) {
@@ -1262,39 +1235,28 @@ export async function toggleAttendance(registrationId: string, targetAttended?: 
   }
 
   if (reg) {
-    reg.is_attended = newAttended;
-    reg.attended_at = newAttended ? new Date().toISOString() : undefined;
+    reg.is_attended = !reg.is_attended;
+    reg.attended_at = reg.is_attended ? new Date().toISOString() : undefined;
   }
   revalidatePath('/events');
-  return { success: true, is_attended: newAttended };
+  return { success: true, is_attended: reg?.is_attended };
 }
 
-export async function toggleRegistrationPayment(registrationId: string, amount?: number, targetPaid?: boolean) {
+export async function toggleRegistrationPayment(registrationId: string, amount?: number) {
   let reg = registrationsStore.find(r => r.id === registrationId);
-  let newPaid: boolean;
-
-  if (targetPaid !== undefined) {
-    newPaid = targetPaid;
-  } else {
-    let currentPaid = reg?.is_paid ?? false;
-    if (isSupabaseConfigured()) {
-      try {
-        const supabase = await createClient();
-        const { data: dbReg } = await supabase.from('event_registrations').select('is_paid').eq('id', registrationId).single();
-        if (dbReg) currentPaid = dbReg.is_paid ?? false;
-      } catch (e) {
-        console.error('toggleRegistrationPayment check error:', e);
-      }
-    }
-    newPaid = !currentPaid;
-  }
-
-  const paidAt = newPaid ? new Date().toISOString() : null;
-  const amountPaid = newPaid ? (amount !== undefined ? amount : (reg?.amount_paid || 0)) : 0;
+  let currentPaid = reg?.is_paid ?? false;
 
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
+      const { data: dbReg } = await supabase.from('event_registrations').select('is_paid').eq('id', registrationId).single();
+      if (dbReg) {
+        currentPaid = dbReg.is_paid ?? false;
+      }
+      const newPaid = !currentPaid;
+      const paidAt = newPaid ? new Date().toISOString() : null;
+      const amountPaid = newPaid ? (amount !== undefined ? amount : (reg?.amount_paid || 0)) : 0;
+
       const { error } = await supabase.from('event_registrations').update({ 
         is_paid: newPaid, 
         paid_at: paidAt,
@@ -1315,14 +1277,14 @@ export async function toggleRegistrationPayment(registrationId: string, amount?:
   }
 
   if (reg) {
-    reg.is_paid = newPaid;
-    reg.paid_at = newPaid ? new Date().toISOString() : undefined;
+    reg.is_paid = !reg.is_paid;
+    reg.paid_at = reg.is_paid ? new Date().toISOString() : undefined;
     if (amount !== undefined) {
-      reg.amount_paid = newPaid ? amount : 0;
+      reg.amount_paid = reg.is_paid ? amount : 0;
     }
   }
   revalidatePath('/events');
-  return { success: true, is_paid: newPaid };
+  return { success: true, is_paid: reg?.is_paid };
 }
 
 export async function updateRegistrationExtraFees(registrationId: string, feeIds: string[], calculatedTotalAmount?: number) {

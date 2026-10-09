@@ -549,9 +549,9 @@ export const EventModals: React.FC<EventModalsProps> = ({
                   onChange={(e: any) => setBudgetType(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
                 >
-                  <option value="pemasukan">✨ Pemasukan / Sumbangan (Dana Paramita, Sponsorship)</option>
-                  <option value="rab">📊 Target Anggaran (RAB Pengeluaran)</option>
-                  <option value="realisasi">💸 Realisasi Pengeluaran (Pengeluaran Langsung / Realisasi RAB)</option>
+                  <option value="pemasukan">Pemasukan / Sumbangan (Dana Paramita, Sponsorship)</option>
+                  <option value="rab">Target Anggaran (RAB Pengeluaran)</option>
+                  <option value="realisasi">Realisasi Pengeluaran (Pengeluaran Langsung / Realisasi RAB)</option>
                 </select>
               </div>
 

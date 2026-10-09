@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { UserCheck, MapPin, Building, Phone, Calendar, History, CheckCircle2, Edit2, Compass, Home } from 'lucide-react';
-import { getProfiles, getEvents, getRegistrationsForEvent, updateProfile, getUserRegistrationHistory } from '@/lib/actions/vihara-actions';
+import { UserCheck, MapPin, Building, Phone, Calendar, History, CheckCircle2, Compass, Home } from 'lucide-react';
+import { getProfiles, updateProfile, getUserRegistrationHistory } from '@/lib/actions/vihara-actions';
 import { Profile, ViharaEvent } from '@/types/database';
 
 export default function MemberProfilePage() {
@@ -15,8 +15,7 @@ export default function MemberProfilePage() {
   const [loginInput, setLoginInput] = useState('');
   const [loginError, setLoginError] = useState('');
   
-  // Edit Profile Modal State
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  // Edit Profile Form State
   const [editFullName, setEditFullName] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editPhone, setEditPhone] = useState('');
@@ -30,10 +29,7 @@ export default function MemberProfilePage() {
 
   const loadProfileData = async (userId: string) => {
     setLoading(true);
-    const [profs, history] = await Promise.all([
-      getProfiles(),
-      getUserRegistrationHistory(userId)
-    ]);
+    const profs = await getProfiles();
     const me = profs.find(p => p.id === userId);
     if (!me) {
       setLoading(false);
@@ -41,6 +37,17 @@ export default function MemberProfilePage() {
     }
 
     setProfile(me);
+    setEditFullName(me.full_name || '');
+    setEditEmail(me.email || '');
+    setEditPhone(me.phone || '');
+    setEditBirthDate(me.birth_date || '');
+    setEditAddress(me.address || '');
+    setEditSentra(me.sentra || 'Sentra Makassar');
+    setEditCetya(me.cetya || '');
+    setEditHan(me.han || '');
+    setEditEmergencyContact(me.emergency_contact || '');
+
+    const history = await getUserRegistrationHistory(userId);
     setUserRegistrations(history);
     setLoading(false);
   };
@@ -75,7 +82,7 @@ export default function MemberProfilePage() {
       setLoggedUserId(found.id);
       loadProfileData(found.id);
     } else {
-      setLoginError('Profil Umat tidak ditemukan dengan Email / HAN / Nama tersebut.');
+      setLoginError('Profil Umat tidak ditemukan dengan Email, HAN, atau Nama tersebut.');
     }
   };
 
@@ -86,42 +93,9 @@ export default function MemberProfilePage() {
     setUserRegistrations([]);
   };
 
-  const openEditModal = () => {
-    if (!profile) return;
-    setEditFullName(profile.full_name || '');
-    setEditEmail(profile.email || '');
-    setEditPhone(profile.phone || '');
-    setEditBirthDate(profile.birth_date || '');
-    setEditAddress(profile.address || '');
-    setEditSentra(profile.sentra || 'Sentra Makassar');
-    setEditCetya(profile.cetya || '');
-    setEditHan(profile.han || '');
-    setEditEmergencyContact(profile.emergency_contact || '');
-    setIsEditModalOpen(true);
-  };
-
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
-
-    const updatedProfile: Profile = {
-      ...profile,
-      full_name: editFullName,
-      email: editEmail.trim() || undefined,
-      phone: editPhone,
-      birth_date: editBirthDate,
-      address: editAddress,
-      sentra: editSentra,
-      cetya: editCetya,
-      han: editHan,
-      emergency_contact: editEmergencyContact
-    };
-
-    // Instant optimistic update (0ms)
-    setProfile(updatedProfile);
-    setSaveSuccessMsg('✓ Profil berhasil diperbarui!');
-    setTimeout(() => setSaveSuccessMsg(''), 3000);
-    setIsEditModalOpen(false);
 
     await updateProfile(profile.id, {
       full_name: editFullName,
@@ -134,33 +108,39 @@ export default function MemberProfilePage() {
       han: editHan,
       emergency_contact: editEmergencyContact
     });
+
+    setSaveSuccessMsg('Perubahan profil berhasil disimpan.');
+    setTimeout(() => setSaveSuccessMsg(''), 3000);
+    loadProfileData(profile.id);
   };
 
   if (loading) {
-    return <div className="p-12 text-center text-purple-600 dark:text-purple-300 font-extrabold">Memuat data profil Umat...</div>;
+    return <div className="p-16 text-center text-xs font-medium text-[#86868b]">Memuat profil Umat...</div>;
   }
 
   if (!profile) {
     return (
-      <div className="max-w-md mx-auto my-12 p-8 rounded-3xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-2xl space-y-6 text-center">
-        <div className="w-14 h-14 rounded-2xl gradient-mnsbdi flex items-center justify-center text-white text-2xl font-bold mx-auto shadow-lg shadow-purple-900/40">
-          🪷
+      <div className="max-w-md mx-auto my-12 p-8 sm:p-10 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-6 text-center">
+        <div className="w-12 h-12 rounded-full bg-[#1d1d1f] dark:bg-white text-white dark:text-black flex items-center justify-center mx-auto shadow-xs">
+          <UserCheck size={22} />
         </div>
 
-        <div className="space-y-2">
-          <h2 className="text-2xl font-black text-slate-900 dark:text-white">Akses Profil Umat</h2>
-          <p className="text-xs text-slate-500">Masukkan Email terdaftar atau Kode HAN Anda untuk melihat profil & riwayat kegiatan.</p>
+        <div className="space-y-1.5">
+          <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">Akses Profil Umat</h1>
+          <p className="text-xs text-[#86868b] dark:text-[#a1a1a6]">
+            Masukkan email terdaftar atau kode HAN untuk melihat riwayat kegiatan.
+          </p>
         </div>
 
         {loginError && (
-          <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-300 text-xs font-bold">
+          <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-medium">
             {loginError}
           </div>
         )}
 
         <form onSubmit={handleUmatLogin} className="space-y-4 text-left">
-          <div>
-            <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 mb-1.5">
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
               Email Umat / Kode HAN / Nama Lengkap
             </label>
             <input
@@ -169,38 +149,38 @@ export default function MemberProfilePage() {
               value={loginInput}
               onChange={(e) => setLoginInput(e.target.value)}
               placeholder="Contoh: suryani@vihara.or.id atau HAN Makassar 02"
-              className="w-full bg-slate-50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-900/60 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-500 font-semibold"
+              className="w-full bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.1] rounded-2xl px-4 py-2.5 text-xs text-neutral-900 dark:text-white focus:outline-none focus:border-black/30 dark:focus:border-white/30 font-medium transition-all"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full py-3 rounded-xl gradient-mnsbdi text-white font-extrabold text-xs transition shadow-lg shadow-purple-900/30 hover:opacity-90 cursor-pointer"
+            className="w-full py-2.5 rounded-full bg-[#1d1d1f] hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-semibold text-xs transition-all shadow-xs cursor-pointer"
           >
             Buka Profil Saya
           </button>
         </form>
 
-        <div className="pt-4 border-t border-purple-100 dark:border-purple-900/60 space-y-2">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-            Atau Coba Akses Akun Demo Umat:
+        <div className="pt-4 border-t border-black/[0.04] dark:border-white/[0.06] space-y-2 text-left">
+          <span className="text-[11px] font-semibold text-[#86868b] uppercase tracking-wider block">
+            Pilihan Cepat Profil Umat:
           </span>
           <div className="flex flex-col gap-2">
             <button
               type="button"
               onClick={() => { setLoginInput('suryani@vihara.or.id'); }}
-              className="w-full px-3 py-2 rounded-xl bg-purple-50 dark:bg-purple-950/80 text-purple-900 dark:text-purple-200 text-xs font-bold border border-purple-200 dark:border-purple-800 hover:bg-purple-100 text-left flex items-center justify-between"
+              className="w-full px-4 py-2 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] text-neutral-900 dark:text-white text-xs font-medium border border-black/[0.06] dark:border-white/[0.08] hover:bg-black/[0.04] dark:hover:bg-white/[0.08] text-left flex items-center justify-between cursor-pointer transition-all"
             >
               <span>Suryani Dewi (suryani@vihara.or.id)</span>
-              <span className="text-[10px] text-amber-500 font-black">Pilih →</span>
+              <span className="text-[11px] text-[#5e35b1] dark:text-amber-400 font-semibold">Pilih</span>
             </button>
             <button
               type="button"
               onClick={() => { setLoginInput('budi@vihara.or.id'); }}
-              className="w-full px-3 py-2 rounded-xl bg-purple-50 dark:bg-purple-950/80 text-purple-900 dark:text-purple-200 text-xs font-bold border border-purple-200 dark:border-purple-800 hover:bg-purple-100 text-left flex items-center justify-between"
+              className="w-full px-4 py-2 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] text-neutral-900 dark:text-white text-xs font-medium border border-black/[0.06] dark:border-white/[0.08] hover:bg-black/[0.04] dark:hover:bg-white/[0.08] text-left flex items-center justify-between cursor-pointer transition-all"
             >
               <span>Budi Santoso (budi@vihara.or.id)</span>
-              <span className="text-[10px] text-amber-500 font-black">Pilih →</span>
+              <span className="text-[11px] text-[#5e35b1] dark:text-amber-400 font-semibold">Pilih</span>
             </button>
           </div>
         </div>
@@ -209,48 +189,48 @@ export default function MemberProfilePage() {
   }
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-8 max-w-5xl mx-auto">
       {saveSuccessMsg && (
-        <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-2 shadow-sm">
-          <CheckCircle2 size={18} className="text-emerald-500" />
+        <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs font-medium flex items-center gap-2">
+          <CheckCircle2 size={16} className="text-emerald-500" />
           <span>{saveSuccessMsg}</span>
         </div>
       )}
 
-      {/* Profile Header Banner Card */}
-      <div className="p-8 rounded-3xl bg-gradient-to-r from-purple-900 via-indigo-950 to-purple-950 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl border border-purple-700/50">
+      {/* Apple-style Profile Summary Card */}
+      <div className="p-8 sm:p-9 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] text-neutral-900 dark:text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xs">
         <div className="flex items-center gap-5">
-          <div className="w-16 h-16 rounded-2xl bg-amber-400 text-slate-950 font-black text-2xl flex items-center justify-center shadow-lg">
+          <div className="w-16 h-16 rounded-full bg-[#1d1d1f] dark:bg-white text-white dark:text-black font-bold text-xl flex items-center justify-center shadow-xs shrink-0">
             {profile.full_name.substring(0, 2).toUpperCase()}
           </div>
 
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-black text-white">{profile.full_name}</h1>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider bg-emerald-400 text-slate-950 px-2 py-0.5 rounded shadow">
-                Profil Umat Vihara
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">{profile.full_name}</h1>
+              <span className="text-[10px] font-semibold uppercase tracking-wider bg-black/[0.04] dark:bg-white/[0.08] text-neutral-700 dark:text-neutral-300 px-2.5 py-0.5 rounded-full border border-black/[0.06] dark:border-white/[0.08]">
+                Umat
               </span>
             </div>
-            <p className="text-xs text-amber-300 font-semibold">
+            <p className="text-xs text-[#86868b] dark:text-[#a1a1a6]">
               {profile.bagian ? `Bagian ${profile.bagian}` : 'Umat Vihara'} &bull; {profile.email || 'Email belum diatur'}
             </p>
-            <p className="text-xs text-purple-200">
-              HAN Naungan: <strong className="font-mono text-amber-200">{profile.han || 'HAN Utama'}</strong> ({profile.cetya || 'Cetya Utama'})
+            <p className="text-xs text-[#86868b] dark:text-[#a1a1a6]">
+              HAN Naungan: <strong className="font-semibold text-neutral-900 dark:text-white">{profile.han || 'HAN Utama'}</strong> ({profile.cetya || 'Cetya Utama'})
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="p-3 rounded-2xl bg-purple-950/80 border border-purple-600/50 text-center px-5">
-            <p className="text-[10px] text-purple-300 font-bold uppercase tracking-wider">Total Partisipasi</p>
-            <p className="text-xl font-black text-amber-300">{userRegistrations.length} Event</p>
+          <div className="p-3 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] text-center px-4">
+            <p className="text-[10px] text-[#86868b] font-semibold uppercase tracking-wider">Partisipasi</p>
+            <p className="text-lg font-bold text-neutral-900 dark:text-white">{userRegistrations.length} Event</p>
           </div>
 
           <button
             onClick={handleLogout}
-            className="px-4 py-2.5 rounded-xl bg-purple-950/80 hover:bg-purple-900 text-rose-300 font-extrabold text-xs flex items-center gap-1.5 transition border border-purple-700/50 cursor-pointer shadow"
+            className="px-4 py-2 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-semibold text-xs border border-rose-500/20 transition-all cursor-pointer"
           >
-            <span>Keluar Akun</span>
+            Keluar Akun
           </button>
         </div>
       </div>
@@ -258,39 +238,39 @@ export default function MemberProfilePage() {
       {/* Grid Profil & Data Diri Umat */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Kolom 1: Status Naungan Resmi (Read-Only Ditetapkan Admin) */}
+        {/* Kolom 1: Status Naungan Resmi (Read-Only) */}
         <div className="space-y-6">
-          <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4">
-            <h3 className="text-sm font-extrabold text-purple-950 dark:text-purple-200 border-b border-purple-100 dark:border-purple-900/60 pb-3 flex items-center gap-2">
-              <Compass className="text-purple-600 dark:text-purple-400" size={18} />
-              <span>Lokasi Naungan Vihara</span>
-            </h3>
+          <div className="p-7 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-black/[0.04] dark:border-white/[0.06]">
+              <Compass className="text-[#5e35b1] dark:text-amber-400" size={16} />
+              <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Lokasi Naungan Vihara</h2>
+            </div>
 
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+            <p className="text-xs text-[#86868b] leading-relaxed">
               Lokasi Sentra, Cetya, dan Kelompok HAN bersifat resmi dan diatur secara terpusat oleh Pengurus Admin Vihara.
             </p>
 
             <div className="space-y-3 text-xs">
-              <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-900/60">
-                <span className="text-slate-400 text-[10px] font-bold block uppercase mb-1">1. Sentra Utama Wilayah</span>
-                <span className="font-extrabold text-purple-950 dark:text-purple-200 text-sm flex items-center gap-1.5">
-                  <Compass size={14} className="text-purple-600" />
+              <div className="p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08]">
+                <span className="text-[#86868b] text-[10px] font-semibold block uppercase mb-0.5">1. Sentra Wilayah</span>
+                <span className="font-semibold text-neutral-900 dark:text-white text-xs flex items-center gap-1.5">
+                  <Compass size={13} className="text-[#86868b]" />
                   {profile.sentra || 'Sentra Makassar'}
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-amber-50/50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/40">
-                <span className="text-slate-400 text-[10px] font-bold block uppercase mb-1">2. Cetya Bernaung</span>
-                <span className="font-bold text-amber-900 dark:text-amber-300 text-xs flex items-center gap-1.5">
-                  <Building size={14} className="text-amber-500" />
+              <div className="p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08]">
+                <span className="text-[#86868b] text-[10px] font-semibold block uppercase mb-0.5">2. Cetya Bernaung</span>
+                <span className="font-semibold text-neutral-900 dark:text-white text-xs flex items-center gap-1.5">
+                  <Building size={13} className="text-[#86868b]" />
                   {profile.cetya || 'Cetya Avalokitesvara Makassar'}
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/80 border border-purple-200 dark:border-purple-800">
-                <span className="text-slate-400 text-[10px] font-bold block uppercase mb-1">3. Kelompok HAN Terdaftar</span>
-                <span className="font-mono font-black text-purple-900 dark:text-purple-100 text-xs flex items-center gap-1.5">
-                  <Home size={14} className="text-purple-500" />
+              <div className="p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08]">
+                <span className="text-[#86868b] text-[10px] font-semibold block uppercase mb-0.5">3. Kelompok HAN</span>
+                <span className="font-semibold text-neutral-900 dark:text-white text-xs flex items-center gap-1.5">
+                  <Home size={13} className="text-[#86868b]" />
                   {profile.han || 'HAN Makassar 01'}
                 </span>
               </div>
@@ -298,76 +278,76 @@ export default function MemberProfilePage() {
           </div>
         </div>
 
-        {/* Kolom 2 & 3: Form Edit Data Diri Mandiri Umat & Riwayat */}
+        {/* Kolom 2 & 3: Form Edit Data Diri & Riwayat */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-5">
-            <h3 className="text-sm font-extrabold text-purple-950 dark:text-purple-200 border-b border-purple-100 dark:border-purple-900/60 pb-3 flex items-center gap-2">
-              <UserCheck size={18} className="text-amber-500" />
-              <span>Pengaturan Data Diri Profil Umat</span>
-            </h3>
+          <div className="p-7 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-5">
+            <div className="flex items-center gap-2 pb-3 border-b border-black/[0.04] dark:border-white/[0.06]">
+              <UserCheck size={16} className="text-amber-500" />
+              <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Pengaturan Data Diri Profil Umat</h2>
+            </div>
 
             <form onSubmit={handleSaveProfile} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Nama Lengkap Umat</label>
+                <div className="space-y-1.5">
+                  <label className="block font-medium text-neutral-700 dark:text-neutral-300">Nama Lengkap Umat</label>
                   <input
                     type="text"
                     required
                     value={editFullName}
                     onChange={(e) => setEditFullName(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-bold focus:outline-none focus:border-purple-600"
+                    className="w-full bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.1] rounded-2xl px-4 py-2.5 text-xs text-neutral-900 dark:text-white font-medium focus:outline-none focus:border-black/30 dark:focus:border-white/30"
                   />
                 </div>
 
-                <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Email Login Terdaftar</label>
+                <div className="space-y-1.5">
+                  <label className="block font-medium text-neutral-700 dark:text-neutral-300">Email Login Terdaftar</label>
                   <input
                     type="email"
                     placeholder="email@domain.com"
                     value={editEmail}
                     onChange={(e) => setEditEmail(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-purple-600"
+                    className="w-full bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.1] rounded-2xl px-4 py-2.5 text-xs text-neutral-900 dark:text-white font-medium focus:outline-none focus:border-black/30 dark:focus:border-white/30"
                   />
                 </div>
 
-                <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">No. Handphone / WhatsApp</label>
+                <div className="space-y-1.5">
+                  <label className="block font-medium text-neutral-700 dark:text-neutral-300">No. Handphone / WhatsApp</label>
                   <input
                     type="text"
                     value={editPhone}
                     onChange={(e) => setEditPhone(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-mono focus:outline-none focus:border-purple-600"
+                    className="w-full bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.1] rounded-2xl px-4 py-2.5 text-xs text-neutral-900 dark:text-white font-medium focus:outline-none focus:border-black/30 dark:focus:border-white/30"
                   />
                 </div>
 
-                <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Tanggal Lahir</label>
+                <div className="space-y-1.5">
+                  <label className="block font-medium text-neutral-700 dark:text-neutral-300">Tanggal Lahir</label>
                   <input
                     type="date"
                     required
                     value={editBirthDate}
                     onChange={(e) => setEditBirthDate(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
+                    className="w-full bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.1] rounded-2xl px-4 py-2.5 text-xs text-neutral-900 dark:text-white font-medium focus:outline-none focus:border-black/30 dark:focus:border-white/30"
                   />
                 </div>
 
-                <div className="md:col-span-2">
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Alamat Tempat Tinggal</label>
+                <div className="md:col-span-2 space-y-1.5">
+                  <label className="block font-medium text-neutral-700 dark:text-neutral-300">Alamat Tempat Tinggal</label>
                   <input
                     type="text"
                     value={editAddress}
                     onChange={(e) => setEditAddress(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
+                    className="w-full bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.1] rounded-2xl px-4 py-2.5 text-xs text-neutral-900 dark:text-white font-medium focus:outline-none focus:border-black/30 dark:focus:border-white/30"
                   />
                 </div>
 
-                <div className="md:col-span-2">
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Kontak Darurat</label>
+                <div className="md:col-span-2 space-y-1.5">
+                  <label className="block font-medium text-neutral-700 dark:text-neutral-300">Kontak Darurat</label>
                   <input
                     type="text"
                     value={editEmergencyContact}
                     onChange={(e) => setEditEmergencyContact(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
+                    className="w-full bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.1] rounded-2xl px-4 py-2.5 text-xs text-neutral-900 dark:text-white font-medium focus:outline-none focus:border-black/30 dark:focus:border-white/30"
                   />
                 </div>
               </div>
@@ -375,51 +355,49 @@ export default function MemberProfilePage() {
               <div className="flex justify-end pt-2">
                 <button
                   type="submit"
-                  className="gradient-mnsbdi text-white font-extrabold px-6 py-2.5 rounded-xl text-xs shadow-lg hover:opacity-95 transition cursor-pointer"
+                  className="bg-[#1d1d1f] hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-semibold px-6 py-2.5 rounded-full text-xs shadow-xs transition-all cursor-pointer"
                 >
-                  Simpan Perubahan Profil Umat
+                  Simpan Perubahan Profil
                 </button>
               </div>
             </form>
           </div>
 
           {/* Riwayat Activity Event */}
-          <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4">
-            <h3 className="text-sm font-extrabold text-purple-950 dark:text-white border-b border-purple-100 dark:border-purple-900/60 pb-3 flex items-center gap-2">
-              <History className="text-amber-500" size={18} />
-              <span>Riwayat Kebaktian & Event Umat</span>
-            </h3>
+          <div className="p-7 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-black/[0.04] dark:border-white/[0.06]">
+              <History className="text-amber-500" size={16} />
+              <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Riwayat Kebaktian & Event Umat</h2>
+            </div>
 
             {userRegistrations.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 text-xs">
+              <div className="p-8 text-center text-[#86868b] text-xs">
                 Belum ada riwayat partisipasi event.
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {userRegistrations.map(({ event, method, isAttended }) => (
-                  <div key={event.id} className="p-4 rounded-xl bg-purple-50/50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-900/60 flex items-center justify-between">
+                  <div key={event.id} className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <h4 className="font-extrabold text-purple-950 dark:text-white text-xs">{event.title}</h4>
-                        <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded ${
-                          method === 'admin' ? 'bg-purple-200 text-purple-900' : 'bg-emerald-200 text-emerald-900'
-                        }`}>
+                        <h3 className="font-bold text-neutral-900 dark:text-white text-xs">{event.title}</h3>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.08] text-[#86868b]">
                           {method}
                         </span>
                       </div>
 
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        {new Date(event.event_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} • {event.location}
+                      <p className="text-[11px] text-[#86868b]">
+                        {new Date(event.event_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} &bull; {event.location}
                       </p>
                     </div>
 
                     <div>
                       {isAttended ? (
-                        <span className="text-[11px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-3 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                        <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1">
                           <CheckCircle2 size={13} /> Hadir
                         </span>
                       ) : (
-                        <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950 px-3 py-1 rounded-lg border border-amber-200 dark:border-amber-800">
+                        <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
                           Terdaftar
                         </span>
                       )}

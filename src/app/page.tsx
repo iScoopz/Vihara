@@ -4,151 +4,220 @@ import {
   UserCheck, 
   CalendarDays, 
   HeartHandshake, 
-  Sparkles, 
-  ArrowRight, 
   MapPin, 
-  Clock, 
-  BookOpen, 
-  Flower2, 
-  CheckCircle2 
+  Users,
+  ChevronRight,
+  ArrowUpRight
 } from 'lucide-react';
+import ThemeToggle from '@/components/ui/theme-toggle';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#0b0717] text-slate-100 flex flex-col font-sans selection:bg-purple-600 selection:text-white">
-      {/* Top Navbar */}
-      <header className="border-b border-purple-900/40 bg-[#13092b]/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-mnsbdi flex items-center justify-center text-white font-black text-xl shadow-lg shadow-purple-900/40">
-              🪷
+    <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#000000] text-[#1d1d1f] dark:text-[#f5f5f7] flex flex-col font-sans transition-colors duration-200">
+      {/* Apple-style Translucent Navigation Bar */}
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#f5f5f7]/80 dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08] transition-all">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="w-8 h-8 rounded-full bg-[#2e1065] text-amber-300 flex items-center justify-center font-bold text-xs shadow-xs group-hover:scale-105 transition-transform">
+              MN
             </div>
-            <div>
-              <h1 className="font-extrabold text-base sm:text-lg text-white leading-tight">
+            <div className="flex flex-col">
+              <span className="font-semibold text-xs sm:text-sm tracking-tight text-neutral-900 dark:text-white leading-none">
                 Vihara MNSBDI
-              </h1>
-              <p className="text-[11px] text-amber-300 font-semibold tracking-wide">
-                Sentra Makassar — Sulawesi
-              </p>
+              </span>
+              <span className="text-[10px] text-[#86868b] tracking-normal font-medium mt-0.5">
+                Sentra Makassar
+              </span>
             </div>
-          </div>
+          </Link>
 
           <div className="flex items-center gap-2 sm:gap-3">
             <Link 
               href="/kegiatan"
-              className="text-xs sm:text-sm font-extrabold text-purple-200 hover:text-white px-3 py-2 rounded-xl hover:bg-purple-900/50 transition flex items-center gap-1.5"
+              className="text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:text-black dark:hover:text-white px-3 py-1.5 rounded-full hover:bg-black/[0.04] dark:hover:bg-white/[0.08] transition-all flex items-center gap-1.5"
             >
-              <UserCheck size={16} className="text-amber-400" />
-              <span className="hidden sm:inline">Katalog</span> Kegiatan Umat
+              <UserCheck size={14} className="text-[#86868b]" />
+              <span>Kegiatan Umat</span>
             </Link>
+
+            <ThemeToggle />
 
             <Link 
               href="/login"
-              className="text-xs sm:text-sm font-extrabold gradient-mnsbdi text-white px-4 py-2.5 rounded-xl transition shadow-lg shadow-purple-900/30 hover:opacity-90 flex items-center gap-1.5 cursor-pointer"
+              className="text-xs font-medium bg-[#1d1d1f] hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 px-4 py-1.5 rounded-full transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
-              <Shield size={16} />
-              <span>Login Pengurus / Admin</span>
+              <Shield size={13} />
+              <span>Pengurus</span>
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-12 sm:py-20 flex flex-col justify-center space-y-16">
+      {/* Main Content Showcase */}
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24 space-y-16 sm:space-y-24">
         
-        {/* Main Banner Text */}
-        <div className="text-center max-w-3xl mx-auto space-y-6">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-950/80 border border-purple-700/50 text-amber-300 text-xs font-bold shadow-inner">
-            <Sparkles size={14} className="text-amber-400 animate-pulse" />
-            <span>Majelis Nichiren Shoshu Buddha Dharma Indonesia (MNSBDI)</span>
+        {/* Apple Style Hero */}
+        <section className="text-center max-w-3xl mx-auto space-y-6">
+          <div className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-wider uppercase text-[#5e35b1] dark:text-amber-400 bg-purple-500/[0.08] dark:bg-amber-400/[0.1] px-3.5 py-1.2 rounded-full border border-purple-500/[0.12] dark:border-amber-400/[0.15]">
+            Majelis Nichiren Shoshu Buddha Dharma Indonesia
           </div>
 
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white tracking-tight leading-tight">
-            Mewujudkan Harmoni & Kebijaksanaan <span className="gradient-mnsbdi bg-clip-text text-transparent">Buddha Dharma</span>
+          <h1 className="text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-neutral-900 dark:text-white leading-[1.08]">
+            Harmoni dan Kebijaksanaan Buddha Dharma
           </h1>
 
-          <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
-            Selamat datang di Portal Resmi Informasi Vihara MNSBDI Sentra Makassar. 
-            Wadah informasi untuk keseluruhan umat.
+          <p className="text-base sm:text-xl text-[#86868b] dark:text-[#a1a1a6] font-normal leading-relaxed max-w-2xl mx-auto">
+            Portal resmi sistem informasi Vihara MNSBDI Sentra Makassar untuk pendaftaran kegiatan umat, jadwal Gongyo dan Kensyu, serta administrasi pengurus.
           </p>
 
-          {/* Action Buttons for Umat & Admin */}
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
+          {/* Action Navigation - Apple Pill Buttons */}
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
             <Link 
               href="/kegiatan"
-              className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs sm:text-sm transition shadow-xl shadow-amber-500/20 flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-6 py-3 rounded-full bg-[#1d1d1f] hover:bg-black text-white dark:bg-white dark:hover:bg-neutral-200 dark:text-black font-semibold text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-2"
             >
-              <UserCheck size={18} />
-              <span>Buka Portal Kegiatan Umat</span>
-              <ArrowRight size={16} />
+              <UserCheck size={16} />
+              <span>Buka Jadwal & Katalog</span>
             </Link>
 
             <Link 
               href="/login"
-              className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-purple-950/80 hover:bg-purple-900 text-purple-200 font-extrabold text-xs sm:text-sm border border-purple-700/50 transition flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-6 py-3 rounded-full bg-black/[0.04] dark:bg-white/[0.08] hover:bg-black/[0.08] dark:hover:bg-white/[0.14] text-neutral-900 dark:text-neutral-100 font-semibold text-xs sm:text-sm border border-black/[0.06] dark:border-white/[0.08] transition-all flex items-center justify-center gap-2"
             >
-              <Shield size={18} className="text-purple-400" />
-              <span>Akses Khusus Pengurus Admin</span>
+              <Shield size={16} className="text-[#86868b]" />
+              <span>Akses Pengurus</span>
             </Link>
           </div>
-        </div>
+        </section>
 
-        {/* Feature Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
-          <div className="p-6 rounded-3xl bg-[#160e29] border border-purple-900/60 space-y-3 shadow-xl">
-            <div className="w-12 h-12 rounded-2xl bg-purple-900/60 text-purple-300 flex items-center justify-center">
-              <CalendarDays size={24} />
-            </div>
-            <h3 className="text-lg font-extrabold text-white">Puja Bhakti & Event Rutin</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Jadwal pelaksanaan Kensyu, Ibadah Rutin mingguan, dan peringatan hari besar keagamaan Vihara MNSBDI.
-            </p>
+        {/* Bento Grid Showcase */}
+        <section className="space-y-4">
+          <div className="flex items-baseline justify-between px-1">
+            <h2 className="text-xs font-semibold tracking-wider uppercase text-[#86868b]">
+              Layanan & Pelaksanaan
+            </h2>
+            <Link href="/kegiatan" className="text-xs font-medium text-[#5e35b1] dark:text-amber-400 hover:underline flex items-center gap-1">
+              Lihat semua <ChevronRight size={12} />
+            </Link>
           </div>
 
-          <div className="p-6 rounded-3xl bg-[#160e29] border border-purple-900/60 space-y-3 shadow-xl">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-300 flex items-center justify-center">
-              <HeartHandshake size={24} />
-            </div>
-            <h3 className="text-lg font-extrabold text-white">Dana Paramita (Kebajikan)</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Fasilitas pencatatan kebajikan Dana Paramita Umat secara akurat, transparan, dan terstruktur.
-            </p>
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+            {/* Bento Card 1: Puja Bhakti */}
+            <div className="p-7 sm:p-8 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] space-y-4 shadow-xs hover:border-black/15 dark:hover:border-white/20 transition-all duration-200 flex flex-col justify-between group">
+              <div className="space-y-4">
+                <div className="w-11 h-11 rounded-2xl bg-purple-500/[0.08] text-[#5e35b1] dark:bg-purple-400/[0.12] dark:text-purple-300 flex items-center justify-center font-bold">
+                  <CalendarDays size={22} />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-bold tracking-tight text-neutral-900 dark:text-white">
+                    Puja Bhakti & Kensyu Rutin
+                  </h3>
+                  <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] leading-relaxed">
+                    Informasi jadwal pelaksanaan Kensyu, Gongyo bersama mingguan, dan peringatan hari besar keagamaan Vihara MNSBDI.
+                  </p>
+                </div>
+              </div>
 
-          <div className="p-6 rounded-3xl bg-[#160e29] border border-purple-900/60 space-y-3 shadow-xl">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center">
-              <Shield size={24} />
+              <div className="pt-2">
+                <Link 
+                  href="/kegiatan" 
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-[#5e35b1] dark:text-amber-400 group-hover:gap-1.5 transition-all"
+                >
+                  <span>Lihat Jadwal Terdekat</span>
+                  <ArrowUpRight size={14} />
+                </Link>
+              </div>
             </div>
-            <h3 className="text-lg font-extrabold text-white">Manajemen Pengurus Terpadu</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Sistem manajemen tertutup khusus Pengurus Admin untuk pengorganisasian Panitia, RAB Keuangan, & Laporan LPJ.
-            </p>
-          </div>
-        </div>
 
-        {/* Info Banner Sekretariat */}
-        <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-purple-950 via-indigo-950 to-purple-950 border border-purple-800/60 text-xs sm:text-sm text-slate-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xl">
-          <div className="space-y-1">
-            <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider block">
-              📍 Alamat Sekretariat Vihara:
+            {/* Bento Card 2: Dana Paramita */}
+            <div className="p-7 sm:p-8 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] space-y-4 shadow-xs hover:border-black/15 dark:hover:border-white/20 transition-all duration-200 flex flex-col justify-between group">
+              <div className="space-y-4">
+                <div className="w-11 h-11 rounded-2xl bg-amber-500/[0.1] text-amber-700 dark:bg-amber-400/[0.12] dark:text-amber-400 flex items-center justify-center font-bold">
+                  <HeartHandshake size={22} />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-bold tracking-tight text-neutral-900 dark:text-white">
+                    Dana Paramita (Kebajikan)
+                  </h3>
+                  <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] leading-relaxed">
+                    Pencatatan kebajikan Dana Paramita Umat secara akurat, transparan, dan terstruktur untuk operasional serta sarana ibadah.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <Link 
+                  href="/login" 
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-[#5e35b1] dark:text-amber-400 group-hover:gap-1.5 transition-all"
+                >
+                  <span>Pencatatan Pengurus</span>
+                  <ArrowUpRight size={14} />
+                </Link>
+              </div>
+            </div>
+
+            {/* Bento Card 3: Manajemen Pengurus */}
+            <div className="p-7 sm:p-8 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] space-y-4 shadow-xs hover:border-black/15 dark:hover:border-white/20 transition-all duration-200 flex flex-col justify-between group">
+              <div className="space-y-4">
+                <div className="w-11 h-11 rounded-2xl bg-black/[0.04] text-neutral-800 dark:bg-white/[0.08] dark:text-neutral-200 flex items-center justify-center font-bold">
+                  <Users size={22} />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-bold tracking-tight text-neutral-900 dark:text-white">
+                    Sistem Organisasi Pengurus
+                  </h3>
+                  <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] leading-relaxed">
+                    Pengelolaan kepanitiaan, data keanggotaan Umat per-HAN/Cetya, inventaris dupa/lilin, serta penyusunan anggaran dan laporan.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <Link 
+                  href="/login" 
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-[#5e35b1] dark:text-amber-400 group-hover:gap-1.5 transition-all"
+                >
+                  <span>Masuk ke Portal Admin</span>
+                  <ArrowUpRight size={14} />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Location Showcase - Apple Clean Banner */}
+        <section className="p-8 sm:p-10 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-xl">
+            <span className="text-[11px] font-semibold tracking-wider uppercase text-[#86868b] block">
+              Sekretariat Vihara
             </span>
-            <p className="font-bold text-white text-sm">
-              Jl. Sungai Cenrana No.39, Makassar — Vihara Vimalakirti Sentra Makassar
+            <p className="font-bold text-neutral-900 dark:text-white text-base sm:text-lg tracking-tight">
+              Jl. Sungai Cenrana No. 39, Makassar (Vihara Vimalakirti Sentra Makassar)
+            </p>
+            <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] leading-relaxed">
+              Melayani kegiatan pembinaan dan Puja Bhakti Umat di wilayah Sulawesi Selatan.
             </p>
           </div>
 
           <Link 
             href="/kegiatan/kalender"
-            className="shrink-0 px-4 py-2.5 rounded-xl bg-purple-900 hover:bg-purple-800 text-amber-300 text-xs font-extrabold border border-purple-700 transition"
+            className="shrink-0 px-5 py-2.5 rounded-full bg-black/[0.05] hover:bg-black/[0.08] dark:bg-white/[0.08] dark:hover:bg-white/[0.14] text-neutral-900 dark:text-white text-xs font-semibold border border-black/[0.06] dark:border-white/[0.08] transition-all"
           >
-            Lihat Kalender Kegiatan
+            Buka Kalender Kegiatan
           </Link>
-        </div>
+        </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-purple-900/40 bg-[#080412] py-6 text-center text-xs text-slate-500">
-        <p>© 2026 Majelis Nichiren Shoshu Buddha Dharma Indonesia (MNSBDI) Sentra Makassar. All Rights Reserved.</p>
+      {/* Apple-style Minimal Footer */}
+      <footer className="border-t border-black/[0.06] dark:border-white/[0.08] bg-[#f5f5f7] dark:bg-black py-8 text-center text-xs text-[#86868b]">
+        <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p>© 2026 Majelis Nichiren Shoshu Buddha Dharma Indonesia (MNSBDI) Sentra Makassar</p>
+          <div className="flex items-center gap-4 text-xs font-medium">
+            <Link href="/kegiatan" className="hover:text-black dark:hover:text-white transition-colors">Katalog Kegiatan</Link>
+            <Link href="/kegiatan/kalender" className="hover:text-black dark:hover:text-white transition-colors">Kalender</Link>
+            <Link href="/login" className="hover:text-black dark:hover:text-white transition-colors">Portal Pengurus</Link>
+          </div>
+        </div>
       </footer>
     </div>
   );

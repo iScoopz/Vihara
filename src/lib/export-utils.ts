@@ -88,7 +88,8 @@ export function exportRABToExcel(
         td { border: 1px solid #cbd5e1; padding: 6px 8px; vertical-align: middle; }
         .row-even { background-color: #f8fafc; }
         .row-odd { background-color: #ffffff; }
-        .currency { text-align: right; font-family: Consolas, monospace; }
+        .num { mso-number-format:"\\#\\,\\#\\#0"; text-align: right; font-family: Consolas, monospace; }
+        .num-green { mso-number-format:"\\#\\,\\#\\#0"; text-align: right; font-family: Consolas, monospace; color: #047857; font-weight: bold; }
         .footer-row { background-color: #f3e8ff; font-weight: bold; }
       </style>
     </head>
@@ -142,9 +143,9 @@ export function exportRABToExcel(
         <tr class="${rowClass}">
           <td style="text-align: center;">${index}</td>
           <td><b>${itemName}</b></td>
-          <td class="currency" style="color: #059669;">Rp ${data.pemasukan.toLocaleString('id-ID')}</td>
-          <td class="currency">Rp ${data.rab.toLocaleString('id-ID')}</td>
-          <td class="currency">Rp ${data.realisasi.toLocaleString('id-ID')}</td>
+          <td class="${data.pemasukan > 0 ? 'num-green' : 'num'}">${data.pemasukan}</td>
+          <td class="num">${data.rab}</td>
+          <td class="num">${data.realisasi}</td>
           <td><span style="font-size:10px; color:#64748b;">${data.notes}</span></td>
         </tr>
       `;
@@ -159,10 +160,10 @@ export function exportRABToExcel(
         <tfoot>
           <tr class="footer-row">
             <td colspan="2" style="text-align:right;">TOTAL KESELURUHAN</td>
-            <td class="currency" style="color: #059669;">Rp ${totalPemasukan.toLocaleString('id-ID')}</td>
-            <td class="currency">Rp ${totalRAB.toLocaleString('id-ID')}</td>
-            <td class="currency">Rp ${totalRealisasi.toLocaleString('id-ID')}</td>
-            <td style="text-align:center;">SALDO: <b>Rp ${saldoKas.toLocaleString('id-ID')}</b></td>
+            <td class="num-green">${totalPemasukan}</td>
+            <td class="num">${totalRAB}</td>
+            <td class="num">${totalRealisasi}</td>
+            <td class="num" style="font-weight:bold;">${saldoKas}</td>
           </tr>
         </tfoot>
       </table>
@@ -415,11 +416,9 @@ export function exportLPJToExcel(event: ViharaEvent, registrations: EventRegistr
         td { border: 1px solid #cbd5e1; padding: 5px 8px; vertical-align: middle; }
         .row-even { background-color: #f8fafc; }
         .row-odd { background-color: #ffffff; }
-        .currency { text-align: right; font-family: Consolas, monospace; }
-        .income { color: #047857; font-weight: bold; }
-        .expense { color: #b45309; }
-        .surplus { color: #047857; font-weight: bold; }
-        .defisit { color: #b91c1c; font-weight: bold; }
+        .num { mso-number-format:"\\#\\,\\#\\#0"; text-align: right; font-family: Consolas, monospace; }
+        .num-green { mso-number-format:"\\#\\,\\#\\#0"; text-align: right; font-family: Consolas, monospace; color: #047857; font-weight: bold; }
+        .num-red { mso-number-format:"\\#\\,\\#\\#0"; text-align: right; font-family: Consolas, monospace; color: #b91c1c; font-weight: bold; }
         .footer-row { background-color: #f3e8ff; font-weight: bold; }
         .grand-total-row { background-color: #3b0764; color: #ffffff; font-weight: bold; font-size: 12px; }
       </style>
@@ -452,7 +451,7 @@ export function exportLPJToExcel(event: ViharaEvent, registrations: EventRegistr
           <td class="meta-label">Total Peserta:</td>
           <td colspan="3" class="meta-val">${registrations.length} Umat Terdaftar</td>
           <td class="meta-label">Status LPJ:</td>
-          <td colspan="2" class="meta-val" style="color:#047857; font-weight:bold;">${saldoKasGlobal >= 0 ? 'SURPLUS' : 'DEFISIT'} (Rp ${saldoKasGlobal.toLocaleString('id-ID')})</td>
+          <td colspan="2" class="meta-val" style="color:#047857; font-weight:bold;">${saldoKasGlobal >= 0 ? 'SURPLUS' : 'DEFISIT'}</td>
         </tr>
         <tr><td colspan="7"></td></tr>
 
@@ -528,12 +527,9 @@ export function exportLPJToExcel(event: ViharaEvent, registrations: EventRegistr
             <tr class="${idx % 2 === 0 ? 'row-odd' : 'row-even'}">
               <td style="text-align:center;">${idx + 1}</td>
               <td colspan="2"><b>${item.bagian}</b></td>
-              <td class="currency">Rp ${item.basePrice.toLocaleString('id-ID')}</td>
-              <td style="text-align:center; font-weight:bold;">${item.count} Umat</td>
-              <td colspan="2" class="currency income">
-                Rp ${item.totalPemasukanBagian.toLocaleString('id-ID')}
-                ${item.subtotalExtra > 0 ? `<br><small style="color:#64748b; font-weight:normal;">(Termasuk Ekstra: Rp ${item.subtotalExtra.toLocaleString('id-ID')})</small>` : ''}
-              </td>
+              <td class="num">${item.basePrice}</td>
+              <td style="text-align:center; font-weight:bold;">${item.count}</td>
+              <td colspan="2" class="num-green">${item.totalPemasukanBagian}</td>
             </tr>
           `).join('') : `
             <tr><td colspan="7" style="text-align:center; color:#94a3b8;">Belum ada data pendaftaran bagian.</td></tr>
@@ -542,8 +538,8 @@ export function exportLPJToExcel(event: ViharaEvent, registrations: EventRegistr
         <tfoot>
           <tr class="footer-row">
             <td colspan="4" style="text-align:right;">TOTAL PEMASUKAN PENDAFTARAN UMAT:</td>
-            <td style="text-align:center; font-weight:bold;">${registrations.length} Umat</td>
-            <td colspan="2" class="currency income" style="font-size:12px;">Rp ${totalUmatRegistrationFees.toLocaleString('id-ID')}</td>
+            <td style="text-align:center; font-weight:bold;">${registrations.length}</td>
+            <td colspan="2" class="num-green" style="font-size:12px;">${totalUmatRegistrationFees}</td>
           </tr>
         </tfoot>
         <tr><td colspan="7"></td></tr>
@@ -568,64 +564,43 @@ export function exportLPJToExcel(event: ViharaEvent, registrations: EventRegistr
           <tr class="row-odd" style="background-color: #ecfdf5;">
             <td style="text-align:center; font-weight:bold; color:#047857;">1</td>
             <td style="font-weight:bold; color:#064e3b;">Total Biaya Pendaftaran Kegiatan Umat (${registrations.length} Umat)</td>
-            <td class="currency income">+ Rp ${totalUmatRegistrationFees.toLocaleString('id-ID')}</td>
-            <td class="currency" style="color:#94a3b8;">-</td>
-            <td class="currency" style="color:#94a3b8;">-</td>
-            <td class="currency income">+ Rp ${totalUmatRegistrationFees.toLocaleString('id-ID')}</td>
+            <td class="num-green">${totalUmatRegistrationFees}</td>
+            <td class="num">0</td>
+            <td class="num">0</td>
+            <td class="num">0</td>
             <td><span style="color:#047857; font-size:10px;">Penerimaan Pendaftaran</span></td>
           </tr>
           ${groupedPdfItems.map((item, idx) => {
             const hasRAB = item.rab > 0;
             const hasRealisasi = item.realisasi > 0;
-            const hasPemasukan = item.pemasukan > 0;
 
-            let displayedSelisih = 0;
+            let selisihVal = 0;
             let isOverBudget = false;
             let isSurplus = false;
 
-            if (hasPemasukan) {
-              displayedSelisih = item.pemasukan;
-              isSurplus = true;
-            } else if (hasRAB && hasRealisasi) {
-              displayedSelisih = item.rab - item.realisasi;
-              if (displayedSelisih < 0) isOverBudget = true;
-              else if (displayedSelisih > 0) isSurplus = true;
-            } else if (hasRealisasi) {
-              // Pengeluaran langsung tanpa rencana RAB awal (misal Transfer Makanan)
-              displayedSelisih = -item.realisasi;
-              isOverBudget = false; // Bukan over budget, hanya pengeluaran langsung
+            // Selisih HANYA dihitung jika memang ada anggaran RAB yang ditentukan
+            if (hasRAB && hasRealisasi) {
+              selisihVal = item.rab - item.realisasi;
+              if (selisihVal < 0) isOverBudget = true;
+              else if (selisihVal > 0) isSurplus = true;
             } else if (hasRAB) {
-              displayedSelisih = -item.rab;
+              selisihVal = item.rab;
+              isSurplus = true;
+            } else {
+              // Jika tidak ada budget RAB yang ditentukan, selisih = 0 (bukan over)
+              selisihVal = 0;
             }
 
-            const formattedSelisih = displayedSelisih > 0 
-              ? `+ Rp ${displayedSelisih.toLocaleString('id-ID')}` 
-              : displayedSelisih < 0 
-                ? `- Rp ${Math.abs(displayedSelisih).toLocaleString('id-ID')}` 
-                : 'Rp 0';
-
-            const selisihStyle = isOverBudget 
-              ? 'color: #b91c1c; font-weight: bold;' 
-              : isSurplus 
-                ? 'color: #047857; font-weight: bold;' 
-                : 'color: #1e293b; font-weight: normal;';
+            const selisihClass = isOverBudget ? 'num-red' : isSurplus ? 'num-green' : 'num';
 
             return `
               <tr class="${idx % 2 === 0 ? 'row-even' : 'row-odd'}">
                 <td style="text-align:center;">${idx + 2}</td>
                 <td><b>${item.itemName}</b></td>
-                <td class="currency ${item.pemasukan > 0 ? 'income' : ''}">
-                  ${item.pemasukan > 0 ? `+ Rp ${item.pemasukan.toLocaleString('id-ID')}` : '-'}
-                </td>
-                <td class="currency">
-                  ${item.rab > 0 ? `Rp ${item.rab.toLocaleString('id-ID')}` : '-'}
-                </td>
-                <td class="currency expense">
-                  ${item.realisasi > 0 ? `Rp ${item.realisasi.toLocaleString('id-ID')}` : '-'}
-                </td>
-                <td class="currency" style="${selisihStyle}">
-                  ${formattedSelisih}
-                </td>
+                <td class="${item.pemasukan > 0 ? 'num-green' : 'num'}">${item.pemasukan > 0 ? item.pemasukan : 0}</td>
+                <td class="num">${item.rab > 0 ? item.rab : 0}</td>
+                <td class="num">${item.realisasi > 0 ? item.realisasi : 0}</td>
+                <td class="${selisihClass}">${selisihVal}</td>
                 <td style="color:#64748b; font-size:10px;">${item.notes}</td>
               </tr>
             `;
@@ -634,57 +609,61 @@ export function exportLPJToExcel(event: ViharaEvent, registrations: EventRegistr
         <tfoot>
           <tr class="footer-row">
             <td colspan="2" style="text-align:right;">TOTAL KESELURUHAN:</td>
-            <td class="currency income">Rp ${totalPemasukanGlobal.toLocaleString('id-ID')}</td>
-            <td class="currency">Rp ${totalRAB.toLocaleString('id-ID')}</td>
-            <td class="currency expense">Rp ${totalRealisasi.toLocaleString('id-ID')}</td>
-            <td class="currency" style="${totalRAB > 0 && totalRealisasi > totalRAB ? 'color: #b91c1c; font-weight: bold;' : (totalRAB - totalRealisasi > 0) ? 'color: #047857; font-weight: bold;' : 'color: #1e293b;'}">
-              ${totalRAB - totalRealisasi >= 0 
-                ? `+ Rp ${(totalRAB - totalRealisasi).toLocaleString('id-ID')}` 
-                : `- Rp ${Math.abs(totalRAB - totalRealisasi).toLocaleString('id-ID')}`}
-            </td>
+            <td class="num-green">${totalPemasukanGlobal}</td>
+            <td class="num">${totalRAB}</td>
+            <td class="num">${totalRealisasi}</td>
+            <td class="${totalRAB > 0 && totalRealisasi > totalRAB ? 'num-red' : 'num'}">${totalRAB > 0 ? (totalRAB - totalRealisasi) : 0}</td>
             <td></td>
           </tr>
           <tr class="grand-total-row">
             <td colspan="5" style="text-align:right; font-size:12px;">SALDO KEUANGAN AKHIR KEGIATAN (TOTAL PEMASUKAN - REALISASI):</td>
-            <td colspan="2" class="currency" style="color: ${saldoKasGlobal >= 0 ? '#fef08a' : '#fca5a5'}; font-size:13px; text-align:center;">
-              Rp ${saldoKasGlobal.toLocaleString('id-ID')} ${saldoKasGlobal >= 0 ? '(SURPLUS / SISA DANA)' : '(DEFISIT)'}
+            <td colspan="2" class="num" style="color: #ffffff; font-size:13px; font-weight:bold;">
+              ${saldoKasGlobal}
             </td>
           </tr>
         </tfoot>
         <tr><td colspan="7"></td></tr>
 
-        <!-- BAGIAN IV: DAFTAR PRESENSI & PELUNASAN PESERTA -->
+        <!-- BAGIAN IV: REKAPITULASI PESERTA UMAT -->
         <tr>
-          <td colspan="7" class="section-header">IV. REKAPITULASI PRESENSI & STATUS PELUNASAN PESERTA UMAT</td>
+          <td colspan="7" class="section-header">IV. REKAPITULASI PESERTA UMAT & BIAYA KEGIATAN</td>
         </tr>
         <thead>
           <tr>
             <th style="width: 40px;">No</th>
-            <th colspan="2" style="width: 250px;">Nama Lengkap Umat</th>
-            <th style="width: 120px;">Bagian</th>
-            <th style="width: 200px;">Cetya & HAN</th>
-            <th style="width: 140px;">Status Pelunasan</th>
-            <th style="width: 140px;">Status Kehadiran</th>
+            <th colspan="3" style="width: 350px;">Nama Lengkap Umat</th>
+            <th style="width: 180px;">Bagian Umat</th>
+            <th colspan="2" style="width: 200px;">Biaya Kegiatan (Rp)</th>
           </tr>
         </thead>
         <tbody>
-          ${lpjSortedRegistrations.length > 0 ? lpjSortedRegistrations.map((reg, idx) => `
-            <tr class="${idx % 2 === 0 ? 'row-odd' : 'row-even'}">
-              <td style="text-align:center;">${idx + 1}</td>
-              <td colspan="2"><b>${reg.profile?.full_name || 'Umat Vihara'}</b></td>
-              <td style="text-align:center; color:#581c87; font-weight:bold;">${reg.profile?.bagian || 'Inspirasi'}</td>
-              <td>${reg.profile?.cetya || '-'} / ${reg.profile?.han || '-'}</td>
-              <td style="text-align:center; font-weight:bold; ${reg.is_paid ? 'color:#047857;' : 'color:#94a3b8;'}">
-                ${reg.is_paid ? '✓ LUNAS' : 'Belum Lunas'}
-              </td>
-              <td style="text-align:center; font-weight:bold; ${reg.is_attended ? 'color:#047857;' : 'color:#94a3b8;'}">
-                ${reg.is_attended ? '✓ HADIR' : 'Belum Presensi'}
-              </td>
-            </tr>
-          `).join('') : `
+          ${lpjSortedRegistrations.length > 0 ? lpjSortedRegistrations.map((reg, idx) => {
+            const userBagian = reg.profile?.bagian || 'Inspirasi';
+            const baseFee = pricing[userBagian] || 0;
+            const selectedIds = reg.selected_extra_fee_ids || [];
+            const extraTotal = extraFees
+              .filter((f) => selectedIds.includes(f.id))
+              .reduce((sum, f) => sum + f.amount, 0);
+            const userTotalFee = (reg.amount_paid && reg.amount_paid > 0) ? reg.amount_paid : (baseFee + extraTotal);
+
+            return `
+              <tr class="${idx % 2 === 0 ? 'row-odd' : 'row-even'}">
+                <td style="text-align:center;">${idx + 1}</td>
+                <td colspan="3"><b>${reg.profile?.full_name || 'Umat Vihara'}</b></td>
+                <td style="text-align:center; color:#581c87; font-weight:bold;">${userBagian}</td>
+                <td colspan="2" class="num-green">${userTotalFee}</td>
+              </tr>
+            `;
+          }).join('') : `
             <tr><td colspan="7" style="text-align:center; color:#94a3b8;">Belum ada data pendaftar umat.</td></tr>
           `}
         </tbody>
+        <tfoot>
+          <tr class="footer-row">
+            <td colspan="5" style="text-align:right;">TOTAL BIAYA KEGIATAN SEMUA PESERTA (${registrations.length} Umat):</td>
+            <td colspan="2" class="num-green" style="font-size:12px;">${totalUmatRegistrationFees}</td>
+          </tr>
+        </tfoot>
         <tr><td colspan="7"></td></tr>
 
         <!-- LEMBAR TANDA TANGAN -->

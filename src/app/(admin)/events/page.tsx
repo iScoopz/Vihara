@@ -6,19 +6,14 @@ import {
   CalendarDays, 
   Plus, 
   Search, 
-  Filter, 
   MapPin, 
-  Users, 
   ChevronRight, 
-  Building,
-  Sparkles,
-  CheckCircle2,
-  Archive,
-  Clock,
-  FileText,
-  Flower2,
-  Building2,
-  RotateCcw
+  CheckCircle2, 
+  Archive, 
+  Clock, 
+  Flower2, 
+  Building2, 
+  RotateCcw 
 } from 'lucide-react';
 import { getEvents, toggleCompleteEvent } from '@/lib/actions/vihara-actions';
 import { ViharaEvent, EventCategory } from '@/types/database';
@@ -41,12 +36,11 @@ export default function AdminEventsListPage() {
   const handleToggleCompleteCard = async (eventId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    const prev = events;
-    setEvents(events.map(ev => ev.id === eventId ? { ...ev, is_completed: !ev.is_completed } : ev));
+    setEvents(prev => prev.map(ev => ev.id === eventId ? { ...ev, is_completed: !ev.is_completed } : ev));
     try {
       await toggleCompleteEvent(eventId);
-    } catch {
-      setEvents(prev);
+    } catch (err) {
+      setEvents(prev => prev.map(ev => ev.id === eventId ? { ...ev, is_completed: !ev.is_completed } : ev));
     }
   };
 
@@ -66,68 +60,73 @@ export default function AdminEventsListPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-purple-950 dark:text-white tracking-tight flex items-center gap-2">
-            <CalendarDays className="text-purple-600 dark:text-purple-400" size={28} />
-            <span>Manajemen Event & Kebaktian Vihara</span>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-black/[0.06] dark:border-white/[0.08]">
+        <div className="space-y-1">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-[#86868b] block">
+            Agenda & Pelaksanaan
+          </span>
+          <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-neutral-900 dark:text-white flex items-center gap-2.5">
+            <CalendarDays className="text-[#5e35b1] dark:text-amber-400" size={26} />
+            <span>Manajemen Event Vihara</span>
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Pengelolaan agenda Kensyu, Pertemuan, Gongyo MNSBDI & Arsip Riwayat Event</p>
+          <p className="text-xs sm:text-sm text-[#86868b] dark:text-[#a1a1a6]">
+            Pengelolaan agenda Kensyu, Pertemuan, Gongyo MNSBDI dan arsip kegiatan selesai.
+          </p>
         </div>
 
         <Link
           href="/events/new"
-          className="inline-flex items-center gap-2 gradient-mnsbdi text-white font-extrabold px-4 py-2.5 rounded-xl transition shadow-lg shadow-purple-500/25 text-sm hover:opacity-95 cursor-pointer w-fit"
+          className="inline-flex items-center gap-1.5 bg-[#1d1d1f] hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-semibold px-5 py-2.5 rounded-full text-xs shadow-xs transition-all cursor-pointer w-fit"
         >
-          <Plus size={18} />
+          <Plus size={14} />
           <span>Buat Event Baru</span>
         </Link>
       </div>
 
-      {/* Main Tabs (Event Aktif vs Riwayat Event) */}
-      <div className="flex border-b border-purple-100 dark:border-purple-900/60 gap-4">
+      {/* Main Tabs (Apple Segmented Pill Control) */}
+      <div className="bg-black/[0.04] dark:bg-white/[0.08] p-1 rounded-full border border-black/[0.04] dark:border-white/[0.06] inline-flex flex-wrap gap-1">
         <button
           onClick={() => setActiveTab('active')}
-          className={`pb-3 font-extrabold text-sm flex items-center gap-2 border-b-2 transition cursor-pointer ${
+          className={`py-1.5 px-4 rounded-full text-xs transition-all flex items-center gap-2 cursor-pointer ${
             activeTab === 'active'
-              ? 'border-purple-600 text-purple-700 dark:text-purple-300'
-              : 'border-transparent text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              ? 'bg-white dark:bg-[#2c2c2e] text-neutral-900 dark:text-white font-semibold shadow-xs'
+              : 'text-[#86868b] hover:text-neutral-900 dark:hover:text-white font-medium'
           }`}
         >
-          <Clock size={16} />
-          <span>Event Aktif & Perencanaan ({activeEventsList.length})</span>
+          <Clock size={13} />
+          <span>Event Aktif ({activeEventsList.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('history')}
-          className={`pb-3 font-extrabold text-sm flex items-center gap-2 border-b-2 transition cursor-pointer ${
+          className={`py-1.5 px-4 rounded-full text-xs transition-all flex items-center gap-2 cursor-pointer ${
             activeTab === 'history'
-              ? 'border-purple-600 text-purple-700 dark:text-purple-300'
-              : 'border-transparent text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              ? 'bg-white dark:bg-[#2c2c2e] text-neutral-900 dark:text-white font-semibold shadow-xs'
+              : 'text-[#86868b] hover:text-neutral-900 dark:hover:text-white font-medium'
           }`}
         >
-          <Archive size={16} />
-          <span>Riwayat Event (Arsip Selesai) ({historyEventsList.length})</span>
+          <Archive size={13} />
+          <span>Riwayat Selesai ({historyEventsList.length})</span>
         </button>
       </div>
 
       {/* Filter Toolbar */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4">
+      <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
+            <Search className="absolute left-3.5 top-3 text-[#86868b]" size={15} />
             <input
               type="text"
-              placeholder={activeTab === 'active' ? "Cari Judul Event Aktif / Lokasi..." : "Cari Riwayat Event / Lokasi Pelaksanaan..."}
+              placeholder={activeTab === 'active' ? "Cari judul event aktif / lokasi..." : "Cari riwayat event / lokasi pelaksanaan..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-purple-600"
+              className="w-full bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.1] rounded-2xl pl-10 pr-3.5 py-2 text-xs text-neutral-900 dark:text-white placeholder-[#86868b] focus:outline-none focus:border-black/30 dark:focus:border-white/30 font-medium transition-all"
             />
           </div>
 
-          <div className="flex gap-2 overflow-x-auto pb-1 sm:pb-0">
+          <div className="flex gap-1.5 overflow-x-auto pb-1 sm:pb-0">
             {categories.map((cat) => {
               const count = cat === 'all' 
                 ? targetList.length 
@@ -137,10 +136,10 @@ export default function AdminEventsListPage() {
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition whitespace-nowrap cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs transition-all whitespace-nowrap cursor-pointer font-medium ${
                     selectedCategory === cat
-                      ? 'gradient-mnsbdi text-white shadow-sm'
-                      : 'bg-slate-50 dark:bg-purple-950 text-slate-600 dark:text-slate-300 border border-purple-100 dark:border-purple-900/60 hover:bg-purple-50'
+                      ? 'bg-[#1d1d1f] text-white dark:bg-white dark:text-black font-semibold shadow-xs'
+                      : 'bg-black/[0.03] dark:bg-white/[0.06] text-neutral-700 dark:text-neutral-300 hover:bg-black/[0.06] dark:hover:bg-white/[0.1]'
                   }`}
                 >
                   {cat === 'all' ? 'Semua Kategori' : cat} ({count})
@@ -153,7 +152,7 @@ export default function AdminEventsListPage() {
 
       {/* Events Grid */}
       {filteredEvents.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
           {filteredEvents.map((ev) => {
             const isPast = new Date(ev.event_date) < new Date();
             const regCount = ev.registrations_count || 0;
@@ -164,106 +163,102 @@ export default function AdminEventsListPage() {
             return (
               <div
                 key={ev.id}
-                className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-4"
+                className="p-7 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs hover:border-black/15 dark:hover:border-white/20 transition-all duration-200 flex flex-col justify-between space-y-4"
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-200">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-purple-500/10 text-[#5e35b1] dark:text-purple-300">
                         {ev.category || 'Gongyo'}
                       </span>
 
                       {/* Event Scale Badge */}
-                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded flex items-center gap-1 ${
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 ${
                         isComplex
-                          ? 'bg-indigo-100 text-indigo-900 dark:bg-indigo-950 dark:text-indigo-300'
-                          : 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300'
+                          ? 'bg-black/[0.04] text-neutral-700 dark:bg-white/[0.08] dark:text-neutral-300'
+                          : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
                       }`}>
                         {isComplex ? <Building2 size={10} /> : <Flower2 size={10} />}
-                        <span>{isComplex ? 'Event Kompleks' : 'Ibadah Rutin (Simpel)'}</span>
+                        <span>{isComplex ? 'Kompleks' : 'Rutin'}</span>
                       </span>
 
-                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded ${
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                         ev.is_published
-                          ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300'
-                          : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300'
+                          ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                          : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
                       }`}>
-                        {ev.is_published ? '✓ Terbit' : '📝 Draf'}
+                        {ev.is_published ? 'Terbit' : 'Draf'}
                       </span>
                     </div>
 
                     {ev.is_completed ? (
-                      <span className="text-[10px] font-extrabold text-slate-700 bg-slate-200 dark:bg-slate-800 dark:text-slate-300 px-2 py-0.5 rounded flex items-center gap-1">
-                        <CheckCircle2 size={12} />
+                      <span className="text-[10px] font-semibold text-neutral-600 dark:text-neutral-300 bg-black/[0.04] dark:bg-white/[0.08] px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <CheckCircle2 size={11} />
                         <span>Selesai</span>
                       </span>
                     ) : isPast ? (
-                      <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
-                        Lewat Tanggal
+                      <span className="text-[10px] font-medium text-[#86868b] bg-black/[0.03] dark:bg-white/[0.06] px-2 py-0.5 rounded-full">
+                        Lewat
                       </span>
                     ) : (
-                      <span className="text-[10px] font-extrabold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950 px-2 py-0.5 rounded">
+                      <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
                         Mendatang
                       </span>
                     )}
                   </div>
 
-                  <h3 className="text-base font-extrabold text-purple-950 dark:text-white leading-snug">
+                  <h2 className="text-base font-bold tracking-tight text-neutral-900 dark:text-white leading-snug">
                     {ev.title}
-                  </h3>
+                  </h2>
 
-                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                  <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] line-clamp-2">
                     {ev.description}
                   </p>
 
-                  <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-300 pt-2 border-t border-purple-100 dark:border-purple-900/60">
-                    <p className="flex items-center gap-1.5 font-semibold">
-                      <CalendarDays size={14} className="text-purple-600" />
-                      {new Date(ev.event_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  <div className="space-y-1.5 text-xs text-neutral-700 dark:text-neutral-300 pt-2.5 border-t border-black/[0.04] dark:border-white/[0.06]">
+                    <p className="flex items-center gap-1.5 font-medium">
+                      <CalendarDays size={13} className="text-[#86868b]" />
+                      <span>{new Date(ev.event_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                     </p>
-                    <p className="flex items-center gap-1.5 font-semibold">
-                      <MapPin size={14} className="text-amber-500" />
-                      {ev.location}
+                    <p className="flex items-center gap-1.5 font-medium">
+                      <MapPin size={13} className="text-[#86868b]" />
+                      <span>{ev.location}</span>
                     </p>
                   </div>
                 </div>
 
-                <div className="space-y-3 pt-3 border-t border-purple-100 dark:border-purple-900/60">
+                <div className="space-y-3 pt-3 border-t border-black/[0.04] dark:border-white/[0.06]">
                   <div className="space-y-1 text-xs">
-                    <div className="flex justify-between font-extrabold">
-                      <span className="text-slate-500">Kuota Terisi</span>
-                      <span className="text-purple-700 dark:text-purple-300">{regCount} / {quota} Umat</span>
+                    <div className="flex justify-between font-medium">
+                      <span className="text-[#86868b]">Kuota</span>
+                      <span className="text-neutral-900 dark:text-white font-semibold">{regCount} / {quota} Umat</span>
                     </div>
-                    <div className="w-full bg-purple-100 dark:bg-purple-950 h-2 rounded-full overflow-hidden">
-                      <div className="gradient-mnsbdi h-full rounded-full" style={{ width: `${percentage}%` }} />
+                    <div className="w-full bg-black/[0.04] dark:bg-white/[0.08] h-1.5 rounded-full overflow-hidden">
+                      <div className="bg-[#5e35b1] dark:bg-purple-400 h-full rounded-full transition-all duration-300" style={{ width: `${percentage}%` }} />
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/events/${ev.id}`}
-                      className={`flex-1 py-2.5 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1 transition ${
-                        activeTab === 'history'
-                          ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700'
-                          : 'bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900 text-purple-950 dark:text-purple-200'
-                      }`}
+                      className="flex-1 py-2 rounded-full font-semibold text-xs flex items-center justify-center gap-1 transition-all bg-black/[0.04] hover:bg-black/[0.08] dark:bg-white/[0.08] dark:hover:bg-white/[0.14] text-neutral-900 dark:text-white"
                     >
-                      <span>{activeTab === 'history' ? 'Workspace' : 'Buka Workspace'}</span>
-                      <ChevronRight size={14} />
+                      <span>Workspace</span>
+                      <ChevronRight size={13} />
                     </Link>
 
                     {/* Quick Complete / Undo Complete Action Button */}
                     <button
                       type="button"
                       onClick={(e) => handleToggleCompleteCard(ev.id, e)}
-                      className={`px-3 py-2.5 rounded-xl text-xs font-black flex items-center gap-1 transition cursor-pointer border ${
+                      className={`px-3 py-2 rounded-full text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer border ${
                         ev.is_completed
-                          ? 'bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-800'
-                          : 'bg-slate-800 hover:bg-slate-900 text-white dark:bg-slate-700 dark:hover:bg-slate-600'
+                          ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-500/20'
+                          : 'bg-black/[0.04] hover:bg-black/[0.08] dark:bg-white/[0.08] dark:hover:bg-white/[0.14] text-neutral-800 dark:text-neutral-200 border-black/[0.06] dark:border-white/[0.08]'
                       }`}
-                      title={ev.is_completed ? "Kembalikan event ke daftar event aktif" : "Tandai event ini telah selesai dan pindahkan ke Riwayat Event"}
+                      title={ev.is_completed ? "Kembalikan event ke daftar aktif" : "Tandai event ini telah selesai"}
                     >
-                      {ev.is_completed ? <RotateCcw size={14} /> : <CheckCircle2 size={14} />}
+                      {ev.is_completed ? <RotateCcw size={13} /> : <CheckCircle2 size={13} />}
                       <span>{ev.is_completed ? 'Aktifkan' : 'Selesai'}</span>
                     </button>
                   </div>
@@ -273,14 +268,14 @@ export default function AdminEventsListPage() {
           })}
         </div>
       ) : (
-        <div className="p-12 text-center bg-white dark:bg-[#160e29] rounded-2xl border border-purple-100 dark:border-purple-900/60 space-y-3">
-          <Archive size={40} className="mx-auto text-purple-300 dark:text-purple-800" />
-          <h3 className="font-extrabold text-slate-800 dark:text-slate-200 text-sm">
-            {activeTab === 'history' ? 'Belum Ada Riwayat Event Selesai' : 'Tidak Ada Event Aktif yang Sesuai'}
-          </h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+        <div className="p-12 text-center bg-white dark:bg-[#161618] rounded-3xl border border-black/[0.06] dark:border-white/[0.08] space-y-3 shadow-xs">
+          <Archive size={36} className="mx-auto text-[#86868b]" />
+          <h2 className="font-bold text-neutral-900 dark:text-white text-sm">
+            {activeTab === 'history' ? 'Belum Ada Riwayat Event Selesai' : 'Tidak Ada Event yang Sesuai'}
+          </h2>
+          <p className="text-xs text-[#86868b] max-w-sm mx-auto leading-relaxed">
             {activeTab === 'history'
-              ? 'Tandai event yang telah terlaksana sebagai "Selesai" (menggunakan tombol Selesai di kartu event atau di Workspace) agar tersimpan rapi di tab ini.'
+              ? 'Tandai event yang telah terlaksana sebagai "Selesai" agar tersimpan rapi di tab ini.'
               : 'Coba ubah kata kunci pencarian atau filter kategori di atas.'}
           </p>
         </div>

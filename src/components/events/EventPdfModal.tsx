@@ -137,10 +137,10 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
               MAJELIS NICHREN SHOSHU BUDDHA DHARMA INDONESIA (MNSBDI)
             </h2>
             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">
-              SENTRA MAKASSAR — PANITIA PELAKSANA EVENT
+              SENTRA MAKASSAR: PANITIA PELAKSANA EVENT
             </h3>
             <p className="text-[10px] text-slate-500 font-semibold">
-              Alamat Sekretariat: Jl. Sulawesi No. 88, Makassar — Email: info@mnsbdi-makassar.or.id
+              Alamat Sekretariat: Jl. Sulawesi No. 88, Makassar | Email: info@mnsbdi-makassar.or.id
             </p>
           </div>
 
@@ -465,24 +465,21 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                           const hasRealisasi = item.realisasi > 0;
                           const hasPemasukan = item.pemasukan > 0;
 
-                          let displayedSelisih = 0;
+                          let displayedSelisih: number | null = null;
                           let isOverBudget = false;
                           let isSurplus = false;
 
                           if (pdfMode === 'lpj') {
-                            if (hasPemasukan) {
-                              displayedSelisih = item.pemasukan;
-                              isSurplus = true;
-                            } else if (hasRAB && hasRealisasi) {
+                            if (hasRAB && hasRealisasi) {
                               displayedSelisih = item.rab - item.realisasi;
                               if (displayedSelisih < 0) isOverBudget = true;
                               else if (displayedSelisih > 0) isSurplus = true;
-                            } else if (hasRealisasi) {
-                              // Pengeluaran langsung tanpa anggaran RAB awal
-                              displayedSelisih = -item.realisasi;
-                              isOverBudget = false; // Bukan over-budget
                             } else if (hasRAB) {
-                              displayedSelisih = -item.rab;
+                              displayedSelisih = item.rab;
+                              isSurplus = true;
+                            } else {
+                              // Jika tidak ada target RAB (misal pengeluaran langsung / sumbangan), tidak perlu masuk selisih
+                              displayedSelisih = null;
                             }
                           } else {
                             // Mode proposal
@@ -510,13 +507,15 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                                   ? 'text-rose-700 font-bold' 
                                   : isSurplus 
                                     ? 'text-emerald-700 font-bold' 
-                                    : 'text-slate-800 font-semibold'
+                                    : 'text-slate-400'
                               }`}>
-                                {displayedSelisih > 0 
-                                  ? `+ Rp ${displayedSelisih.toLocaleString('id-ID')}`
-                                  : displayedSelisih < 0
-                                    ? `- Rp ${Math.abs(displayedSelisih).toLocaleString('id-ID')}`
-                                    : 'Rp 0'}
+                                {displayedSelisih !== null
+                                  ? displayedSelisih > 0 
+                                    ? `+ Rp ${displayedSelisih.toLocaleString('id-ID')}`
+                                    : displayedSelisih < 0
+                                      ? `- Rp ${Math.abs(displayedSelisih).toLocaleString('id-ID')}`
+                                      : 'Rp 0'
+                                  : '-'}
                               </td>
                             </tr>
                           );

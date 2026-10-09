@@ -239,7 +239,7 @@ export default function NewDonationPage() {
           </div>
 
           <div className="border-t border-purple-700/50 pt-3 text-[11px] text-purple-300 text-center">
-            Sabbe Satta Bhavantu Sukhitatta ✨<br />
+            Sabbe Satta Bhavantu Sukhitatta<br />
             Semua Makhluk Hidup Berbahagia
           </div>
         </div>

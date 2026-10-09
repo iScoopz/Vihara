@@ -245,7 +245,7 @@ export default function AdminProfilePage() {
           <button
             type="submit"
             disabled={saving}
-            className="gradient-mnsbdi text-white font-black px-6 py-3 rounded-xl text-xs shadow-xl flex items-center gap-2 hover:opacity-95 transition cursor-pointer"
+            className="bg-[#1d1d1f] hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-semibold px-6 py-2.5 rounded-full text-xs shadow-xs flex items-center gap-2 transition-all cursor-pointer"
           >
             {saving ? (
               <span>Menyimpan Perubahan...</span>

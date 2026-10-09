@@ -68,12 +68,12 @@ export default function InventoryPage() {
   }, []);
 
   const handleStockAdjust = async (id: string, delta: number) => {
-    setItems(prev =>
-      prev.map(item =>
-        item.id === id ? { ...item, stock_quantity: Math.max(0, item.stock_quantity + delta) } : item
-      )
-    );
-    await updateStockQuantity(id, delta);
+    setItems(prev => prev.map(item => item.id === id ? { ...item, stock_quantity: Math.max(0, item.stock_quantity + delta) } : item));
+    try {
+      await updateStockQuantity(id, delta);
+    } catch (e) {
+      loadData();
+    }
   };
 
   const handleAddItem = async (e: React.FormEvent) => {
@@ -150,9 +150,9 @@ export default function InventoryPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsAddItemModalOpen(true)}
-            className="inline-flex items-center gap-2 gradient-mnsbdi text-white font-extrabold px-4 py-2.5 rounded-xl transition shadow-lg shadow-purple-500/25 text-sm"
+            className="inline-flex items-center gap-2 bg-purple-900 hover:bg-purple-800 text-amber-300 font-black px-4 py-2.5 rounded-xl transition shadow-sm border border-purple-700/60 text-xs active:scale-95 cursor-pointer"
           >
-            <PlusCircle size={18} />
+            <PlusCircle size={16} />
             <span>Tambah Barang</span>
           </button>
         </div>
@@ -176,30 +176,30 @@ export default function InventoryPage() {
         </div>
       )}
 
-      {/* Tabs Navigation */}
-      <div className="flex border-b border-purple-100 dark:border-indigo-900/60 gap-4">
+      {/* Tabs Navigation (Sleek Segmented Pill Container) */}
+      <div className="bg-slate-100/90 dark:bg-purple-950/40 p-1.5 rounded-2xl border border-slate-200/80 dark:border-purple-900/50 inline-flex flex-wrap gap-1.5 shadow-xs">
         <button
           onClick={() => setActiveTab('stok')}
-          className={`pb-3 px-2 font-extrabold text-xs transition flex items-center gap-2 border-b-2 ${
+          className={`py-2 px-4 rounded-xl text-xs transition flex items-center gap-2 cursor-pointer active:scale-95 ${
             activeTab === 'stok'
-              ? 'border-purple-600 text-purple-700 dark:text-purple-300'
-              : 'border-transparent text-slate-400 hover:text-slate-700'
+              ? 'bg-white dark:bg-[#1f1338] text-purple-950 dark:text-amber-300 font-black shadow-xs border border-slate-200/80 dark:border-purple-700/60'
+              : 'text-slate-600 dark:text-purple-300/80 font-bold hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-purple-900/30'
           }`}
         >
-          <Package size={16} />
+          <Package size={15} />
           <span>Daftar Stok Barang ({items.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('transaksi')}
-          className={`pb-3 px-2 font-extrabold text-xs transition flex items-center gap-2 border-b-2 ${
+          className={`py-2 px-4 rounded-xl text-xs transition flex items-center gap-2 cursor-pointer active:scale-95 ${
             activeTab === 'transaksi'
-              ? 'border-purple-600 text-purple-700 dark:text-purple-300'
-              : 'border-transparent text-slate-400 hover:text-slate-700'
+              ? 'bg-white dark:bg-[#1f1338] text-purple-950 dark:text-amber-300 font-black shadow-xs border border-slate-200/80 dark:border-purple-700/60'
+              : 'text-slate-600 dark:text-purple-300/80 font-bold hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-purple-900/30'
           }`}
         >
-          <History size={16} />
-          <span>Riwayat Pembelian Umat ({transactions.length})</span>
+          <History size={15} />
+          <span>Riwayat Transaksi ({transactions.length})</span>
         </button>
       </div>
 
@@ -219,13 +219,13 @@ export default function InventoryPage() {
               />
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto">
+            <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto">
               <button
                 onClick={() => setSelectedCategory('all')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition ${
+                className={`px-3.5 py-1.5 rounded-full text-xs transition-all whitespace-nowrap cursor-pointer font-medium ${
                   selectedCategory === 'all'
-                    ? 'gradient-mnsbdi text-white shadow-md'
-                    : 'bg-slate-100 dark:bg-indigo-950 text-slate-600 dark:text-slate-300'
+                    ? 'bg-[#1d1d1f] text-white dark:bg-white dark:text-black font-semibold shadow-xs'
+                    : 'bg-black/[0.03] dark:bg-white/[0.06] text-neutral-700 dark:text-neutral-300 hover:bg-black/[0.06] dark:hover:bg-white/[0.1]'
                 }`}
               >
                 Semua Kategori
@@ -234,10 +234,10 @@ export default function InventoryPage() {
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs transition-all whitespace-nowrap cursor-pointer font-medium ${
                     selectedCategory === cat
-                      ? 'gradient-mnsbdi text-white shadow-md'
-                      : 'bg-slate-100 dark:bg-indigo-950 text-slate-600 dark:text-slate-300'
+                      ? 'bg-[#1d1d1f] text-white dark:bg-white dark:text-black font-semibold shadow-xs'
+                      : 'bg-black/[0.03] dark:bg-white/[0.06] text-neutral-700 dark:text-neutral-300 hover:bg-black/[0.06] dark:hover:bg-white/[0.1]'
                   }`}
                 >
                   {cat}
@@ -542,7 +542,7 @@ export default function InventoryPage() {
                 </button>
                 <button
                   type="submit"
-                  className="gradient-mnsbdi text-white font-extrabold px-4 py-2 rounded-xl text-xs shadow-md"
+                  className="bg-[#1d1d1f] hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-semibold px-5 py-2 rounded-full text-xs shadow-xs transition-all cursor-pointer"
                 >
                   Simpan Barang
                 </button>

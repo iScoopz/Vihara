@@ -32,6 +32,7 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
   const [attendanceFilter, setAttendanceFilter] = useState<'all' | 'attended' | 'absent'>('all');
   const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
   const [copiedWa, setCopiedWa] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const handleCopyWaList = () => {
     const dateStr = new Date(event.event_date).toLocaleDateString('id-ID', {
@@ -282,10 +283,11 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
             )}
 
             <button
+              type="button"
               onClick={onOpenRegModal}
-              className="px-3.5 py-2.5 rounded-xl gradient-mnsbdi text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer whitespace-nowrap"
+              className="px-4 py-2.5 rounded-xl bg-purple-900 hover:bg-purple-800 text-amber-300 font-black text-xs flex items-center justify-center gap-1.5 shadow-sm border border-purple-700/60 cursor-pointer whitespace-nowrap active:scale-95"
             >
-              <PlusCircle size={14} />
+              <PlusCircle size={15} />
               <span>Daftarkan Umat (Admin)</span>
             </button>
           </div>
@@ -459,15 +461,16 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
 
                       {/* Actions */}
                       <td className="py-3 px-3 text-right">
-                        <div className="flex flex-wrap items-center justify-end gap-1.5 min-w-[210px]">
+                        <div className="flex flex-wrap items-center justify-end gap-1.5 min-w-[220px]">
                           {/* Toggle Payment Button (Only Complex) */}
                           {isComplex && (
                             <button
+                              type="button"
                               onClick={() => onTogglePayment(reg.id, totalFee)}
-                              className={`px-3 py-1.5 rounded-xl font-extrabold text-[11px] cursor-pointer transition shadow-sm ${
+                              className={`px-3 py-1.5 rounded-xl font-bold text-[11px] cursor-pointer transition shadow-xs active:scale-95 ${
                                 isPaid
-                                  ? 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
-                                  : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                                  : 'bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold shadow-sm'
                               }`}
                             >
                               {isPaid ? 'Batalkan Lunas' : 'Tandai Lunas'}
@@ -476,30 +479,51 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
 
                           {/* Toggle Attendance Button */}
                           <button
+                            type="button"
                             onClick={() => onToggleAttendance(reg.id)}
-                            className={`px-3 py-1.5 rounded-xl font-extrabold text-[11px] cursor-pointer transition shadow-sm ${
+                            className={`px-3 py-1.5 rounded-xl font-bold text-[11px] cursor-pointer transition shadow-xs active:scale-95 ${
                               reg.is_attended
-                                ? 'bg-amber-100 text-amber-900 hover:bg-amber-200 dark:bg-amber-950 dark:text-amber-300'
-                                : 'bg-purple-600 text-white hover:bg-purple-700'
+                                ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 hover:bg-amber-200 border border-amber-300 dark:border-amber-700/60'
+                                : 'bg-purple-700 hover:bg-purple-800 text-white font-extrabold shadow-sm'
                             }`}
                           >
                             {reg.is_attended ? 'Batalkan Presensi' : 'Tandai Hadir'}
                           </button>
 
-                          {/* Cancel Registration Button */}
+                          {/* Cancel Registration Button (Fast Non-blocking Inline Confirmation) */}
                           {onCancelRegistration && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (confirm(`Apakah Anda yakin ingin membatalkan pendaftaran umat "${reg.profile?.full_name || 'Umat'}" dari event ini?`)) {
-                                  onCancelRegistration(reg.id);
-                                }
-                              }}
-                              className="px-3 py-1.5 rounded-xl font-extrabold text-[11px] cursor-pointer transition bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800 shadow-sm"
-                              title="Hapus / Batalkan Pendaftaran Umat"
-                            >
-                              Batal Daftar
-                            </button>
+                            confirmDeleteId === reg.id ? (
+                              <div className="inline-flex items-center gap-1 animate-in fade-in duration-100">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    onCancelRegistration(reg.id);
+                                    setConfirmDeleteId(null);
+                                  }}
+                                  className="px-2.5 py-1.5 rounded-xl font-extrabold text-[11px] bg-rose-600 text-white hover:bg-rose-700 active:scale-95 cursor-pointer shadow-sm"
+                                  title="Konfirmasi pembatalan pendaftaran"
+                                >
+                                  Yakin Batal?
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmDeleteId(null)}
+                                  className="px-2 py-1.5 rounded-xl text-[10px] text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                                  title="Tutup konfirmasi"
+                                >
+                                  Batal
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteId(reg.id)}
+                                className="px-2.5 py-1.5 rounded-xl font-bold text-[11px] cursor-pointer transition text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200/80 dark:border-rose-900/50 active:scale-95"
+                                title="Batalkan Pendaftaran Umat"
+                              >
+                                Batal
+                              </button>
+                            )
                           )}
                         </div>
                       </td>

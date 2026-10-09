@@ -136,7 +136,7 @@ export default function AdminCalendarPage() {
                 </div>
 
                 <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase shadow ${
-                  ev.diffDays === 0 ? 'bg-rose-500 text-white animate-pulse' :
+                  ev.diffDays === 0 ? 'bg-rose-600 text-white' :
                   ev.diffDays === 1 ? 'bg-amber-500 text-slate-950' :
                   'bg-indigo-600 text-white'
                 }`}>
@@ -177,7 +177,7 @@ export default function AdminCalendarPage() {
               >
                 <div className="flex justify-between items-center mb-1">
                   {isCurrentDay ? (
-                    <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] shadow animate-pulse">
+                    <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-bold text-[10px] shadow-sm">
                       Hari Ini ({dayNum})
                     </span>
                   ) : (

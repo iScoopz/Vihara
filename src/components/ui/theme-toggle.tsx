@@ -37,20 +37,22 @@ export default function ThemeToggle() {
     <button
       onClick={toggleTheme}
       type="button"
-      className="p-2 rounded-xl border transition-all flex items-center gap-2 text-xs font-semibold
-        bg-white dark:bg-purple-950 border-purple-200 dark:border-purple-800 
-        text-purple-900 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-900 shadow-sm cursor-pointer"
-      title={darkMode ? "Ganti ke Light Mode" : "Ganti ke Dark Mode"}
+      className="p-2 sm:px-3 sm:py-1.5 rounded-full border border-black/[0.08] dark:border-white/[0.12] transition-all flex items-center gap-1.5 text-xs font-medium
+        bg-black/[0.04] dark:bg-white/[0.08] hover:bg-black/[0.07] dark:hover:bg-white/[0.14] 
+        text-neutral-800 dark:text-neutral-200 cursor-pointer
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+      title={darkMode ? "Ganti ke Terang" : "Ganti ke Gelap"}
+      aria-label={darkMode ? "Ganti ke mode terang" : "Ganti ke mode gelap"}
     >
       {darkMode ? (
         <>
-          <Sun size={16} className="text-amber-400" />
-          <span className="hidden sm:inline font-bold">Light Mode</span>
+          <Sun size={14} className="text-amber-400 shrink-0" />
+          <span className="hidden sm:inline text-[11px] font-medium tracking-tight">Terang</span>
         </>
       ) : (
         <>
-          <Moon size={16} className="text-purple-700" />
-          <span className="hidden sm:inline font-bold">Dark Mode</span>
+          <Moon size={14} className="text-neutral-700 dark:text-neutral-300 shrink-0" />
+          <span className="hidden sm:inline text-[11px] font-medium tracking-tight">Gelap</span>
         </>
       )}
     </button>

@@ -441,9 +441,9 @@ export default function UmatDirectoryPage() {
         {activeMainTab === 'umat' && (
           <button
             onClick={() => setIsAddUmatModalOpen(true)}
-            className="inline-flex items-center gap-2 gradient-mnsbdi text-white font-extrabold px-4 py-2.5 rounded-xl transition shadow-lg shadow-purple-500/25 text-sm hover:opacity-95 cursor-pointer"
+            className="inline-flex items-center gap-2 bg-purple-900 hover:bg-purple-800 text-amber-300 font-black px-4 py-2.5 rounded-xl transition shadow-sm border border-purple-700/60 text-xs active:scale-95 cursor-pointer"
           >
-            <UserPlus size={18} />
+            <UserPlus size={16} />
             <span>Tambah Umat Baru</span>
           </button>
         )}
@@ -457,9 +457,9 @@ export default function UmatDirectoryPage() {
               setCetyaPhoneInput('');
               setIsAddCetyaModalOpen(true);
             }}
-            className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold px-4 py-2.5 rounded-xl transition shadow-lg text-sm cursor-pointer"
+            className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-4 py-2.5 rounded-xl transition shadow-sm text-xs active:scale-95 cursor-pointer"
           >
-            <Building size={18} />
+            <Building size={16} />
             <span>Tambah Cetya Baru</span>
           </button>
         )}
@@ -471,50 +471,50 @@ export default function UmatDirectoryPage() {
               setHanLeaderInput('');
               setIsAddHanModalOpen(true);
             }}
-            className="inline-flex items-center gap-2 bg-purple-700 hover:bg-purple-800 text-white font-extrabold px-4 py-2.5 rounded-xl transition shadow-lg text-sm cursor-pointer"
+            className="inline-flex items-center gap-2 bg-purple-900 hover:bg-purple-800 text-amber-300 font-black px-4 py-2.5 rounded-xl transition shadow-sm border border-purple-700/60 text-xs active:scale-95 cursor-pointer"
           >
-            <Home size={18} />
+            <Home size={16} />
             <span>Tambah HAN Baru</span>
           </button>
         )}
       </div>
 
-      {/* Main Hierarchy Tabs */}
-      <div className="flex border-b border-purple-100 dark:border-purple-900/60 gap-4 overflow-x-auto">
+      {/* Main Hierarchy Tabs (Sleek Segmented Pill Container) */}
+      <div className="bg-slate-100/90 dark:bg-purple-950/40 p-1.5 rounded-2xl border border-slate-200/80 dark:border-purple-900/50 inline-flex flex-wrap gap-1.5 shadow-xs">
         <button
           onClick={() => setActiveMainTab('umat')}
-          className={`pb-3 px-4 font-black text-xs transition flex items-center gap-2 border-b-2 whitespace-nowrap cursor-pointer ${
+          className={`py-2 px-4 rounded-xl text-xs transition flex items-center gap-2 cursor-pointer active:scale-95 ${
             activeMainTab === 'umat'
-              ? 'border-purple-600 text-purple-700 dark:text-purple-300'
-              : 'border-transparent text-slate-400 hover:text-slate-700'
+              ? 'bg-white dark:bg-[#1f1338] text-purple-950 dark:text-amber-300 font-black shadow-xs border border-slate-200/80 dark:border-purple-700/60'
+              : 'text-slate-600 dark:text-purple-300/80 font-bold hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-purple-900/30'
           }`}
         >
-          <Users size={16} />
+          <Users size={15} />
           <span>Data Umat ({profiles.length})</span>
         </button>
 
         <button
           onClick={() => setActiveMainTab('cetya')}
-          className={`pb-3 px-4 font-black text-xs transition flex items-center gap-2 border-b-2 whitespace-nowrap cursor-pointer ${
+          className={`py-2 px-4 rounded-xl text-xs transition flex items-center gap-2 cursor-pointer active:scale-95 ${
             activeMainTab === 'cetya'
-              ? 'border-purple-600 text-purple-700 dark:text-purple-300'
-              : 'border-transparent text-slate-400 hover:text-slate-700'
+              ? 'bg-white dark:bg-[#1f1338] text-purple-950 dark:text-amber-300 font-black shadow-xs border border-slate-200/80 dark:border-purple-700/60'
+              : 'text-slate-600 dark:text-purple-300/80 font-bold hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-purple-900/30'
           }`}
         >
-          <Building size={16} />
-          <span>Kelola & Profil Cetya ({cetyas.length})</span>
+          <Building size={15} />
+          <span>Kelola Cetya ({cetyas.length})</span>
         </button>
 
         <button
           onClick={() => setActiveMainTab('han')}
-          className={`pb-3 px-4 font-black text-xs transition flex items-center gap-2 border-b-2 whitespace-nowrap cursor-pointer ${
+          className={`py-2 px-4 rounded-xl text-xs transition flex items-center gap-2 cursor-pointer active:scale-95 ${
             activeMainTab === 'han'
-              ? 'border-purple-600 text-purple-700 dark:text-purple-300'
-              : 'border-transparent text-slate-400 hover:text-slate-700'
+              ? 'bg-white dark:bg-[#1f1338] text-purple-950 dark:text-amber-300 font-black shadow-xs border border-slate-200/80 dark:border-purple-700/60'
+              : 'text-slate-600 dark:text-purple-300/80 font-bold hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-purple-900/30'
           }`}
         >
-          <Home size={16} />
-          <span>Kelola & Profil HAN ({hans.length})</span>
+          <Home size={15} />
+          <span>Kelola HAN ({hans.length})</span>
         </button>
       </div>
 
@@ -804,9 +804,9 @@ export default function UmatDirectoryPage() {
                 </div>
 
                 <div className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
-                  <p>📍 <strong>Alamat:</strong> {c.address || '-'}</p>
-                  <p>👤 <strong>Ketua / PJ Cetya:</strong> {c.leader_name || '-'}</p>
-                  <p>📞 <strong>Telepon Sekretariat:</strong> {c.phone || '-'}</p>
+                  <p><span className="text-slate-400 font-semibold mr-1">Alamat:</span> {c.address || '-'}</p>
+                  <p><span className="text-slate-400 font-semibold mr-1">Ketua / PJ Cetya:</span> {c.leader_name || '-'}</p>
+                  <p><span className="text-slate-400 font-semibold mr-1">Telepon:</span> {c.phone || '-'}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 pt-3 border-t border-purple-100 dark:border-purple-900/60 text-xs">
@@ -863,8 +863,8 @@ export default function UmatDirectoryPage() {
                 </div>
 
                 <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
-                  <p>🏛️ <strong>Cetya Induk:</strong> {h.cetya_name}</p>
-                  <p>👤 <strong>Pembina HAN:</strong> {h.leader_name || '-'}</p>
+                  <p><span className="text-slate-400 font-semibold mr-1">Cetya Induk:</span> {h.cetya_name}</p>
+                  <p><span className="text-slate-400 font-semibold mr-1">Pembina HAN:</span> {h.leader_name || '-'}</p>
                 </div>
 
                 <div className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-xs font-bold text-purple-900 dark:text-purple-200 flex justify-between items-center">
@@ -1049,7 +1049,7 @@ export default function UmatDirectoryPage() {
                 </button>
                 <button
                   type="submit"
-                  className="gradient-mnsbdi text-white font-extrabold px-4 py-2 rounded-xl text-xs shadow-md cursor-pointer"
+                  className="bg-[#1d1d1f] hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-semibold px-5 py-2 rounded-full text-xs shadow-xs transition-all cursor-pointer"
                 >
                   Simpan Perubahan
                 </button>
@@ -1214,7 +1214,7 @@ export default function UmatDirectoryPage() {
                 </button>
                 <button
                   type="submit"
-                  className="gradient-mnsbdi text-white font-extrabold px-4 py-2 rounded-xl text-xs shadow-md cursor-pointer"
+                  className="bg-[#1d1d1f] hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-semibold px-5 py-2 rounded-full text-xs shadow-xs transition-all cursor-pointer"
                 >
                   Simpan Data Umat
                 </button>

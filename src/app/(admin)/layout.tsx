@@ -62,30 +62,30 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (isAuthenticated === false) {
     return (
-      <div className="min-h-screen bg-[#0b0717] text-white flex flex-col items-center justify-center p-6 text-center space-y-6">
-        <div className="w-16 h-16 rounded-3xl bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center shadow-2xl">
+      <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#000000] text-neutral-900 dark:text-white flex flex-col items-center justify-center p-6 text-center space-y-6">
+        <div className="w-16 h-16 rounded-3xl bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center shadow-xs">
           <Shield size={32} />
         </div>
 
         <div className="space-y-2 max-w-md">
-          <h2 className="text-2xl font-black text-white">Akses Pengurus Admin Ditolak</h2>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            Halaman ini khusus untuk Pengurus Vihara MNSBDI. Silakan login terlebih dahulu untuk mengakses Portal Admin.
+          <h2 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">Akses Pengurus Dibatasi</h2>
+          <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] leading-relaxed">
+            Halaman ini khusus untuk Pengurus Vihara MNSBDI. Silakan masuk terlebih dahulu untuk mengakses portal administrasi.
           </p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
           <Link
             href="/login"
-            className="px-6 py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs transition shadow-xl flex items-center justify-center gap-2"
+            className="px-6 py-2.5 rounded-full bg-[#1d1d1f] hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-semibold text-xs transition-all shadow-xs flex items-center justify-center gap-2"
           >
-            <Shield size={16} />
-            <span>Masuk / Login Admin</span>
+            <Shield size={15} />
+            <span>Masuk Portal Pengurus</span>
           </Link>
 
           <Link
             href="/kegiatan"
-            className="px-6 py-3 rounded-2xl bg-purple-950 hover:bg-purple-900 text-purple-200 font-extrabold text-xs border border-purple-700 transition"
+            className="px-6 py-2.5 rounded-full bg-black/[0.04] dark:bg-white/[0.08] hover:bg-black/[0.08] dark:hover:bg-white/[0.14] text-neutral-800 dark:text-neutral-200 font-semibold text-xs border border-black/[0.06] dark:border-white/[0.08] transition-all"
           >
             Kembali ke Portal Umat
           </Link>
@@ -96,33 +96,35 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (isAuthenticated === null) {
     return (
-      <div className="min-h-screen bg-[#0b0717] text-purple-300 flex items-center justify-center font-extrabold text-sm">
-        Memeriksa Autentikasi Pengurus Admin...
+      <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#000000] text-[#86868b] flex items-center justify-center font-medium text-xs">
+        Memeriksa Autentikasi Pengurus...
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0b0717] text-slate-900 dark:text-slate-100 flex flex-col md:flex-row font-sans transition-colors duration-200">
+    <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#000000] text-[#1d1d1f] dark:text-[#f5f5f7] flex flex-col md:flex-row font-sans transition-colors duration-200">
       
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 bg-[#2e1065] dark:bg-[#13092b] border-r border-purple-900/40 text-white flex-col justify-between shrink-0 shadow-xl min-h-screen sticky top-0 h-screen">
+      {/* Desktop macOS-style Sidebar */}
+      <aside className="hidden md:flex w-64 bg-white/70 dark:bg-[#121214]/70 backdrop-blur-xl border-r border-black/[0.06] dark:border-white/[0.08] flex-col justify-between shrink-0 min-h-screen sticky top-0 h-screen transition-all">
         <div>
           {/* Logo Brand */}
-          <div className="p-6 border-b border-purple-800/40 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-mnsbdi flex items-center justify-center text-white font-bold shadow-lg shadow-purple-500/30">
-              🪷
+          <div className="p-5 border-b border-black/[0.06] dark:border-white/[0.08] flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#2e1065] text-amber-300 flex items-center justify-center font-bold text-xs shadow-xs">
+              MN
             </div>
             <div>
-              <h2 className="font-extrabold text-sm text-white tracking-wide">Vihara System</h2>
-              <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-extrabold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-400/30">
-                <Shield size={10} /> Portal Admin
+              <h2 className="font-semibold text-xs tracking-tight text-neutral-900 dark:text-white leading-none">
+                Vihara MNSBDI
+              </h2>
+              <span className="inline-flex items-center gap-1 text-[10px] tracking-wide font-medium text-[#86868b] mt-0.5">
+                Portal Pengurus
               </span>
             </div>
           </div>
 
           {/* Navigation Links */}
-          <nav className="p-4 space-y-1.5">
+          <nav className="p-3 space-y-0.5">
             {ADMIN_NAV.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
@@ -130,17 +132,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  className={`flex items-center justify-between px-3.5 py-2 rounded-xl text-xs transition-all ${
                     isActive
-                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold shadow-lg shadow-amber-500/25'
-                      : 'text-purple-200 hover:text-white hover:bg-purple-900/50'
+                      ? 'bg-black/[0.07] dark:bg-white/[0.12] text-neutral-900 dark:text-white font-semibold'
+                      : 'text-[#86868b] hover:text-neutral-900 dark:hover:text-white hover:bg-black/[0.03] dark:hover:bg-white/[0.05] font-medium'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon size={18} />
+                  <div className="flex items-center gap-2.5">
+                    <Icon size={15} className={isActive ? 'text-[#5e35b1] dark:text-amber-400' : 'text-[#86868b]'} />
                     <span>{item.label}</span>
                   </div>
-                  {isActive && <ChevronRight size={16} className="text-slate-950" />}
+                  {isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#5e35b1] dark:bg-amber-400" />}
                 </Link>
               );
             })}
@@ -148,38 +150,38 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         {/* Bottom Controls */}
-        <div className="p-4 border-t border-purple-800/40 space-y-3">
+        <div className="p-4 border-t border-black/[0.06] dark:border-white/[0.08] space-y-2.5">
           <Link
             href="/kegiatan"
-            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-purple-900/60 hover:bg-purple-800 text-xs font-bold text-amber-300 border border-purple-700/50 transition shadow-sm"
+            className="flex items-center justify-center gap-2 w-full py-2 rounded-full bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/[0.1] text-xs font-semibold text-neutral-800 dark:text-neutral-200 border border-black/[0.06] dark:border-white/[0.08] transition-all"
           >
-            <UserCheck size={14} />
+            <UserCheck size={14} className="text-[#86868b]" />
             <span>Lihat Portal Umat</span>
           </Link>
 
-          <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center justify-between pt-1">
             <Link 
               href="/admin-profile" 
               className="flex items-center gap-2.5 group hover:opacity-90 transition cursor-pointer"
-              title="Edit Profil Pengurus Langsung"
+              title="Edit Profil Pengurus"
             >
-              <div className="w-8 h-8 rounded-full bg-amber-500 text-slate-950 font-extrabold flex items-center justify-center text-xs shadow-md group-hover:scale-105 transition">
+              <div className="w-7 h-7 rounded-full bg-[#1d1d1f] dark:bg-white text-white dark:text-black font-semibold flex items-center justify-center text-[10px] shadow-xs">
                 {adminUser?.full_name ? adminUser.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'AD'}
               </div>
               <div className="text-left">
-                <p className="text-xs font-bold text-white truncate w-24 group-hover:text-amber-300">
+                <p className="text-xs font-semibold text-neutral-900 dark:text-white truncate w-24">
                   {adminUser?.full_name || 'Pengurus Admin'}
                 </p>
-                <p className="text-[10px] text-purple-300">✏️ Edit Profil</p>
+                <p className="text-[10px] text-[#86868b]">Edit Profil</p>
               </div>
             </Link>
 
             <button
               onClick={handleAdminLogout}
-              className="text-purple-300 hover:text-rose-400 p-1.5 rounded-lg transition cursor-pointer"
-              title="Logout Pengurus Admin"
+              className="text-[#86868b] hover:text-rose-600 dark:hover:text-rose-400 p-1.5 rounded-lg transition cursor-pointer"
+              title="Keluar dari Portal Pengurus"
             >
-              <LogOut size={16} />
+              <LogOut size={15} />
             </button>
           </div>
         </div>
@@ -188,37 +190,37 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Mobile Drawer Overlay */}
       {isMobileMenuOpen && (
         <div 
-          className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 md:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 md:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/* Mobile Drawer Content */}
-      <div className={`fixed top-0 left-0 bottom-0 w-72 bg-[#2e1065] dark:bg-[#13092b] text-white z-50 flex flex-col justify-between transition-transform duration-300 md:hidden ${
+      <div className={`fixed top-0 left-0 bottom-0 w-72 bg-[#f5f5f7] dark:bg-[#121214] text-neutral-900 dark:text-white z-50 flex flex-col justify-between transition-transform duration-300 md:hidden border-r border-black/[0.08] dark:border-white/[0.08] ${
         isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div>
-          <div className="p-5 border-b border-purple-800/40 flex items-center justify-between">
+          <div className="p-5 border-b border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl gradient-mnsbdi flex items-center justify-center text-white font-bold shadow-md">
-                🪷
+              <div className="w-8 h-8 rounded-full bg-[#2e1065] text-amber-300 flex items-center justify-center font-bold text-xs shadow-xs">
+                MN
               </div>
               <div>
-                <h2 className="font-extrabold text-sm text-white">Vihara System</h2>
-                <span className="text-[9px] uppercase tracking-wider font-extrabold text-amber-300">
-                  Portal Admin
+                <h2 className="font-semibold text-xs tracking-tight text-neutral-900 dark:text-white">Vihara MNSBDI</h2>
+                <span className="text-[10px] text-[#86868b] font-medium">
+                  Portal Pengurus
                 </span>
               </div>
             </div>
             <button 
               onClick={() => setIsMobileMenuOpen(false)}
-              className="p-1.5 text-purple-200 hover:text-white rounded-lg"
+              className="p-1.5 text-[#86868b] hover:text-neutral-900 dark:hover:text-white rounded-lg cursor-pointer"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
 
-          <nav className="p-4 space-y-1.5">
+          <nav className="p-3 space-y-1">
             {ADMIN_NAV.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
@@ -227,44 +229,44 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all ${
                     isActive
-                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold shadow-lg'
-                      : 'text-purple-200 hover:text-white hover:bg-purple-900/50'
+                      ? 'bg-black/[0.08] dark:bg-white/[0.12] text-neutral-900 dark:text-white font-semibold'
+                      : 'text-[#86868b] hover:text-neutral-900 dark:hover:text-white font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.05]'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon size={18} />
+                  <div className="flex items-center gap-2.5">
+                    <Icon size={16} className={isActive ? 'text-[#5e35b1] dark:text-amber-400' : 'text-[#86868b]'} />
                     <span>{item.label}</span>
                   </div>
-                  {isActive && <ChevronRight size={16} className="text-slate-950" />}
+                  {isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#5e35b1] dark:bg-amber-400" />}
                 </Link>
               );
             })}
           </nav>
         </div>
 
-        <div className="p-4 border-t border-purple-800/40 space-y-3">
+        <div className="p-4 border-t border-black/[0.06] dark:border-white/[0.08] space-y-2.5">
           <Link
             href="/kegiatan"
             onClick={() => setIsMobileMenuOpen(false)}
-            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-purple-900/60 text-xs font-bold text-amber-300 border border-purple-700/50"
+            className="flex items-center justify-center gap-2 w-full py-2 rounded-full bg-black/[0.04] dark:bg-white/[0.06] text-xs font-semibold text-neutral-800 dark:text-neutral-200 border border-black/[0.06] dark:border-white/[0.08]"
           >
-            <UserCheck size={14} />
+            <UserCheck size={14} className="text-[#86868b]" />
             <span>Lihat Portal Umat</span>
           </Link>
           <div className="flex items-center justify-between pt-1">
             <Link 
               href="/admin-profile" 
               onClick={() => setIsMobileMenuOpen(false)}
-              className="text-xs text-purple-200 font-semibold truncate w-40 hover:text-amber-300"
+              className="text-xs text-neutral-900 dark:text-white font-semibold truncate w-40"
             >
-              👤 {adminUser?.full_name || 'Admin'}
+              {adminUser?.full_name || 'Admin'}
             </Link>
             <button 
               onClick={handleAdminLogout} 
-              className="text-purple-300 hover:text-rose-400 p-1 cursor-pointer"
-              title="Logout Pengurus Admin"
+              className="text-[#86868b] hover:text-rose-500 p-1 cursor-pointer"
+              title="Keluar dari Portal Pengurus"
             >
               <LogOut size={16} />
             </button>
@@ -275,31 +277,31 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Header */}
-        <header className="h-16 border-b border-purple-100 dark:border-purple-900/60 bg-white dark:bg-[#160e29] px-4 md:px-8 flex items-center justify-between sticky top-0 z-40 shadow-sm transition-colors">
+        <header className="h-14 sm:h-16 border-b border-black/[0.06] dark:border-white/[0.08] bg-[#f5f5f7]/80 dark:bg-black/80 backdrop-blur-xl px-4 md:px-8 flex items-center justify-between sticky top-0 z-40 transition-colors">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 text-purple-950 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-950/60 rounded-xl md:hidden cursor-pointer"
+              className="p-1.5 text-neutral-700 dark:text-neutral-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.08] rounded-xl md:hidden cursor-pointer"
               title="Buka Menu Sidebar"
             >
-              <Menu size={22} />
+              <Menu size={20} />
             </button>
             <div>
-              <h1 className="text-sm font-bold text-purple-950 dark:text-purple-100 flex items-center gap-2">
+              <h1 className="text-xs sm:text-sm font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
                 <span>Sistem Informasi Vihara</span>
               </h1>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">Supabase Connected • Responsive Layout</p>
+              <p className="text-[10px] text-[#86868b] hidden sm:block">Sentra Makassar, Sulawesi</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3">
             <ThemeToggle />
             <Link
               href="/admin-profile"
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 text-xs font-bold text-purple-950 dark:text-purple-200 hover:border-amber-400 transition"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/[0.04] dark:bg-white/[0.08] border border-black/[0.06] dark:border-white/[0.08] text-xs font-medium text-neutral-900 dark:text-white hover:bg-black/[0.07] dark:hover:bg-white/[0.14] transition-all"
               title="Edit Profil Pengurus"
             >
-              <div className="w-5 h-5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] flex items-center justify-center">
+              <div className="w-5 h-5 rounded-full bg-[#1d1d1f] dark:bg-white text-white dark:text-black font-semibold text-[9px] flex items-center justify-center">
                 {adminUser?.full_name ? adminUser.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'AD'}
               </div>
               <span className="hidden md:inline">{adminUser?.full_name || 'Pengurus Admin'}</span>
