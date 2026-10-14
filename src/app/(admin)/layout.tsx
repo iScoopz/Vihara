@@ -13,7 +13,7 @@ import {
   LogOut, 
   Shield, 
   UserCheck,
-  ChevronRight,
+  UserX,
   Menu,
   X
 } from 'lucide-react';
@@ -23,6 +23,7 @@ const ADMIN_NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/umat', label: 'Data Umat', icon: Users },
   { href: '/events', label: 'Kelola Event', icon: CalendarDays },
+  { href: '/belum-daftar', label: 'Umat Belum Daftar', icon: UserX },
   { href: '/calendar', label: 'Kalender Kegiatan', icon: CalendarIcon },
   { href: '/donations', label: 'Dana Paramita', icon: HeartHandshake },
   { href: '/inventory', label: 'Inventaris & POS', icon: Package },

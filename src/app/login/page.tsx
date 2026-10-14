@@ -7,7 +7,7 @@ import { ShieldCheck, UserCheck, Lock, Mail, ArrowLeft, CheckCircle2 } from 'luc
 import ThemeToggle from '@/components/ui/theme-toggle';
 
 import { createClient } from '@/lib/supabase/client';
-import { getProfiles } from '@/lib/actions/vihara-actions';
+import { findLoginProfile } from '@/lib/actions/vihara-actions';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -39,7 +39,6 @@ export default function LoginPage() {
     setLoading(true);
     setErrorMessage('');
 
-    const profs = await getProfiles();
     const query = email.trim().toLowerCase();
 
     if (!query) {
@@ -49,10 +48,7 @@ export default function LoginPage() {
     }
 
     if (role === 'admin') {
-      const adminFound = profs.find(
-        (p) =>
-          p.role === 'admin' && p.email?.toLowerCase() === query
-      ) || (query === 'admin@vihara.or.id' ? profs.find(p => p.role === 'admin') : null);
+      const adminFound = await findLoginProfile(query, 'admin');
 
       if (!adminFound) {
         setLoading(false);
@@ -100,11 +96,7 @@ export default function LoginPage() {
       setLoading(false);
       router.push('/dashboard');
     } else {
-      const umatFound = profs.find(
-        (p) =>
-          (p.email && p.email.toLowerCase() === query) ||
-          (p.han && p.han.toLowerCase() === query)
-      );
+      const umatFound = await findLoginProfile(query, 'umat');
 
       if (!umatFound) {
         setLoading(false);

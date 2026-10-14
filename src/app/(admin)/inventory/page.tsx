@@ -16,12 +16,10 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { 
-  getInventory, 
-  updateStockQuantity, 
-  addInventoryItem, 
-  recordInventoryPurchase, 
-  getInventoryTransactions,
-  getProfiles
+  getInventoryPageBundle,
+  updateStockQuantity,
+  addInventoryItem,
+  recordInventoryPurchase
 } from '@/lib/actions/vihara-actions';
 import { InventoryItem, InventoryTransaction, Profile } from '@/types/database';
 import { SearchableUmatSelect } from '@/components/ui/SearchableUmatSelect';
@@ -55,12 +53,10 @@ export default function InventoryPage() {
   const [purchaseError, setPurchaseError] = useState('');
 
   const loadData = async () => {
-    const invs = await getInventory();
-    const txs = await getInventoryTransactions();
-    const profs = await getProfiles();
-    setItems(invs);
-    setTransactions(txs);
-    setProfiles(profs);
+    const bundle = await getInventoryPageBundle();
+    setItems(bundle.inventory);
+    setTransactions(bundle.transactions);
+    setProfiles(bundle.profiles);
   };
 
   useEffect(() => {
@@ -70,7 +66,8 @@ export default function InventoryPage() {
   const handleStockAdjust = async (id: string, delta: number) => {
     setItems(prev => prev.map(item => item.id === id ? { ...item, stock_quantity: Math.max(0, item.stock_quantity + delta) } : item));
     try {
-      await updateStockQuantity(id, delta);
+      const res = await updateStockQuantity(id, delta);
+      if (res.error) loadData();
     } catch (e) {
       loadData();
     }

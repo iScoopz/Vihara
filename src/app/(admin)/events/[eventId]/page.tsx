@@ -19,7 +19,8 @@ import {
   Users,
   Copy,
   Check,
-  CheckCircle2
+  CheckCircle2,
+  UserX
 } from 'lucide-react';
 import { 
   getEventDetailPageBundle,
@@ -181,7 +182,11 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
     e.preventDefault();
     if (!selectedUmatId) return;
 
-    const res = await registerForEvent(event.id, selectedUmatId, 'p1');
+    let adminId: string | undefined;
+    try {
+      adminId = JSON.parse(localStorage.getItem('vihara_admin_profile') || '{}').id;
+    } catch {}
+    const res = await registerForEvent(event.id, selectedUmatId, adminId);
 
     if (res.error) {
       setRegMsg(res.error);
@@ -596,6 +601,14 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
             <span>{copiedWa ? '✓ Copied List WA!' : 'Salin List WA'}</span>
           </button>
 
+          <Link
+            href={`/belum-daftar?event=${event.id}`}
+            className="px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition shadow-xs border bg-white dark:bg-[#160e29] text-slate-800 dark:text-slate-200 border-slate-200 dark:border-purple-900 hover:bg-slate-50 dark:hover:bg-purple-950"
+          >
+            <UserX size={14} />
+            <span>Lihat yang Belum Daftar</span>
+          </Link>
+
           <button
             onClick={handleToggleComplete}
             className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-xs border active:scale-95 ${
@@ -923,7 +936,9 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
         isOpen={isPricingModalOpen}
         event={event}
         onClose={() => setIsPricingModalOpen(false)}
-        onSaved={loadData}
+        onSaved={(pricing, fees) =>
+          setEvent(prev => (prev ? { ...prev, pricing_per_bagian: pricing, extra_fees: fees } : prev))
+        }
       />
     </div>
   );

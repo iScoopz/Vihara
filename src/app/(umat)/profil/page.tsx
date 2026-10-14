@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { UserCheck, MapPin, Building, Phone, Calendar, History, CheckCircle2, Compass, Home } from 'lucide-react';
-import { getProfiles, updateProfile, getUserRegistrationHistory } from '@/lib/actions/vihara-actions';
+import { getProfileById, findLoginProfile, updateProfile, getUserRegistrationHistory } from '@/lib/actions/vihara-actions';
 import { Profile, ViharaEvent } from '@/types/database';
 
 export default function MemberProfilePage() {
@@ -29,8 +29,10 @@ export default function MemberProfilePage() {
 
   const loadProfileData = async (userId: string) => {
     setLoading(true);
-    const profs = await getProfiles();
-    const me = profs.find(p => p.id === userId);
+    const [me, history] = await Promise.all([
+      getProfileById(userId),
+      getUserRegistrationHistory(userId)
+    ]);
     if (!me) {
       setLoading(false);
       return;
@@ -47,7 +49,6 @@ export default function MemberProfilePage() {
     setEditHan(me.han || '');
     setEditEmergencyContact(me.emergency_contact || '');
 
-    const history = await getUserRegistrationHistory(userId);
     setUserRegistrations(history);
     setLoading(false);
   };
@@ -69,13 +70,7 @@ export default function MemberProfilePage() {
     setLoginError('');
     if (!loginInput.trim()) return;
 
-    const profs = await getProfiles();
-    const query = loginInput.trim().toLowerCase();
-    const found = profs.find(p => 
-      (p.email && p.email.toLowerCase() === query) ||
-      (p.han && p.han.toLowerCase() === query) ||
-      (p.full_name && p.full_name.toLowerCase() === query)
-    );
+    const found = await findLoginProfile(loginInput, 'umat-by-name');
 
     if (found) {
       localStorage.setItem('vihara_umat_id', found.id);

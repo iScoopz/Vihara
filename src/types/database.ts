@@ -108,6 +108,9 @@ export interface ViharaEvent {
   skenario_kerja?: EventSkenarioKerja[];
 }
 
+// Lightweight event row for pickers that do not need budgets or registrations.
+export type EventOption = Pick<ViharaEvent, 'id' | 'title' | 'event_date' | 'is_published' | 'is_completed' | 'category'>;
+
 export interface EventRegistration {
   id: string;
   event_id: string;

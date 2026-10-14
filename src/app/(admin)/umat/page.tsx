@@ -35,6 +35,7 @@ import {
 } from '@/lib/actions/vihara-actions';
 import { Profile, CetyaProfile, HanProfile, UmatBagian } from '@/types/database';
 import ConfirmModal from '@/components/ui/confirm-modal';
+import { NO_CETYA, UNAFFILIATED_CETYA_OPTIONS } from '@/lib/umat-options';
 
 export default function UmatDirectoryPage() {
   const [activeMainTab, setActiveMainTab] = useState<'umat' | 'cetya' | 'han'>('umat');
@@ -129,13 +130,9 @@ export default function UmatDirectoryPage() {
     setSentras(bundle.sentras);
     setCetyas(bundle.cetyas);
     if (bundle.cetyas.length > 0) {
-      setCetya(bundle.cetyas[0].name);
-      setHanCetyaInput(bundle.cetyas[0].name);
+      setHanCetyaInput(prev => prev || bundle.cetyas[0].name);
     }
     setHans(bundle.hans);
-    if (bundle.hans.length > 0) {
-      setHan(bundle.hans[0].name);
-    }
   };
 
   useEffect(() => {
@@ -149,6 +146,41 @@ export default function UmatDirectoryPage() {
   // Filter HAN options based on selected Cetya
   const availableHansForAdd = hans.filter(h => h.cetya_name === cetya);
   const availableHansForEdit = hans.filter(h => h.cetya_name === editCetya);
+  // Members of one HAN can come from several Cetya, so the rest stay selectable.
+  const otherHansForAdd = hans.filter(h => h.cetya_name !== cetya);
+  const otherHansForEdit = hans.filter(h => h.cetya_name !== editCetya && h.name !== editHan);
+
+  // Sentra -> Cetya -> HAN cascade: picking a parent resets the children to a valid choice.
+  const firstCetyaFor = (sentraName: string) =>
+    cetyas.find(c => c.sentra === sentraName)?.name || NO_CETYA;
+  const firstHanFor = (cetyaName: string) =>
+    hans.find(h => h.cetya_name === cetyaName)?.name || '';
+
+  const changeAddSentra = (value: string) => {
+    const nextCetya = firstCetyaFor(value);
+    setSentra(value);
+    setCetya(nextCetya);
+    setHan(firstHanFor(nextCetya));
+  };
+  const changeAddCetya = (value: string) => {
+    setCetya(value);
+    setHan(firstHanFor(value));
+  };
+  const changeEditSentra = (value: string) => {
+    const nextCetya = firstCetyaFor(value);
+    setEditSentra(value);
+    setEditCetya(nextCetya);
+    setEditHan(firstHanFor(nextCetya));
+  };
+  const changeEditCetya = (value: string) => {
+    setEditCetya(value);
+    setEditHan(firstHanFor(value));
+  };
+
+  const openAddUmatModal = () => {
+    changeAddSentra(sentra || 'Sentra Makassar');
+    setIsAddUmatModalOpen(true);
+  };
 
   // Umat Actions
   const handleAddUmat = async (e: React.FormEvent) => {
@@ -211,8 +243,8 @@ export default function UmatDirectoryPage() {
   const openEditUmatModal = (profile: Profile) => {
     setEditingProfile(profile);
     setEditSentra(profile.sentra || 'Sentra Makassar');
-    setEditCetya(profile.cetya || cetyas[0]?.name || '');
-    setEditHan(profile.han || hans[0]?.name || '');
+    setEditCetya(profile.cetya || NO_CETYA);
+    setEditHan(profile.han || '');
     setEditFullName(profile.full_name || '');
     setEditEmail(profile.email || '');
     setEditPhone(profile.phone || '');
@@ -440,7 +472,7 @@ export default function UmatDirectoryPage() {
         {/* Dynamic Add Button based on Active Tab */}
         {activeMainTab === 'umat' && (
           <button
-            onClick={() => setIsAddUmatModalOpen(true)}
+            onClick={openAddUmatModal}
             className="inline-flex items-center gap-2 bg-purple-900 hover:bg-purple-800 text-amber-300 font-black px-4 py-2.5 rounded-xl transition shadow-sm border border-purple-700/60 text-xs active:scale-95 cursor-pointer"
           >
             <UserPlus size={16} />
@@ -565,6 +597,7 @@ export default function UmatDirectoryPage() {
               >
                 <option value="all">Semua Cetya</option>
                 {cetyas.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                {UNAFFILIATED_CETYA_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
               </select>
 
               {/* Filter HAN */}
@@ -920,7 +953,7 @@ export default function UmatDirectoryPage() {
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">1. Sentra Utama</label>
                   <select
                     value={editSentra}
-                    onChange={(e) => setEditSentra(e.target.value)}
+                    onChange={(e) => changeEditSentra(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-2.5 py-2 text-xs font-extrabold text-purple-950 dark:text-purple-200 focus:outline-none focus:border-purple-600"
                   >
                     {sentras.map(s => <option key={s} value={s}>{s}</option>)}
@@ -931,10 +964,16 @@ export default function UmatDirectoryPage() {
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">2. Cetya</label>
                   <select
                     value={editCetya}
-                    onChange={(e) => setEditCetya(e.target.value)}
+                    onChange={(e) => changeEditCetya(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-2.5 py-2 text-xs font-extrabold text-amber-700 dark:text-amber-300 focus:outline-none focus:border-purple-600"
                   >
+                    {editCetya && !UNAFFILIATED_CETYA_OPTIONS.includes(editCetya) && !availableCetyasForEdit.some(c => c.name === editCetya) && (
+                      <option value={editCetya}>{editCetya}</option>
+                    )}
                     {availableCetyasForEdit.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                    <optgroup label="Tanpa naungan">
+                      {UNAFFILIATED_CETYA_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                    </optgroup>
                   </select>
                 </div>
 
@@ -945,7 +984,16 @@ export default function UmatDirectoryPage() {
                     onChange={(e) => setEditHan(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
                   >
+                    {editHan && !availableHansForEdit.some(h => h.name === editHan) && (
+                      <option value={editHan}>{editHan}</option>
+                    )}
                     {availableHansForEdit.map(h => <option key={h.id} value={h.name}>{h.name}</option>)}
+                    <option value="">Tidak ada HAN</option>
+                    {otherHansForEdit.length > 0 && (
+                      <optgroup label="HAN di Cetya lain">
+                        {otherHansForEdit.map(h => <option key={h.id} value={h.name}>{h.name}</option>)}
+                      </optgroup>
+                    )}
                   </select>
                 </div>
               </div>
@@ -1109,7 +1157,7 @@ export default function UmatDirectoryPage() {
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">1. Sentra Utama</label>
                   <select
                     value={sentra}
-                    onChange={(e) => setSentra(e.target.value)}
+                    onChange={(e) => changeAddSentra(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-2.5 py-2 text-xs font-extrabold text-purple-950 dark:text-purple-200 focus:outline-none focus:border-purple-600"
                   >
                     {sentras.map(s => <option key={s} value={s}>{s}</option>)}
@@ -1120,10 +1168,13 @@ export default function UmatDirectoryPage() {
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">2. Cetya</label>
                   <select
                     value={cetya}
-                    onChange={(e) => setCetya(e.target.value)}
+                    onChange={(e) => changeAddCetya(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-2.5 py-2 text-xs font-extrabold text-amber-700 dark:text-amber-300 focus:outline-none focus:border-purple-600"
                   >
                     {availableCetyasForAdd.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                    <optgroup label="Tanpa naungan">
+                      {UNAFFILIATED_CETYA_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                    </optgroup>
                   </select>
                 </div>
 
@@ -1135,6 +1186,12 @@ export default function UmatDirectoryPage() {
                     className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
                   >
                     {availableHansForAdd.map(h => <option key={h.id} value={h.name}>{h.name}</option>)}
+                    <option value="">Tidak ada HAN</option>
+                    {otherHansForAdd.length > 0 && (
+                      <optgroup label="HAN di Cetya lain">
+                        {otherHansForAdd.map(h => <option key={h.id} value={h.name}>{h.name}</option>)}
+                      </optgroup>
+                    )}
                   </select>
                 </div>
               </div>

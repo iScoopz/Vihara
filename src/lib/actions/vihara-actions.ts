@@ -32,17 +32,18 @@ import {
   HanProfile,
   EventProposalRundown,
   EventSkenarioKerja,
-  EventExtraFee
+  EventExtraFee,
+  EventOption
 } from '@/types/database';
 
 let profilesStore = [...INITIAL_PROFILES];
-let eventsStore = [...INITIAL_EVENTS];
-let inventoryStore = [...INITIAL_INVENTORY];
-let donationsStore = [...INITIAL_DONATIONS];
+const eventsStore = [...INITIAL_EVENTS];
+const inventoryStore = [...INITIAL_INVENTORY];
+const donationsStore = [...INITIAL_DONATIONS];
 let registrationsStore = [...INITIAL_REGISTRATIONS];
 let budgetsStore = [...INITIAL_BUDGETS];
-let committeesStore = [...INITIAL_COMMITTEES];
-let transactionsStore = [...INITIAL_TRANSACTIONS];
+const committeesStore = [...INITIAL_COMMITTEES];
+const transactionsStore = [...INITIAL_TRANSACTIONS];
 let cetyasStore = [...INITIAL_CETYAS];
 let hansStore = [...INITIAL_HANS];
 
@@ -71,16 +72,101 @@ export async function getUmatPageBundle() {
 }
 
 export async function getEventDetailPageBundle(eventId: string) {
-  const [eventObj, regsList, profilesList] = await Promise.all([
+  // Profiles are fetched once and reused for the registration join.
+  const [eventObj, rawRegs, profilesList] = await Promise.all([
     getEventById(eventId),
-    getRegistrationsForEvent(eventId),
+    fetchRawRegistrations(eventId),
     getProfiles()
   ]);
+  const byId = new Map(profilesList.map(p => [p.id, p]));
   return {
     event: eventObj,
-    registrations: regsList,
+    registrations: rawRegs.map(r => ({ ...r, profile: byId.get(r.profile_id) })),
     profiles: profilesList
   };
+}
+
+export async function getBelumDaftarPageBundle() {
+  const [eventsList, profilesList, sentrasList, cetyasList, hansList] = await Promise.all([
+    getEventOptions(),
+    getProfiles(),
+    getSentras(),
+    getCetyas(),
+    getHans()
+  ]);
+  return {
+    events: eventsList,
+    profiles: profilesList,
+    sentras: sentrasList,
+    cetyas: cetyasList,
+    hans: hansList
+  };
+}
+
+async function getEventOptions(): Promise<EventOption[]> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase
+        .from('events')
+        .select('id, title, event_date, is_published, is_completed, category')
+        .order('event_date', { ascending: false });
+      if (error) {
+        console.error('Supabase getEventOptions error:', error);
+      } else if (data) {
+        return data;
+      }
+    } catch (e) {
+      console.error('getEventOptions exception:', e);
+    }
+  }
+  return [...eventsStore]
+    .sort((a, b) => b.event_date.localeCompare(a.event_date))
+    .map(({ id, title, event_date, is_published, is_completed, category }) => ({ id, title, event_date, is_published, is_completed, category }));
+}
+
+export async function getRegisteredProfileIds(eventId: string): Promise<string[]> {
+  if (!eventId) return [];
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase
+        .from('event_registrations')
+        .select('profile_id')
+        .eq('event_id', eventId);
+      if (error) {
+        console.error('Supabase getRegisteredProfileIds error:', error);
+      } else if (data) {
+        return data.map(r => r.profile_id);
+      }
+    } catch (e) {
+      console.error('getRegisteredProfileIds exception:', e);
+    }
+  }
+  return registrationsStore.filter(r => r.event_id === eventId).map(r => r.profile_id);
+}
+
+async function fetchRawRegistrations(eventId: string): Promise<EventRegistration[]> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase
+        .from('event_registrations')
+        .select('*')
+        .eq('event_id', eventId)
+        .order('created_at', { ascending: true });
+      if (error) {
+        console.error('Supabase fetchRawRegistrations error:', error);
+      } else if (data) {
+        return data;
+      }
+    } catch (e) {
+      console.error('fetchRawRegistrations exception:', e);
+    }
+  }
+  return registrationsStore
+    .filter(r => r.event_id === eventId)
+    .sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
 }
 
 export async function getDashboardPageBundle() {
@@ -95,6 +181,19 @@ export async function getDashboardPageBundle() {
     profiles: profilesList,
     donations: donationsList,
     inventory: inventoryList
+  };
+}
+
+export async function getInventoryPageBundle() {
+  const [inventoryList, transactionsList, profilesList] = await Promise.all([
+    getInventory(),
+    getInventoryTransactions(),
+    getProfiles()
+  ]);
+  return {
+    inventory: inventoryList,
+    transactions: transactionsList,
+    profiles: profilesList
   };
 }
 
@@ -277,10 +376,14 @@ export async function getUpcomingBirthdays(targetMonth?: number): Promise<Profil
   });
 }
 
-export async function registerForEvent(eventId: string, targetUmatId?: string, currentUserId: string = 'p2') {
-  let profileToRegister = currentUserId;
+export async function registerForEvent(eventId: string, targetUmatId?: string, currentUserId?: string) {
+  let profileToRegister = currentUserId || '';
   let regMethod: 'self' | 'admin' = 'self';
   let registeredBy: string | undefined = undefined;
+
+  if (!targetUmatId && !currentUserId) {
+    return { error: 'Masuk sebagai umat terlebih dahulu untuk mendaftar.' };
+  }
 
   if (targetUmatId) {
     profileToRegister = targetUmatId;
@@ -390,6 +493,26 @@ export async function getInventory(): Promise<InventoryItem[]> {
   return [...inventoryStore];
 }
 
+// Reads the item from the database when available; items added in another
+// server instance are not in the in-memory store.
+async function findInventoryItem(itemId: string): Promise<InventoryItem | undefined> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase.from('inventory').select('*').eq('id', itemId).single();
+      if (!error && data) return data;
+    } catch (e) {
+      console.error('findInventoryItem exception:', e);
+    }
+  }
+  return inventoryStore.find(i => i.id === itemId);
+}
+
+function syncInventoryStore(item: InventoryItem) {
+  const idx = inventoryStore.findIndex(i => i.id === item.id);
+  if (idx !== -1) inventoryStore[idx] = item;
+}
+
 export async function recordInventoryPurchase(
   inventoryId: string, 
   quantity: number, 
@@ -397,16 +520,17 @@ export async function recordInventoryPurchase(
   profileId?: string, 
   notes?: string
 ) {
-  const item = inventoryStore.find(i => i.id === inventoryId);
-  if (!item) return { error: 'Barang tidak ditemukan.' };
-  if (item.stock_quantity < quantity) {
-    return { error: `Stok tidak mencukupi. Sisa stok: ${item.stock_quantity} ${item.unit}` };
+  const found = await findInventoryItem(inventoryId);
+  if (!found) return { error: 'Barang tidak ditemukan.' };
+  if (found.stock_quantity < quantity) {
+    return { error: `Stok tidak mencukupi. Sisa stok: ${found.stock_quantity} ${found.unit}` };
   }
 
-  item.stock_quantity -= quantity;
-  item.last_updated = new Date().toISOString();
-
-  const totalPrice = quantity * item.price_per_unit;
+  const item: InventoryItem = {
+    ...found,
+    stock_quantity: found.stock_quantity - quantity,
+    last_updated: new Date().toISOString()
+  };
 
   const transaction: InventoryTransaction = {
     id: `t_${Date.now()}`,
@@ -416,7 +540,7 @@ export async function recordInventoryPurchase(
     buyer_name: buyerName,
     quantity,
     unit_price: item.price_per_unit,
-    total_price: totalPrice,
+    total_price: quantity * item.price_per_unit,
     transaction_date: new Date().toISOString(),
     notes
   };
@@ -424,13 +548,21 @@ export async function recordInventoryPurchase(
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      await supabase.from('inventory').update({ stock_quantity: item.stock_quantity, last_updated: item.last_updated }).eq('id', inventoryId);
-      await supabase.from('inventory_transactions').insert([transaction]);
+      const [stockRes, trxRes] = await Promise.all([
+        supabase.from('inventory').update({ stock_quantity: item.stock_quantity, last_updated: item.last_updated }).eq('id', inventoryId),
+        supabase.from('inventory_transactions').insert([transaction])
+      ]);
+      if (stockRes.error || trxRes.error) {
+        console.error('Supabase recordInventoryPurchase error:', stockRes.error || trxRes.error);
+        return { error: 'Transaksi gagal disimpan ke database.' };
+      }
     } catch (e) {
       console.error('recordInventoryPurchase exception:', e);
+      return { error: 'Transaksi gagal disimpan ke database.' };
     }
   }
 
+  syncInventoryStore(item);
   transactionsStore.unshift(transaction);
 
   revalidatePath('/inventory');
@@ -455,22 +587,32 @@ export async function getInventoryTransactions(): Promise<InventoryTransaction[]
 }
 
 export async function updateStockQuantity(itemId: string, delta: number) {
-  const item = inventoryStore.find(i => i.id === itemId);
-  if (item) {
-    item.stock_quantity = Math.max(0, item.stock_quantity + delta);
-    item.last_updated = new Date().toISOString();
+  const found = await findInventoryItem(itemId);
+  if (!found) return { error: 'Barang tidak ditemukan.' };
 
-    if (isSupabaseConfigured()) {
-      try {
-        const supabase = await createClient();
-        await supabase.from('inventory').update({ stock_quantity: item.stock_quantity, last_updated: item.last_updated }).eq('id', itemId);
-      } catch (e) {
-        console.error('updateStockQuantity exception:', e);
+  const item: InventoryItem = {
+    ...found,
+    stock_quantity: Math.max(0, found.stock_quantity + delta),
+    last_updated: new Date().toISOString()
+  };
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { error } = await supabase.from('inventory').update({ stock_quantity: item.stock_quantity, last_updated: item.last_updated }).eq('id', itemId);
+      if (error) {
+        console.error('Supabase updateStockQuantity error:', error);
+        return { error: 'Gagal memperbarui stok.' };
       }
+    } catch (e) {
+      console.error('updateStockQuantity exception:', e);
+      return { error: 'Gagal memperbarui stok.' };
     }
   }
+
+  syncInventoryStore(item);
   revalidatePath('/inventory');
-  return { success: true, newQuantity: item?.stock_quantity };
+  return { success: true, newQuantity: item.stock_quantity };
 }
 
 export async function addInventoryItem(item: Omit<InventoryItem, 'id' | 'last_updated'>) {
@@ -551,6 +693,41 @@ export async function getProfiles(): Promise<Profile[]> {
   return [...profilesStore];
 }
 
+export async function getProfileById(id: string): Promise<Profile | null> {
+  if (!id) return null;
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', id).maybeSingle();
+      if (error) {
+        console.error('Supabase getProfileById error:', error);
+      } else {
+        return data;
+      }
+    } catch (e) {
+      console.error('getProfileById exception:', e);
+    }
+  }
+  return profilesStore.find(p => p.id === id) || null;
+}
+
+// Looks up one profile on the server so the login pages never download the whole umat list.
+export async function findLoginProfile(query: string, mode: 'admin' | 'umat' | 'umat-by-name'): Promise<Profile | null> {
+  const q = query.trim().toLowerCase();
+  if (!q) return null;
+
+  const profs = await getProfiles();
+  if (mode === 'admin') {
+    return profs.find(p => p.role === 'admin' && p.email?.toLowerCase() === q)
+      || (q === 'admin@vihara.or.id' ? profs.find(p => p.role === 'admin') || null : null);
+  }
+  return profs.find(p =>
+    (p.email && p.email.toLowerCase() === q) ||
+    (p.han && p.han.toLowerCase() === q) ||
+    (mode === 'umat-by-name' && p.full_name && p.full_name.toLowerCase() === q)
+  ) || null;
+}
+
 export async function addProfile(profile: Omit<Profile, 'id' | 'created_at'>) {
   const newProfile: Profile = {
     ...profile,
@@ -629,29 +806,26 @@ export async function getEvents(): Promise<ViharaEvent[]> {
       ]);
 
       if (eventsRes.data) {
-        const dbRegs = regsRes.data || [];
         const dbBudgets: EventBudget[] = budgetRes.data || [];
-        
-        // Sync dbBudgets with local budgetsStore
-        dbBudgets.forEach(db => {
-          const idx = budgetsStore.findIndex(b => b.id === db.id);
-          if (idx !== -1) {
-            budgetsStore[idx] = db;
-          } else {
-            budgetsStore.push(db);
-          }
-        });
 
-        return eventsRes.data.map(ev => {
-          const dbCount = dbRegs.filter(r => r.event_id === ev.id).length;
-          const mockCount = registrationsStore.filter(r => r.event_id === ev.id).length;
-          return {
-            ...ev,
-            registrations_count: Math.max(dbCount, mockCount),
-            budgets: budgetsStore.filter(b => b.event_id === ev.id),
-            committees: committeesStore.filter(c => c.event_id === ev.id)
-          };
-        });
+        // Count and group once instead of filtering the full lists per event.
+        const regCounts = new Map<string, number>();
+        for (const r of regsRes.data || []) {
+          regCounts.set(r.event_id, (regCounts.get(r.event_id) || 0) + 1);
+        }
+        const budgetsByEvent = new Map<string, EventBudget[]>();
+        for (const b of dbBudgets) {
+          const list = budgetsByEvent.get(b.event_id);
+          if (list) list.push(b);
+          else budgetsByEvent.set(b.event_id, [b]);
+        }
+
+        return eventsRes.data.map(ev => ({
+          ...ev,
+          registrations_count: regCounts.get(ev.id) || 0,
+          budgets: budgetsByEvent.get(ev.id) || [],
+          committees: committeesStore.filter(c => c.event_id === ev.id)
+        }));
       }
     } catch (e) {
       console.error('getEvents exception:', e);
@@ -681,26 +855,11 @@ export async function getEventById(id: string): Promise<ViharaEvent | null> {
 
       if (eventRes.data) {
         const evData = eventRes.data;
-        const dbCount = regRes.count || 0;
-        const mockCount = registrationsStore.filter(r => r.event_id === id).length;
-        
-        const dbBudgets: EventBudget[] = budgetRes.data || [];
-        // Sync dbBudgets with local budgetsStore
-        dbBudgets.forEach(db => {
-          const idx = budgetsStore.findIndex(b => b.id === db.id);
-          if (idx !== -1) {
-            budgetsStore[idx] = db;
-          } else {
-            budgetsStore.push(db);
-          }
-        });
-
-        const evBudgets = budgetsStore.filter(b => b.event_id === id);
 
         return {
           ...evData,
-          registrations_count: Math.max(dbCount, mockCount),
-          budgets: evBudgets,
+          registrations_count: regRes.count || 0,
+          budgets: budgetRes.data || [],
           committees: committeesStore.filter(c => c.event_id === id),
           proposal_rundowns: prRes.data && prRes.data.length > 0 ? prRes.data : (evData.proposal_rundowns || []),
           skenario_kerja: skRes.data && skRes.data.length > 0 ? skRes.data : (evData.skenario_kerja || [])
@@ -752,7 +911,7 @@ export async function createEvent(eventData: Omit<ViharaEvent, 'id' | 'created_a
 }
 
 export async function togglePublishEvent(eventId: string) {
-  let ev = eventsStore.find(e => e.id === eventId);
+  const ev = eventsStore.find(e => e.id === eventId);
   let currentPublishStatus = ev?.is_published ?? false;
 
   if (isSupabaseConfigured()) {
@@ -789,7 +948,7 @@ export async function togglePublishEvent(eventId: string) {
 }
 
 export async function toggleCompleteEvent(eventId: string) {
-  let ev = eventsStore.find(e => e.id === eventId);
+  const ev = eventsStore.find(e => e.id === eventId);
   let currentCompleteStatus = ev?.is_completed ?? false;
 
   if (isSupabaseConfigured()) {
@@ -834,21 +993,27 @@ export async function updateEventPricing(
   if (ev) {
     ev.pricing_per_bagian = pricingPerBagian;
     ev.extra_fees = extraFees;
+  }
 
-    if (isSupabaseConfigured()) {
-      try {
-        const supabase = await createClient();
-        const { error } = await supabase
-          .from('events')
-          .update({ 
-            pricing_per_bagian: pricingPerBagian, 
-            extra_fees: extraFees 
-          })
-          .eq('id', eventId);
-        if (error) console.error('Supabase updateEventPricing error:', error);
-      } catch (e) {
-        console.error('updateEventPricing exception:', e);
+  // Events created in the database are not in the in-memory store,
+  // so the database write must not depend on it.
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { error } = await supabase
+        .from('events')
+        .update({
+          pricing_per_bagian: pricingPerBagian,
+          extra_fees: extraFees
+        })
+        .eq('id', eventId);
+      if (error) {
+        console.error('Supabase updateEventPricing error:', error);
+        return { error: 'Gagal menyimpan tarif event.' };
       }
+    } catch (e) {
+      console.error('updateEventPricing exception:', e);
+      return { error: 'Gagal menyimpan tarif event.' };
     }
   }
 
@@ -857,43 +1022,60 @@ export async function updateEventPricing(
   return { success: true, event: ev };
 }
 
-export async function addSubSectionToOrg(eventId: string, sectionType: 'sub_acara' | 'sub_umum', roleName: string, picName: string) {
+// Reads the current org structure from the database when available, so edits
+// apply to events that only exist there (not in the in-memory mock store).
+async function loadOrgStructure(eventId: string): Promise<EventOrgStructure | null> {
   const ev = eventsStore.find(e => e.id === eventId);
-  if (!ev) return { error: 'Event tidak ditemukan' };
-
-  if (!ev.org_structure) {
-    ev.org_structure = JSON.parse(JSON.stringify(INITIAL_ORG_STRUCTURE));
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase.from('events').select('org_structure').eq('id', eventId).single();
+      if (!error && data) {
+        return (data.org_structure as EventOrgStructure | null) || JSON.parse(JSON.stringify(INITIAL_ORG_STRUCTURE));
+      }
+    } catch (e) {
+      console.error('loadOrgStructure exception:', e);
+    }
   }
+  if (!ev) return null;
+  return ev.org_structure || JSON.parse(JSON.stringify(INITIAL_ORG_STRUCTURE));
+}
 
-  const org = ev.org_structure;
-  if (!org) return { error: 'Org structure Error' };
-
-  const newSub: SubSectionRole = {
-    id: `sub_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-    role_name: roleName,
-    pic_name: picName
-  };
-
-  if (sectionType === 'sub_acara') {
-    if (!org.sub_acara) org.sub_acara = [];
-    org.sub_acara.push(newSub);
-  } else {
-    if (!org.sub_umum) org.sub_umum = [];
-    org.sub_umum.push(newSub);
-  }
+async function saveOrgStructure(eventId: string, org: EventOrgStructure): Promise<{ success?: boolean; error?: string }> {
+  const ev = eventsStore.find(e => e.id === eventId);
+  if (ev) ev.org_structure = org;
 
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
       const { error } = await supabase.from('events').update({ org_structure: org }).eq('id', eventId);
-      if (error) console.error('Supabase addSubSectionToOrg error:', error);
+      if (error) {
+        console.error('Supabase saveOrgStructure error:', error);
+        return { error: 'Gagal menyimpan struktur panitia.' };
+      }
     } catch (e) {
-      console.error('addSubSectionToOrg exception:', e);
+      console.error('saveOrgStructure exception:', e);
+      return { error: 'Gagal menyimpan struktur panitia.' };
     }
   }
 
   revalidatePath(`/events/${eventId}`);
-  return { success: true, subSection: newSub };
+  return { success: true };
+}
+
+export async function addSubSectionToOrg(eventId: string, sectionType: 'sub_acara' | 'sub_umum', roleName: string, picName: string) {
+  const org = await loadOrgStructure(eventId);
+  if (!org) return { error: 'Event tidak ditemukan' };
+
+  const newSub: SubSectionRole = {
+    id: `sub_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    role_name: roleName,
+    pic_name: picName
+  };
+  org[sectionType] = [...(org[sectionType] || []), newSub];
+
+  const res = await saveOrgStructure(eventId, org);
+  return res.error ? res : { success: true, subSection: newSub };
 }
 
 export async function updateSubSectionInOrg(
@@ -903,61 +1085,21 @@ export async function updateSubSectionInOrg(
   roleName: string,
   picName: string
 ) {
-  const ev = eventsStore.find(e => e.id === eventId);
-  if (!ev || !ev.org_structure) return { error: 'Event tidak ditemukan' };
+  const org = await loadOrgStructure(eventId);
+  if (!org) return { error: 'Event tidak ditemukan' };
 
-  const org = ev.org_structure;
-  const list = sectionType === 'sub_acara' ? org.sub_acara : org.sub_umum;
-  if (list) {
-    const item = list.find(s => s.id === subId);
-    if (item) {
-      item.role_name = roleName;
-      item.pic_name = picName;
-    }
-  }
-
-  if (isSupabaseConfigured()) {
-    try {
-      const supabase = await createClient();
-      const { error } = await supabase.from('events').update({ org_structure: org }).eq('id', eventId);
-      if (error) console.error('Supabase updateSubSectionInOrg error:', error);
-    } catch (e) {
-      console.error('updateSubSectionInOrg exception:', e);
-    }
-  }
-
-  revalidatePath(`/events/${eventId}`);
-  return { success: true };
+  org[sectionType] = (org[sectionType] || []).map(s =>
+    s.id === subId ? { ...s, role_name: roleName, pic_name: picName } : s
+  );
+  return saveOrgStructure(eventId, org);
 }
 
 export async function deleteSubSectionFromOrg(eventId: string, sectionType: 'sub_acara' | 'sub_umum', subId: string) {
-  const ev = eventsStore.find(e => e.id === eventId);
-  if (!ev || !ev.org_structure) return { error: 'Event tidak ditemukan' };
+  const org = await loadOrgStructure(eventId);
+  if (!org) return { error: 'Event tidak ditemukan' };
 
-  const org = ev.org_structure;
-
-  if (sectionType === 'sub_acara') {
-    if (org.sub_acara) {
-      org.sub_acara = org.sub_acara.filter(s => s.id !== subId);
-    }
-  } else {
-    if (org.sub_umum) {
-      org.sub_umum = org.sub_umum.filter(s => s.id !== subId);
-    }
-  }
-
-  if (isSupabaseConfigured()) {
-    try {
-      const supabase = await createClient();
-      const { error } = await supabase.from('events').update({ org_structure: org }).eq('id', eventId);
-      if (error) console.error('Supabase deleteSubSectionFromOrg error:', error);
-    } catch (e) {
-      console.error('deleteSubSectionFromOrg exception:', e);
-    }
-  }
-
-  revalidatePath(`/events/${eventId}`);
-  return { success: true };
+  org[sectionType] = (org[sectionType] || []).filter(s => s.id !== subId);
+  return saveOrgStructure(eventId, org);
 }
 
 export async function addBudgetItem(budget: Omit<EventBudget, 'id'>) {
@@ -1088,40 +1230,26 @@ export async function updateGroupedBudget(
 }
 
 export async function getRegistrationsForEvent(eventId: string) {
+  const regs = await fetchRawRegistrations(eventId);
+  if (regs.length === 0) return [];
+
+  let profilesList: Profile[] = profilesStore;
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      const [regsRes, profilesRes] = await Promise.all([
-        supabase
-          .from('event_registrations')
-          .select('*')
-          .eq('event_id', eventId)
-          .order('created_at', { ascending: true }),
-        supabase.from('profiles').select('*')
-      ]);
-
-      if (regsRes.data && regsRes.data.length > 0) {
-        const dbProfiles = profilesRes.data || [];
-        return regsRes.data.map(r => {
-          const foundProfile = dbProfiles.find(p => p.id === r.profile_id) || profilesStore.find(p => p.id === r.profile_id);
-          return {
-            ...r,
-            profile: foundProfile
-          };
-        });
-      }
+      // Only the registered profiles, not the whole umat table.
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', regs.map(r => r.profile_id));
+      if (data) profilesList = data;
     } catch (e) {
       console.error('getRegistrationsForEvent exception:', e);
     }
   }
 
-  return registrationsStore
-    .filter(r => r.event_id === eventId)
-    .sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''))
-    .map(r => ({
-      ...r,
-      profile: profilesStore.find(p => p.id === r.profile_id)
-    }));
+  const byId = new Map(profilesList.map(p => [p.id, p]));
+  return regs.map(r => ({ ...r, profile: byId.get(r.profile_id) }));
 }
 
 export async function getUserRegisteredEventIds(profileId: string): Promise<string[]> {
@@ -1209,7 +1337,7 @@ export async function cancelRegistration(registrationId: string) {
 }
 
 export async function toggleAttendance(registrationId: string) {
-  let reg = registrationsStore.find(r => r.id === registrationId);
+  const reg = registrationsStore.find(r => r.id === registrationId);
   let currentAttended = reg?.is_attended ?? false;
 
   if (isSupabaseConfigured()) {
@@ -1243,7 +1371,7 @@ export async function toggleAttendance(registrationId: string) {
 }
 
 export async function toggleRegistrationPayment(registrationId: string, amount?: number) {
-  let reg = registrationsStore.find(r => r.id === registrationId);
+  const reg = registrationsStore.find(r => r.id === registrationId);
   let currentPaid = reg?.is_paid ?? false;
 
   if (isSupabaseConfigured()) {
@@ -1288,7 +1416,7 @@ export async function toggleRegistrationPayment(registrationId: string, amount?:
 }
 
 export async function updateRegistrationExtraFees(registrationId: string, feeIds: string[], calculatedTotalAmount?: number) {
-  let reg = registrationsStore.find(r => r.id === registrationId);
+  const reg = registrationsStore.find(r => r.id === registrationId);
 
   if (isSupabaseConfigured()) {
     try {

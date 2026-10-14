@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Receipt, Plus, Trash2, X, DollarSign } from 'lucide-react';
 import { ViharaEvent, EventExtraFee, UmatBagian } from '@/types/database';
 import { updateEventPricing } from '@/lib/actions/vihara-actions';
+import { useToast } from '@/components/ui/ToastNotification';
 
 interface EventPricingModalProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ export const EventPricingModal: React.FC<EventPricingModalProps> = ({
   onClose,
   onSaved
 }) => {
+  const { showToast } = useToast();
   const [pricingMap, setPricingMap] = useState<Record<string, string>>({});
   const [extraFees, setExtraFees] = useState<EventExtraFee[]>([]);
 
@@ -63,9 +65,15 @@ export const EventPricingModal: React.FC<EventPricingModalProps> = ({
       formattedPricing[bgKey] = parseFloat(valStr) || 0;
     });
 
+    const previousPricing = event.pricing_per_bagian;
+    const previousFees = event.extra_fees;
     onSaved(formattedPricing, extraFees);
     onClose();
-    await updateEventPricing(event.id, formattedPricing, extraFees);
+    const res = await updateEventPricing(event.id, formattedPricing, extraFees);
+    if (res.error) {
+      onSaved(previousPricing, previousFees);
+      showToast(res.error, 'error', 'Tarif tidak tersimpan');
+    }
   };
 
   return (
