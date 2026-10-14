@@ -1,27 +1,8 @@
 'use client'
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, useMemo, use } from 'react';
 import Link from 'next/link';
-import { 
-  CalendarDays, 
-  ArrowLeft, 
-  MapPin, 
-  Clock, 
-  Receipt, 
-  FileText, 
-  UserCheck, 
-  Layers,
-  Printer,
-  ListTodo,
-  Globe,
-  Send,
-  FileEdit,
-  Users,
-  Copy,
-  Check,
-  CheckCircle2,
-  UserX
-} from 'lucide-react';
+import { ArrowLeft, Printer } from 'lucide-react';
 import { 
   getEventDetailPageBundle,
   registerForEvent, 
@@ -52,6 +33,7 @@ import { EventPanitiaTab } from '@/components/events/EventPanitiaTab';
 import { EventProposalRundownTab } from '@/components/events/EventProposalRundownTab';
 import { EventSkenarioKerjaTab } from '@/components/events/EventSkenarioKerjaTab';
 import { EventPresensiTab } from '@/components/events/EventPresensiTab';
+import { EventBelumDaftarTab } from '@/components/events/EventBelumDaftarTab';
 import { EventRABTab, GroupedBudgetItem } from '@/components/events/EventRABTab';
 import { EventLaporanTab } from '@/components/events/EventLaporanTab';
 import { EventPdfModal } from '@/components/events/EventPdfModal';
@@ -59,6 +41,9 @@ import { EventModals } from '@/components/events/EventModals';
 import { EventPricingModal } from '@/components/events/EventPricingModal';
 
 import { useToast } from '@/components/ui/ToastNotification';
+import { Badge, Button, Panel, StateMessage } from '@/components/ui/kit';
+
+type TabId = 'overview' | 'bidang' | 'rundown' | 'skenario' | 'rab' | 'registrasi' | 'belum' | 'laporan';
 
 export default function EventDetailPage({ params }: { params: Promise<{ eventId: string }> }) {
   const resolvedParams = use(params);
@@ -68,46 +53,14 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
   const [event, setEvent] = useState<ViharaEvent | null>(null);
   const [registrations, setRegistrations] = useState<EventRegistration[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'bidang' | 'rundown' | 'skenario' | 'rab' | 'registrasi' | 'laporan'>('overview');
+  const [activeTab, setActiveTab] = useState<TabId>('overview');
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'missing' | 'error'>('loading');
 
   // Modals visibility
   const [isRegModalOpen, setIsRegModalOpen] = useState(false);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [isAddSubModalOpen, setIsAddSubModalOpen] = useState(false);
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
-  const [copiedWa, setCopiedWa] = useState(false);
-
-  const handleCopyWaList = () => {
-    if (!event) return;
-    const dateStr = new Date(event.event_date).toLocaleDateString('id-ID', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
-
-    let waText = `*DAFTAR PESERTA: ${event.title.toUpperCase()}*\n`;
-    waText += `📅 Tanggal: ${dateStr}\n`;
-    waText += `📍 Lokasi: ${event.location}\n`;
-    waText += `👥 Total: ${registrations.length} Orang\n\n`;
-
-    const sortedRegs = [...registrations].sort((a, b) => {
-      const nameA = a.profile?.full_name || '';
-      const nameB = b.profile?.full_name || '';
-      return nameA.localeCompare(nameB);
-    });
-
-    sortedRegs.forEach((r, idx) => {
-      waText += `${idx + 1}. ${r.profile?.full_name || 'Peserta'}\n`;
-    });
-
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(waText.trim());
-      setCopiedWa(true);
-      setTimeout(() => setCopiedWa(false), 3000);
-    }
-  };
-
   // Proposal Rundown Modal State
   const [isProposalRundownModalOpen, setIsProposalRundownModalOpen] = useState(false);
   const [editingProposalRundown, setEditingProposalRundown] = useState<EventProposalRundown | null>(null);
@@ -164,18 +117,57 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
 
   const loadData = async () => {
     const bundle = await getEventDetailPageBundle(eventId);
-    if (!bundle.event) return;
+    if (!bundle.event) {
+      setLoadState(prev => (prev === 'ready' ? prev : 'missing'));
+      return;
+    }
     setEvent(bundle.event);
     setRegistrations(bundle.registrations);
     setProfiles(bundle.profiles);
+    setLoadState('ready');
+  };
+
+  const initialLoad = async () => {
+    setLoadState('loading');
+    try {
+      await loadData();
+    } catch {
+      setLoadState('error');
+    }
   };
 
   useEffect(() => {
-    loadData();
+    initialLoad();
   }, [eventId]);
 
+  const unregisteredCount = useMemo(() => {
+    const registeredIds = new Set(registrations.map(r => r.profile_id));
+    return profiles.filter(p => p.is_active !== false && !registeredIds.has(p.id)).length;
+  }, [profiles, registrations]);
+
   if (!event) {
-    return <div className="p-8 text-center text-slate-500">Memuat detail event...</div>;
+    return (
+      <div className="space-y-4">
+        <Link href="/events" className="inline-flex items-center gap-1 min-h-[44px] sm:min-h-0 text-sm text-ink-2 hover:text-ink">
+          <ArrowLeft size={14} aria-hidden />
+          Daftar event
+        </Link>
+        <Panel>
+          {loadState === 'error' ? (
+            <StateMessage
+              kind="error"
+              title="Detail event gagal dimuat."
+              description="Periksa koneksi lalu coba lagi."
+              action={<Button size="sm" onClick={initialLoad}>Coba lagi</Button>}
+            />
+          ) : loadState === 'missing' ? (
+            <StateMessage kind="empty" title="Event tidak ditemukan." description="Event ini mungkin sudah dihapus." />
+          ) : (
+            <StateMessage kind="loading" title="Memuat detail event..." />
+          )}
+        </Panel>
+      </div>
+    );
   }
 
   const handleAdminRegister = async (e: React.FormEvent) => {
@@ -192,12 +184,29 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
       setRegMsg(res.error);
       showToast(res.error, 'error', 'Gagal Mendaftarkan Umat');
     } else {
-      setRegMsg('✓ Umat berhasil didaftarkan oleh Admin');
+      setRegMsg('Umat berhasil didaftarkan.');
       showToast('Umat berhasil didaftarkan ke event ini.', 'success', 'Pendaftaran Berhasil');
       setTimeout(() => setRegMsg(''), 3000);
       setIsRegModalOpen(false);
       loadData();
     }
+  };
+
+  // Registers from the "Belum Daftar" tab; the row moves to the participant list on success.
+  const handleQuickRegister = async (profile: Profile) => {
+    let adminId: string | undefined;
+    try {
+      adminId = JSON.parse(localStorage.getItem('vihara_admin_profile') || '{}').id;
+    } catch {}
+    const res = await registerForEvent(event.id, profile.id, adminId);
+    if (res.error || !res.registration) {
+      showToast(res.error || 'Pendaftaran gagal.', 'error', 'Gagal mendaftarkan');
+      return false;
+    }
+    const registration = res.registration;
+    setRegistrations(prev => [...prev, { ...registration, profile }]);
+    showToast(`${profile.full_name} didaftarkan.`, 'success', 'Terdaftar');
+    return true;
   };
 
   const handleCancelRegistration = async (regId: string) => {
@@ -543,232 +552,122 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
     }
   };
 
-  const isPastEvent = new Date(event.event_date) < new Date();
   const isPublished = event.is_published ?? false;
   const isCompleted = event.is_completed ?? false;
+  const isComplex = event.is_complex ?? true;
+
+  const openPdf = (mode: 'proposal' | 'lpj' | 'peserta') => {
+    setPdfMode(mode);
+    setIsPdfModalOpen(true);
+  };
+
+  const tabs: { id: TabId; label: string; count?: number }[] = [
+    { id: 'overview', label: 'Ringkasan' },
+    ...(isComplex
+      ? [
+          { id: 'bidang' as const, label: 'Panitia' },
+          { id: 'rundown' as const, label: 'Susunan acara', count: event.proposal_rundowns?.length || 0 },
+          { id: 'skenario' as const, label: 'Jadwal tim', count: event.skenario_kerja?.length || 0 }
+        ]
+      : []),
+    { id: 'registrasi', label: 'Peserta', count: registrations.length },
+    { id: 'belum', label: 'Belum Daftar', count: unregisteredCount },
+    ...(isComplex ? [{ id: 'rab' as const, label: 'Keuangan' }] : []),
+    { id: 'laporan', label: 'Dokumen' }
+  ];
+
+  const handleTabKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    const index = tabs.findIndex(t => t.id === activeTab);
+    const next = tabs[(index + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length];
+    setActiveTab(next.id);
+    const nextTab = document.getElementById(`event-tab-${next.id}`);
+    nextTab?.focus();
+    nextTab?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Header & Title */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-purple-100 dark:border-purple-900/60 pb-5">
-        <div className="space-y-1">
-          <Link
-            href="/events"
-            className="inline-flex items-center gap-1 text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline mb-1"
-          >
-            <ArrowLeft size={14} />
-            <span>Kembali ke Daftar Event</span>
-          </Link>
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-              {event.title}
-            </h1>
-            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
-              isCompleted
-                ? 'bg-slate-200 text-slate-800 border-slate-400 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700'
-                : isPublished
-                  ? 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800'
-                  : 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800'
-            }`}>
-              {isCompleted ? 'Event Selesai (Arsip)' : isPublished ? 'Diterbitkan (Publik)' : 'Draf Perencanaan'}
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-4">
-            <span className="flex items-center gap-1">
-              <CalendarDays size={14} className="text-purple-600" />
+    <div className="space-y-5">
+      <div className="space-y-3">
+        <Link href="/events" className="inline-flex items-center gap-1 min-h-[44px] sm:min-h-0 text-sm text-ink-2 hover:text-ink">
+          <ArrowLeft size={14} aria-hidden />
+          Daftar event
+        </Link>
+
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+          <div className="space-y-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h1 className="text-xl font-bold tracking-tight text-ink break-words">{event.title}</h1>
+              {isCompleted ? (
+                <Badge tone="neutral">Selesai</Badge>
+              ) : isPublished ? (
+                <Badge tone="ok">Diterbitkan</Badge>
+              ) : (
+                <Badge tone="gold">Draf</Badge>
+              )}
+            </div>
+            <p className="text-sm text-ink-2">
               {new Date(event.event_date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-            </span>
-            <span className="flex items-center gap-1">
-              <MapPin size={14} className="text-purple-600" />
-              {event.location}
-            </span>
-          </p>
-        </div>
+              {event.location ? <> · {event.location}</> : null}
+            </p>
+          </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={handleCopyWaList}
-            className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-xs border active:scale-95 ${
-              copiedWa
-                ? 'bg-emerald-600 text-white border-emerald-600'
-                : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 hover:bg-emerald-200 border-emerald-200 dark:border-emerald-800'
-            }`}
-            title="Salin daftar pendaftar event berbentuk teks siap kirim ke WhatsApp"
-          >
-            {copiedWa ? <Check size={14} /> : <Copy size={14} />}
-            <span>{copiedWa ? '✓ Copied List WA!' : 'Salin List WA'}</span>
-          </button>
-
-          <Link
-            href={`/belum-daftar?event=${event.id}`}
-            className="px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition shadow-xs border bg-white dark:bg-[#160e29] text-slate-800 dark:text-slate-200 border-slate-200 dark:border-purple-900 hover:bg-slate-50 dark:hover:bg-purple-950"
-          >
-            <UserX size={14} />
-            <span>Lihat yang Belum Daftar</span>
-          </Link>
-
-          <button
-            onClick={handleToggleComplete}
-            className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-xs border active:scale-95 ${
-              isCompleted
-                ? 'bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 hover:bg-amber-200 border-amber-300 dark:border-amber-800'
-                : 'bg-slate-800 hover:bg-slate-900 text-white dark:bg-slate-700 dark:hover:bg-slate-600'
-            }`}
-          >
-            <CheckCircle2 size={14} />
-            <span>{isCompleted ? 'Buka Kembali Event' : 'Tandai Event Selesai'}</span>
-          </button>
-
-          {/* Top Actions Buttons (Scrollable on Mobile) */}
-          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 overflow-x-auto scrollbar-none pb-1 w-full sm:w-auto">
-            <button
-              onClick={handleTogglePublish}
-              className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer border shrink-0 active:scale-95 ${
-                isPublished
-                  ? 'bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300 border-slate-300 dark:border-slate-800'
-                  : 'bg-emerald-600 text-white hover:bg-emerald-700 border-emerald-700 shadow-xs'
-              }`}
-            >
-              {isPublished ? <FileEdit size={14} /> : <Globe size={14} />}
-              <span>{isPublished ? 'Kembalikan ke Draf' : 'Terbitkan Event ke Umat'}</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setPdfMode('peserta');
-                setIsPdfModalOpen(true);
-              }}
-              className="px-3 py-2 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 hover:bg-emerald-200 text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer border border-emerald-200 dark:border-emerald-800 shrink-0 active:scale-95"
-            >
-              <Users size={14} />
-              <span>Cetak List Peserta</span>
-            </button>
-
-            {(event.is_complex ?? true) && (
-              <>
-                <button
-                  onClick={() => {
-                    setPdfMode('proposal');
-                    setIsPdfModalOpen(true);
-                  }}
-                  className="px-3 py-2 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-200 hover:bg-purple-200 text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer border border-purple-200 dark:border-purple-800 shrink-0 active:scale-95"
-                >
-                  <Printer size={14} />
-                  <span>Cetak Proposal Event</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setPdfMode('lpj');
-                    setIsPdfModalOpen(true);
-                  }}
-                  className="px-3 py-2 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 hover:bg-amber-200 text-xs font-extrabold flex items-center gap-1.5 transition cursor-pointer border border-amber-200 dark:border-amber-800 shrink-0 active:scale-95"
-                >
-                  <FileText size={14} />
-                  <span>Cetak LPJ Event</span>
-                </button>
-              </>
-            )}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="primary" onClick={handleTogglePublish}>
+              {isPublished ? 'Kembalikan ke draf' : 'Terbitkan'}
+            </Button>
+            <Button onClick={handleToggleComplete}>
+              {isCompleted ? 'Buka kembali' : 'Tandai selesai'}
+            </Button>
+            <div role="group" aria-label="Cetak dokumen" className="flex flex-wrap items-center gap-2">
+              <Button onClick={() => openPdf('peserta')}>
+                <Printer size={14} aria-hidden />
+                Cetak peserta
+              </Button>
+              {isComplex && (
+                <>
+                  <Button onClick={() => openPdf('proposal')}>Cetak proposal</Button>
+                  <Button onClick={() => openPdf('lpj')}>Cetak LPJ</Button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Workspace Navigation Tabs (Sleek Segmented Pill Container, Instant Tactile Switch) */}
-      <div className="bg-slate-100/90 dark:bg-purple-950/40 p-1.5 rounded-2xl border border-slate-200/80 dark:border-purple-900/50 flex overflow-x-auto scrollbar-none gap-1.5 shadow-xs">
-        <button
-          onClick={() => setActiveTab('overview')}
-          className={`py-2 px-3.5 rounded-xl text-xs transition flex items-center gap-2 whitespace-nowrap cursor-pointer active:scale-95 ${
-            activeTab === 'overview'
-              ? 'bg-white dark:bg-[#1f1338] text-purple-950 dark:text-amber-300 font-black shadow-xs border border-slate-200/80 dark:border-purple-700/60'
-              : 'text-slate-600 dark:text-purple-300/80 font-bold hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-purple-900/30'
-          }`}
-        >
-          <CalendarDays size={15} />
-          <span>Overview</span>
-        </button>
-
-        {(event.is_complex ?? true) && (
-          <>
+      <div
+        role="tablist"
+        aria-label="Bagian event"
+        onKeyDown={handleTabKeyDown}
+        className="flex relative overflow-x-auto border-b border-line"
+      >
+        {tabs.map(tab => {
+          const selected = activeTab === tab.id;
+          return (
             <button
-              onClick={() => setActiveTab('bidang')}
-              className={`py-2 px-3.5 rounded-xl text-xs transition flex items-center gap-2 whitespace-nowrap cursor-pointer active:scale-95 ${
-                activeTab === 'bidang'
-                  ? 'bg-white dark:bg-[#1f1338] text-purple-950 dark:text-amber-300 font-black shadow-xs border border-slate-200/80 dark:border-purple-700/60'
-                  : 'text-slate-600 dark:text-purple-300/80 font-bold hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-purple-900/30'
+              key={tab.id}
+              id={`event-tab-${tab.id}`}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              aria-controls="event-tabpanel"
+              tabIndex={selected ? 0 : -1}
+              onClick={e => {
+                setActiveTab(tab.id);
+                e.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+              }}
+              className={`shrink-0 min-h-[44px] px-3 -mb-px border-b-2 text-sm whitespace-nowrap cursor-pointer ${
+                selected ? 'border-brand text-ink font-semibold' : 'border-transparent text-ink-2 font-medium hover:text-ink'
               }`}
             >
-              <Layers size={15} />
-              <span>Panitia & Struktur</span>
+              {tab.label}
+              {tab.count !== undefined && <span className="ml-1.5 text-xs tabular-nums text-ink-3">{tab.count}</span>}
             </button>
-
-            <button
-              onClick={() => setActiveTab('rundown')}
-              className={`py-2 px-3.5 rounded-xl text-xs transition flex items-center gap-2 whitespace-nowrap cursor-pointer active:scale-95 ${
-                activeTab === 'rundown'
-                  ? 'bg-white dark:bg-[#1f1338] text-purple-950 dark:text-amber-300 font-black shadow-xs border border-slate-200/80 dark:border-purple-700/60'
-                  : 'text-slate-600 dark:text-purple-300/80 font-bold hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-purple-900/30'
-              }`}
-            >
-              <Clock size={15} />
-              <span>Susunan Acara ({event.proposal_rundowns?.length || 0})</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('skenario')}
-              className={`py-2 px-3.5 rounded-xl text-xs transition flex items-center gap-2 whitespace-nowrap cursor-pointer active:scale-95 ${
-                activeTab === 'skenario'
-                  ? 'bg-white dark:bg-[#1f1338] text-purple-950 dark:text-amber-300 font-black shadow-xs border border-slate-200/80 dark:border-purple-700/60'
-                  : 'text-slate-600 dark:text-purple-300/80 font-bold hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-purple-900/30'
-              }`}
-            >
-              <ListTodo size={15} />
-              <span>Jadwal Tim ({event.skenario_kerja?.length || 0})</span>
-            </button>
-          </>
-        )}
-
-        <button
-          onClick={() => setActiveTab('registrasi')}
-          className={`py-2 px-3.5 rounded-xl text-xs transition flex items-center gap-2 whitespace-nowrap cursor-pointer active:scale-95 ${
-            activeTab === 'registrasi'
-              ? 'bg-white dark:bg-[#1f1338] text-purple-950 dark:text-amber-300 font-black shadow-xs border border-slate-200/80 dark:border-purple-700/60'
-              : 'text-slate-600 dark:text-purple-300/80 font-bold hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-purple-900/30'
-          }`}
-        >
-          <UserCheck size={15} />
-          <span>Daftar Peserta & Kehadiran ({registrations.length})</span>
-        </button>
-
-        {(event.is_complex ?? true) && (
-          <button
-            onClick={() => setActiveTab('rab')}
-            className={`py-2 px-3.5 rounded-xl text-xs transition flex items-center gap-2 whitespace-nowrap cursor-pointer active:scale-95 ${
-              activeTab === 'rab'
-                ? 'bg-white dark:bg-[#1f1338] text-purple-950 dark:text-amber-300 font-black shadow-xs border border-slate-200/80 dark:border-purple-700/60'
-                : 'text-slate-600 dark:text-purple-300/80 font-bold hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-purple-900/30'
-            }`}
-          >
-            <Receipt size={15} />
-            <span>RAB & Keuangan</span>
-          </button>
-        )}
-
-        <button
-          onClick={() => setActiveTab('laporan')}
-          className={`py-2 px-3.5 rounded-xl text-xs transition flex items-center gap-2 whitespace-nowrap cursor-pointer active:scale-95 ${
-            activeTab === 'laporan'
-              ? 'bg-white dark:bg-[#1f1338] text-purple-950 dark:text-amber-300 font-black shadow-xs border border-slate-200/80 dark:border-purple-700/60'
-              : 'text-slate-600 dark:text-purple-300/80 font-bold hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-purple-900/30'
-          }`}
-        >
-          <FileText size={15} />
-          <span>Dokumen & Laporan</span>
-        </button>
+          );
+        })}
       </div>
 
-      {/* TAB CONTENT COMPONENTS */}
+      <div role="tabpanel" id="event-tabpanel" aria-labelledby={`event-tab-${activeTab}`}>
       {activeTab === 'overview' && (
         <EventOverviewTab event={event} registrations={registrations} />
       )}
@@ -811,6 +710,15 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
         />
       )}
 
+      {activeTab === 'belum' && (
+        <EventBelumDaftarTab
+          event={event}
+          profiles={profiles}
+          registrations={registrations}
+          onRegister={handleQuickRegister}
+        />
+      )}
+
       {activeTab === 'rab' && (
         <EventRABTab
           event={event}
@@ -825,14 +733,11 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
         <EventLaporanTab
           event={event}
           registrations={registrations}
-          onOpenPdfModal={(mode) => {
-            setPdfMode(mode);
-            setIsPdfModalOpen(true);
-          }}
+          onOpenPdfModal={openPdf}
         />
       )}
+      </div>
 
-      {/* MODALS CONTAINER */}
       <EventModals
         event={event}
         profiles={profiles}
@@ -921,7 +826,6 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
         onCloseEditBudgetModal={() => setIsEditBudgetModalOpen(false)}
       />
 
-      {/* PRINTABLE PDF MODAL */}
       {isPdfModalOpen && (
         <EventPdfModal
           event={event}
@@ -931,7 +835,6 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
         />
       )}
 
-      {/* EVENT PRICING & EXTRA FEES MODAL */}
       <EventPricingModal
         isOpen={isPricingModalOpen}
         event={event}

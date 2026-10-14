@@ -1,7 +1,13 @@
 import React from 'react';
-import { Plus, FileSpreadsheet, TrendingUp, TrendingDown, DollarSign, Wallet, Users, Trash2, Edit2, CheckCircle2, AlertTriangle, ArrowDown } from 'lucide-react';
+import { Plus, FileSpreadsheet, Trash2, Edit2 } from 'lucide-react';
 import { ViharaEvent, EventRegistration } from '@/types/database';
 import { exportRABToExcel } from '@/lib/export-utils';
+import { Badge, Button, Panel } from '@/components/ui/kit';
+
+const rupiah = (n: number) => `Rp ${n.toLocaleString('id-ID')}`;
+
+const iconButton =
+  'inline-flex items-center justify-center w-11 h-11 sm:w-8 sm:h-8 rounded-lg text-ink-2 hover:bg-surface-2 hover:text-ink cursor-pointer';
 
 export interface GroupedBudgetItem {
   key: string;
@@ -34,7 +40,7 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
   const rabItems = event.budgets?.filter(b => b.budget_type === 'rab') || [];
   const realisasiItems = event.budgets?.filter(b => b.budget_type === 'realisasi') || [];
 
-  // Calculate total Umat registration fees for ALL registered Umat (Base Price + Extra Fees)
+  // Expected fee per registrant = base price for their bagian + selected extra fees.
   const pricing = event.pricing_per_bagian || {};
   const extraFees = event.extra_fees || [];
   let totalUmatRegistrationFees = 0;
@@ -62,7 +68,7 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
   const totalRealisasi = realisasiItems.reduce((acc, curr) => acc + curr.amount, 0);
   const saldoKasGlobal = totalPemasukanGlobal - totalRealisasi;
 
-  // Group budgets by Item Name to prevent duplicate separate rows for RAB and Realisasi
+  // One row per item name so RAB and realisasi of the same item sit side by side.
   const groupedMap: Record<string, GroupedBudgetItem> = {};
 
   (event.budgets || []).forEach((b) => {
@@ -96,234 +102,144 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
 
   const groupedItems = Object.values(groupedMap);
 
+  const statusBadge = (item: GroupedBudgetItem) => {
+    const diff = item.realisasi - item.rab;
+    const hasRab = item.rab > 0;
+    const hasRealisasi = item.realisasi > 0;
+    if (item.pemasukan > 0) return <Badge tone="ok">Pemasukan</Badge>;
+    if (hasRab && hasRealisasi) {
+      if (diff === 0) return <Badge tone="ok">Sesuai anggaran</Badge>;
+      if (diff > 0) return <Badge tone="danger">Lebih {rupiah(diff)}</Badge>;
+      return <Badge tone="ok">Hemat {rupiah(Math.abs(diff))}</Badge>;
+    }
+    if (hasRab && !hasRealisasi) return <Badge tone="gold">Belum terpakai</Badge>;
+    return <Badge>Pengeluaran tambahan</Badge>;
+  };
+
   return (
-    <div className="space-y-6 print:hidden">
-      <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-purple-100 dark:border-purple-900/60 pb-3">
+    <div className="space-y-4 print:hidden">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
+        <div>
+          <h2 className="text-base font-semibold text-ink">Anggaran dan pengeluaran</h2>
+          <p className="text-sm text-ink-2">Penerimaan pendaftaran, rencana anggaran (RAB), dan pengeluaran kegiatan.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button onClick={() => exportRABToExcel(event.title, event.budgets || [], totalUmatRegistrationFees, registrations.length)}>
+            <FileSpreadsheet size={14} aria-hidden />
+            Unduh Excel
+          </Button>
+          <Button variant="primary" onClick={() => onOpenBudgetModal()}>
+            <Plus size={14} aria-hidden />
+            Tambah item anggaran
+          </Button>
+        </div>
+      </div>
+
+      <Panel className="p-5 space-y-4">
+        <div>
+          <p className="text-sm text-ink-2">Sisa kas kegiatan</p>
+          <p className={`text-3xl font-bold tabular-nums ${saldoKasGlobal >= 0 ? 'text-brand' : 'text-danger'}`}>
+            {rupiah(saldoKasGlobal)}
+          </p>
+          <p className="text-xs text-ink-3">{saldoKasGlobal >= 0 ? 'Surplus' : 'Defisit'}</p>
+        </div>
+        <dl className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-line pt-4">
           <div>
-            <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-              <Wallet size={18} className="text-purple-600" />
-              <span>Anggaran & Pengeluaran Kegiatan</span>
-            </h3>
-            <p className="text-xs text-slate-500">Pencatatan penerimaan pendaftaran, rencana anggaran (RAB), dan pengeluaran kegiatan.</p>
+            <dt className="text-xs text-ink-3">Total pemasukan</dt>
+            <dd className="text-sm font-semibold tabular-nums text-ink">{rupiah(totalPemasukanGlobal)}</dd>
+            <dd className="text-xs text-ink-3">
+              {registrations.length} peserta {rupiah(totalUmatRegistrationFees)}, lainnya {rupiah(totalPemasukanManual)}
+            </dd>
           </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => exportRABToExcel(event.title, event.budgets || [], totalUmatRegistrationFees, registrations.length)}
-              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1 shadow cursor-pointer"
-            >
-              <FileSpreadsheet size={14} />
-              <span>Unduh RAB (Excel)</span>
-            </button>
-
-            <button
-              onClick={() => onOpenBudgetModal()}
-              className="px-3 py-1.5 rounded-xl gradient-mnsbdi text-white font-extrabold text-xs flex items-center gap-1 shadow-md cursor-pointer"
-            >
-              <Plus size={14} />
-              <span>Tambah Item Anggaran</span>
-            </button>
+          <div>
+            <dt className="text-xs text-ink-3">Anggaran (RAB)</dt>
+            <dd className="text-sm font-semibold tabular-nums text-ink">{rupiah(totalRAB)}</dd>
           </div>
-        </div>
-
-        {/* 4 Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-          {/* Card Total Pemasukan Global */}
-          <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60">
-            <div className="flex items-center justify-between text-emerald-800 dark:text-emerald-300 font-bold mb-1">
-              <span className="text-[11px]">Total Pemasukan:</span>
-              <TrendingUp size={14} />
-            </div>
-            <strong className="text-base font-black text-emerald-950 dark:text-emerald-100 block">
-              Rp {totalPemasukanGlobal.toLocaleString('id-ID')}
-            </strong>
-            <span className="text-[10px] text-slate-500 block mt-0.5 leading-tight">
-              ({registrations.length} Peserta: Rp {totalUmatRegistrationFees.toLocaleString('id-ID')} + Pemasukan Lain: Rp {totalPemasukanManual.toLocaleString('id-ID')})
-            </span>
+          <div>
+            <dt className="text-xs text-ink-3">Pengeluaran aktual</dt>
+            <dd className="text-sm font-semibold tabular-nums text-ink">{rupiah(totalRealisasi)}</dd>
           </div>
+        </dl>
+      </Panel>
 
-          {/* Card Target RAB */}
-          <div className="p-3.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/60">
-            <div className="flex items-center justify-between text-purple-800 dark:text-purple-300 font-bold mb-1">
-              <span className="text-[11px]">Anggaran (RAB):</span>
-              <DollarSign size={14} />
-            </div>
-            <strong className="text-base font-black text-purple-950 dark:text-purple-100 block">
-              Rp {totalRAB.toLocaleString('id-ID')}
-            </strong>
-            <span className="text-[10px] text-slate-500 block mt-0.5">Rencana Alokasi Dana</span>
-          </div>
-
-          {/* Card Realisasi */}
-          <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60">
-            <div className="flex items-center justify-between text-amber-800 dark:text-amber-300 font-bold mb-1">
-              <span className="text-[11px]">Pengeluaran Aktual:</span>
-              <TrendingDown size={14} />
-            </div>
-            <strong className="text-base font-black text-amber-950 dark:text-amber-100 block">
-              Rp {totalRealisasi.toLocaleString('id-ID')}
-            </strong>
-            <span className="text-[10px] text-slate-500 block mt-0.5">Total Dana Terpakai</span>
-          </div>
-
-          {/* Card Saldo Kas */}
-          <div className={`p-3.5 rounded-xl border ${
-            saldoKasGlobal >= 0 
-              ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/60 text-blue-950 dark:text-blue-100'
-              : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/60 text-rose-950 dark:text-rose-100'
-          }`}>
-            <div className="flex items-center justify-between font-bold mb-1">
-              <span className="text-[11px]">Sisa Kas Kegiatan:</span>
-              <Wallet size={14} />
-            </div>
-            <strong className="text-base font-black block">
-              Rp {saldoKasGlobal.toLocaleString('id-ID')}
-            </strong>
-            <span className="text-[10px] opacity-80 block mt-0.5">
-              {saldoKasGlobal >= 0 ? 'Surplus' : 'Defisit'}
-            </span>
-          </div>
-        </div>
-
-        {/* Financial Table with Grouped Items & Quick Realisasi Input */}
-        <div className="overflow-x-auto pt-2">
-          <table className="w-full text-left text-xs border-collapse">
+      <Panel className="overflow-hidden">
+        <div className="relative overflow-x-auto">
+          <table className="w-full min-w-[720px] text-left text-sm">
             <thead>
-              <tr className="border-b border-purple-100 dark:border-purple-900/60 text-slate-400 font-extrabold">
-                <th className="pb-3 w-10 text-center">No</th>
-                <th className="pb-3">Uraian Kebutuhan / Item</th>
-                <th className="pb-3 text-right text-emerald-600 dark:text-emerald-400">Pemasukan (Rp)</th>
-                <th className="pb-3 text-right text-purple-600 dark:text-purple-400">Anggaran (RAB)</th>
-                <th className="pb-3 text-right text-amber-600 dark:text-amber-400">Pengeluaran</th>
-                <th className="pb-3 text-center">Status / Selisih</th>
-                <th className="pb-3 text-center w-36">Aksi</th>
+              <tr className="border-b border-line text-xs text-ink-3">
+                <th scope="col" className="py-2.5 px-4 font-medium w-12">No</th>
+                <th scope="col" className="py-2.5 px-4 font-medium">Uraian</th>
+                <th scope="col" className="py-2.5 px-4 font-medium text-right">Pemasukan</th>
+                <th scope="col" className="py-2.5 px-4 font-medium text-right">Anggaran (RAB)</th>
+                <th scope="col" className="py-2.5 px-4 font-medium text-right">Pengeluaran</th>
+                <th scope="col" className="py-2.5 px-4 font-medium">Status</th>
+                <th scope="col" className="py-2.5 px-4"><span className="sr-only">Aksi</span></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-purple-50 dark:divide-purple-900/40">
-              {/* Mandatory Row: Biaya Kegiatan dari Umat Terdaftar */}
-              <tr className="bg-emerald-50/70 dark:bg-emerald-950/50 font-black">
-                <td className="py-3 text-center text-emerald-700 dark:text-emerald-300">1</td>
-                <td className="py-3 text-emerald-950 dark:text-emerald-100 font-extrabold flex items-center gap-1.5">
-                  <Users size={14} className="text-emerald-600 dark:text-emerald-400" />
-                  <span>Penerimaan Pendaftaran Peserta ({registrations.length} Orang)</span>
-                </td>
-                <td className="py-3 text-right text-emerald-700 dark:text-emerald-300 font-black text-sm">
-                  Rp {totalUmatRegistrationFees.toLocaleString('id-ID')}
-                </td>
-                <td className="py-3 text-right text-slate-400">-</td>
-                <td className="py-3 text-right text-slate-400">-</td>
-                <td className="py-3 text-center">
-                  <span className="px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-emerald-200 text-emerald-950 dark:bg-emerald-900 dark:text-emerald-100">
-                    Pemasukan Pendaftaran
-                  </span>
-                </td>
-                <td className="py-3 text-center text-slate-400 text-[10px] italic">Sistem</td>
+            <tbody className="divide-y divide-line">
+              <tr className="bg-surface-2">
+                <td className="py-2.5 px-4 tabular-nums text-ink-3">1</td>
+                <td className="py-2.5 px-4 font-medium text-ink">Pendaftaran peserta ({registrations.length} orang)</td>
+                <td className="py-2.5 px-4 text-right tabular-nums text-ink">{rupiah(totalUmatRegistrationFees)}</td>
+                <td className="py-2.5 px-4 text-right text-ink-3">-</td>
+                <td className="py-2.5 px-4 text-right text-ink-3">-</td>
+                <td className="py-2.5 px-4"><Badge tone="ok">Pemasukan</Badge></td>
+                <td className="py-2.5 px-4 text-right text-xs text-ink-3">Otomatis</td>
               </tr>
 
-              {groupedItems.length > 0 ? (
-                groupedItems.map((item, i) => {
-                  const diff = item.realisasi - item.rab;
-                  const hasRab = item.rab > 0;
-                  const hasRealisasi = item.realisasi > 0;
-                  const hasPemasukan = item.pemasukan > 0;
-                  const allItemIds = [item.rabId, item.realisasiId, item.pemasukanId].filter(Boolean) as string[];
+              {groupedItems.map((item, i) => {
+                const hasRab = item.rab > 0;
+                const hasRealisasi = item.realisasi > 0;
+                const hasPemasukan = item.pemasukan > 0;
+                const allItemIds = [item.rabId, item.realisasiId, item.pemasukanId].filter(Boolean) as string[];
 
-                  return (
-                    <tr key={item.key} className="hover:bg-purple-50/50 dark:hover:bg-purple-950/40">
-                      <td className="py-3 text-center font-bold text-slate-500">{i + 2}</td>
-                      <td className="py-3 font-extrabold text-slate-900 dark:text-white">{item.itemName}</td>
-                      
-                      {/* Pemasukan */}
-                      <td className="py-3 text-right font-black text-emerald-600 dark:text-emerald-400">
-                        {hasPemasukan ? `Rp ${item.pemasukan.toLocaleString('id-ID')}` : '-'}
-                      </td>
-
-                      {/* Target RAB */}
-                      <td className="py-3 text-right font-bold text-purple-700 dark:text-purple-300">
-                        {hasRab ? `Rp ${item.rab.toLocaleString('id-ID')}` : '-'}
-                      </td>
-
-                      {/* Realisasi Pengeluaran */}
-                      <td className="py-3 text-right font-black text-amber-700 dark:text-amber-300">
-                        {hasRealisasi ? `Rp ${item.realisasi.toLocaleString('id-ID')}` : '-'}
-                      </td>
-
-                      {/* Status / Selisih */}
-                      <td className="py-3 text-center">
-                        {hasPemasukan ? (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
-                            Pemasukan
-                          </span>
-                        ) : hasRab && hasRealisasi ? (
-                          diff === 0 ? (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 inline-flex items-center gap-1">
-                              <CheckCircle2 size={12} /> Sesuai Anggaran
-                            </span>
-                          ) : diff > 0 ? (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-300 inline-flex items-center gap-1">
-                              <AlertTriangle size={12} /> Lebih Rp {diff.toLocaleString('id-ID')}
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 inline-flex items-center gap-1">
-                              <ArrowDown size={12} /> Hemat Rp {Math.abs(diff).toLocaleString('id-ID')}
-                            </span>
-                          )
-                        ) : hasRab && !hasRealisasi ? (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-300">
-                            Belum Terpakai
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300">
-                            Pengeluaran Tambahan
-                          </span>
+                return (
+                  <tr key={item.key} className="hover:bg-surface-2">
+                    <td className="py-2 px-4 tabular-nums text-ink-3">{i + 2}</td>
+                    <td className="py-2 px-4 font-medium text-ink">{item.itemName}</td>
+                    <td className="py-2 px-4 text-right tabular-nums text-ink">{hasPemasukan ? rupiah(item.pemasukan) : '-'}</td>
+                    <td className="py-2 px-4 text-right tabular-nums text-ink">{hasRab ? rupiah(item.rab) : '-'}</td>
+                    <td className="py-2 px-4 text-right tabular-nums text-ink">{hasRealisasi ? rupiah(item.realisasi) : '-'}</td>
+                    <td className="py-2 px-4">{statusBadge(item)}</td>
+                    <td className="py-1 px-4">
+                      <div className="flex items-center justify-end gap-1">
+                        {hasRab && !hasRealisasi && (
+                          <Button size="sm" onClick={() => onOpenBudgetModal(item.itemName, 'realisasi')}>
+                            Catat pengeluaran
+                          </Button>
                         )}
-                      </td>
-
-                      {/* Aksi */}
-                      <td className="py-3 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          {hasRab && !hasRealisasi && (
-                            <button
-                              onClick={() => onOpenBudgetModal(item.itemName, 'realisasi')}
-                              className="px-2 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-[10px] flex items-center gap-1 shadow cursor-pointer"
-                              title="Catat pengeluaran untuk item ini"
-                            >
-                              <Plus size={11} />
-                              <span>+ Pengeluaran</span>
-                            </button>
-                          )}
-
-                          {onOpenEditBudgetModal && (
-                            <button
-                              onClick={() => onOpenEditBudgetModal(item)}
-                              className="p-1 text-slate-400 hover:text-amber-500 transition cursor-pointer"
-                              title="Edit item keuangan ini"
-                            >
-                              <Edit2 size={13} />
-                            </button>
-                          )}
-
-                          {onDeleteBudgetItems && (
-                            <button
-                              onClick={() => onDeleteBudgetItems(allItemIds)}
-                              className="p-1 text-slate-400 hover:text-rose-500 transition cursor-pointer"
-                              title="Hapus seluruh item keuangan ini"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : null}
+                        {onOpenEditBudgetModal && (
+                          <button
+                            type="button"
+                            onClick={() => onOpenEditBudgetModal(item)}
+                            className={iconButton}
+                            aria-label={`Ubah ${item.itemName}`}
+                          >
+                            <Edit2 size={15} aria-hidden />
+                          </button>
+                        )}
+                        {onDeleteBudgetItems && (
+                          <button
+                            type="button"
+                            onClick={() => onDeleteBudgetItems(allItemIds)}
+                            className={`${iconButton} hover:text-danger hover:bg-danger-soft`}
+                            aria-label={`Hapus ${item.itemName}`}
+                          >
+                            <Trash2 size={15} aria-hidden />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
-      </div>
+        {groupedItems.length === 0 && (
+          <p className="px-4 py-3 border-t border-line text-sm text-ink-3">Belum ada item anggaran selain pendaftaran.</p>
+        )}
+      </Panel>
     </div>
   );
 };
-

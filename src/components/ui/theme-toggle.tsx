@@ -4,57 +4,33 @@ import { useState, useEffect } from 'react';
 import { Sun, Moon } from 'lucide-react';
 
 export default function ThemeToggle() {
-  const [darkMode, setDarkMode] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [darkMode, setDarkMode] = useState<boolean | null>(null);
 
+  // The root layout script already applied the saved theme; read it back from the DOM.
   useEffect(() => {
-    setMounted(true);
-    const saved = localStorage.getItem('vihara-theme');
-    const isDark = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    setDarkMode(isDark);
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    setDarkMode(document.documentElement.classList.contains('dark'));
   }, []);
 
   const toggleTheme = () => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    if (newMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('vihara-theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('vihara-theme', 'light');
-    }
+    const next = !darkMode;
+    setDarkMode(next);
+    document.documentElement.classList.toggle('dark', next);
+    try {
+      localStorage.setItem('vihara-theme', next ? 'dark' : 'light');
+    } catch {}
   };
 
-  if (!mounted) return null;
+  if (darkMode === null) return <span className="w-11 h-11" aria-hidden />;
 
   return (
     <button
       onClick={toggleTheme}
       type="button"
-      className="p-2 sm:px-3 sm:py-1.5 rounded-full border border-black/[0.08] dark:border-white/[0.12] transition-all flex items-center gap-1.5 text-xs font-medium
-        bg-black/[0.04] dark:bg-white/[0.08] hover:bg-black/[0.07] dark:hover:bg-white/[0.14] 
-        text-neutral-800 dark:text-neutral-200 cursor-pointer
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
-      title={darkMode ? "Ganti ke Terang" : "Ganti ke Gelap"}
-      aria-label={darkMode ? "Ganti ke mode terang" : "Ganti ke mode gelap"}
+      className="min-h-[44px] sm:min-h-[36px] px-3 rounded-lg flex items-center gap-1.5 text-sm text-ink-2 hover:text-ink hover:bg-surface-2 cursor-pointer"
+      aria-label={darkMode ? 'Ganti ke mode terang' : 'Ganti ke mode gelap'}
     >
-      {darkMode ? (
-        <>
-          <Sun size={14} className="text-amber-400 shrink-0" />
-          <span className="hidden sm:inline text-[11px] font-medium tracking-tight">Terang</span>
-        </>
-      ) : (
-        <>
-          <Moon size={14} className="text-neutral-700 dark:text-neutral-300 shrink-0" />
-          <span className="hidden sm:inline text-[11px] font-medium tracking-tight">Gelap</span>
-        </>
-      )}
+      {darkMode ? <Sun size={16} aria-hidden /> : <Moon size={16} aria-hidden />}
+      <span className="hidden sm:inline">{darkMode ? 'Terang' : 'Gelap'}</span>
     </button>
   );
 }

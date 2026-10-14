@@ -40,46 +40,30 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     <ToastContext.Provider value={{ showToast }}>
       {children}
 
-      {/* Floating Toast Container */}
-      <div className="fixed top-5 right-5 z-[99999] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none print:hidden">
+      <div aria-live="polite" className="fixed bottom-4 left-4 right-4 sm:left-auto sm:bottom-auto sm:top-4 z-[99999] flex flex-col gap-2 sm:max-w-sm sm:w-full pointer-events-none print:hidden">
         {toasts.map((toast) => {
           const isSuccess = toast.type === 'success';
           const isError = toast.type === 'error';
+          const Icon = isSuccess ? CheckCircle2 : isError ? AlertTriangle : Info;
 
           return (
             <div
               key={toast.id}
-              className={`pointer-events-auto p-4 rounded-xl shadow-lg border flex items-start gap-3 transition-all duration-200 animate-in fade-in slide-in-from-top-4 ${
-                isSuccess
-                  ? 'bg-emerald-950 border-emerald-600 text-emerald-100'
-                  : isError
-                  ? 'bg-rose-950 border-rose-600 text-rose-100'
-                  : 'bg-slate-900 border-slate-700 text-slate-100'
-              }`}
+              role={isError ? 'alert' : 'status'}
+              className="pointer-events-auto pl-4 pr-1 py-2 rounded-xl shadow-lg border border-line bg-surface text-ink flex items-start gap-3"
             >
-              <div className="shrink-0 mt-0.5">
-                {isSuccess ? (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                ) : isError ? (
-                  <AlertTriangle className="w-5 h-5 text-rose-400" />
-                ) : (
-                  <Info className="w-5 h-5 text-purple-400" />
-                )}
+              <Icon size={18} aria-hidden className={`shrink-0 mt-1.5 ${isSuccess ? 'text-ok' : isError ? 'text-danger' : 'text-brand-ink'}`} />
+              <div className="flex-1 py-1 min-w-0">
+                {toast.title && <p className="text-sm font-semibold">{toast.title}</p>}
+                <p className="text-sm text-ink-2 break-words">{toast.message}</p>
               </div>
-
-              <div className="flex-1 space-y-0.5">
-                <h5 className="text-xs font-black uppercase tracking-wide">
-                  {toast.title || (isSuccess ? 'Berhasil' : isError ? 'Pemberitahuan System' : 'Informasi')}
-                </h5>
-                <p className="text-xs font-semibold leading-relaxed opacity-90">{toast.message}</p>
-              </div>
-
               <button
                 type="button"
                 onClick={() => removeToast(toast.id)}
-                className="shrink-0 p-1 hover:bg-white/10 rounded-lg text-slate-300 hover:text-white transition cursor-pointer"
+                aria-label="Tutup notifikasi"
+                className="shrink-0 w-11 h-11 sm:w-9 sm:h-9 inline-flex items-center justify-center rounded-lg text-ink-3 hover:text-ink hover:bg-surface-2 cursor-pointer"
               >
-                <X size={14} />
+                <X size={16} aria-hidden />
               </button>
             </div>
           );
@@ -94,11 +78,7 @@ export const useToast = () => {
   if (!context) {
     // Fallback if rendered outside ToastProvider
     return {
-      showToast: (message: string, type: ToastType = 'info') => {
-        if (type === 'error') alert(`⚠️ ${message}`);
-        else if (type === 'success') alert(`✓ ${message}`);
-        else alert(`ℹ️ ${message}`);
-      }
+      showToast: (message: string) => alert(message)
     };
   }
   return context;

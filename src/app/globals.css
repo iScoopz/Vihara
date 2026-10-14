@@ -2,78 +2,98 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Design tokens (see DESIGN.md). Pages use bg-canvas, text-ink-2, bg-brand, etc.;
+   the values swap for dark mode here, so pages need no dark: variant for them. */
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-on-brand: var(--on-brand);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-ink: var(--brand-ink);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+}
+
 @layer base {
   :root {
-    --bg-main: #f5f5f7;
-    --bg-card: #ffffff;
-    --text-main: #1d1d1f;
-    --text-muted: #86868b;
-    --border-color: rgba(0, 0, 0, 0.08);
+    color-scheme: light;
+    --canvas: #f5f5f7;
+    --surface: #ffffff;
+    --surface-2: #f0f0f3;
+    --line: rgba(0, 0, 0, 0.1);
+    --line-strong: rgba(0, 0, 0, 0.18);
+    --ink: #1d1d1f;
+    --ink-2: #48484f;  /* 8.9:1 on surface */
+    --ink-3: #6b6b73;  /* 4.8:1 on canvas, 5.3:1 on surface */
+    --brand: #5b2fa6;  /* MNSBDI purple, 8.8:1 with white */
+    --brand-hover: #4a2489;
+    --on-brand: #ffffff;
+    --brand-soft: #f1ebfb;
+    --brand-ink: #4a2489;
+    --gold: #92400e;   /* text on gold-soft, 6.6:1 */
+    --gold-soft: #fef3c7;
+    --ok: #166534;
+    --ok-soft: #dcfce7;
+    --danger: #b91c1c;
+    --danger-soft: #fee2e2;
   }
 
   .dark {
-    --bg-main: #000000;
-    --bg-card: #161618;
-    --text-main: #f5f5f7;
-    --text-muted: #a1a1a6;
-    --border-color: rgba(255, 255, 255, 0.08);
+    color-scheme: dark;
+    --canvas: #0c0c0e;
+    --surface: #161618;
+    --surface-2: #1f1f22;
+    --line: rgba(255, 255, 255, 0.12);
+    --line-strong: rgba(255, 255, 255, 0.2);
+    --ink: #f5f5f7;
+    --ink-2: #c7c7cc;
+    --ink-3: #9a9aa2;  /* 6.5:1 on surface */
+    --brand: #c4b0f5;  /* light purple, dark text on it 9.3:1 */
+    --brand-hover: #d4c4f8;
+    --on-brand: #1b0f33;
+    --brand-soft: rgba(196, 176, 245, 0.14);
+    --brand-ink: #d4c4f8;
+    --gold: #fcd34d;
+    --gold-soft: rgba(252, 211, 77, 0.12);
+    --ok: #86efac;
+    --ok-soft: rgba(134, 239, 172, 0.12);
+    --danger: #fca5a5;
+    --danger-soft: rgba(252, 165, 165, 0.12);
   }
 
   body {
-    background-color: var(--bg-main);
-    color: var(--text-main);
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
+    background-color: var(--canvas);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    letter-spacing: -0.011em;
   }
 
-  /* Instant tactile click feedback for all buttons (eliminates laggy/mushy feel) */
   button, [role="button"] {
-    transition: transform 0.08s ease-out, filter 0.08s ease-out, background-color 0.12s ease-out, border-color 0.12s ease-out, color 0.12s ease-out;
-    user-select: none;
-  }
-
-  button:active:not(:disabled), [role="button"]:active:not([aria-disabled="true"]) {
-    transform: scale(0.972);
+    transition: background-color 0.12s ease-out, border-color 0.12s ease-out, color 0.12s ease-out;
   }
 
   button:disabled, [role="button"][aria-disabled="true"] {
-    transform: none !important;
     cursor: not-allowed;
   }
 
-  /* Accessible high-contrast focus indicator (WCAG AA / R-32) */
+  /* Visible keyboard focus everywhere (R-32) */
   :focus-visible {
-    outline: 2px solid #f59e0b;
+    outline: 2px solid var(--brand);
     outline-offset: 2px;
   }
-}
-
-/* Custom MNSBDI Unified Palette Classes (Clean Apple / Buddhist Premium Finish) */
-.gradient-mnsbdi {
-  background-color: #1d1d1f;
-  color: #ffffff;
-}
-
-:where(.dark) .gradient-mnsbdi {
-  background-color: #2e1065;
-  color: #f5f5f7;
-}
-
-.gradient-purple {
-  background-color: #2e1065;
-  color: #ffffff;
-}
-
-:where(.dark) .gradient-purple {
-  background-color: #3b0764;
-  color: #f5f5f7;
-}
-
-.gradient-gold {
-  background-color: #d97706;
-  color: #ffffff;
 }
 
 /* ----------------------------------------------------

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Printer, X, FileSpreadsheet } from 'lucide-react';
 import { ViharaEvent, EventRegistration, UmatBagian } from '@/types/database';
 import { exportLPJToExcel } from '@/lib/export-utils';
+import { Button } from '@/components/ui/kit';
 
 interface EventPdfModalProps {
   event: ViharaEvent;
@@ -18,6 +19,52 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
   pdfMode,
   onClose
 }) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  // Not the kit Modal: globals.css print rules expect this overlay itself to be
+  // #printable-pdf-document-wrapper so the document can flow across A4 pages.
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const dialog = dialogRef.current;
+    dialog?.querySelector<HTMLElement>('[data-autofocus]')?.focus();
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onCloseRef.current();
+        return;
+      }
+      if (e.key === 'Tab' && dialog) {
+        const items = [...dialog.querySelectorAll<HTMLElement>('button:not([disabled]), a[href]')];
+        if (items.length === 0) return;
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+      previouslyFocused?.focus?.();
+    };
+  }, []);
+
+  const documentLabel = pdfMode === 'proposal' ? 'Proposal event' : pdfMode === 'lpj' ? 'LPJ event' : 'Daftar peserta';
+
   const org = event.org_structure;
   const pemasukanItems = event.budgets?.filter(b => b.budget_type === 'pemasukan') || [];
   const rabItems = event.budgets?.filter(b => b.budget_type === 'rab') || [];
@@ -91,45 +138,42 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
   });
 
   return (
-    <div id="printable-pdf-document-wrapper" className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 overflow-y-auto p-4 md:p-8">
-      <div className="max-w-4xl mx-auto space-y-4">
-        {/* Apple-style Minimal Floating Action Bar (Hidden when printed) */}
-        <div className="bg-[#1c1c1e] text-white px-5 py-3 rounded-full border border-white/10 shadow-xl flex justify-between items-center print:hidden">
-          <div className="flex items-center gap-2.5 text-xs font-medium">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-            <span className="text-[#a1a1a6]">
-              Dokumen: <strong className="text-white font-semibold">{pdfMode === 'proposal' ? 'Proposal Event' : pdfMode === 'lpj' ? 'LPJ Event' : 'Daftar Peserta'}</strong>
-            </span>
-          </div>
+    <div
+      id="printable-pdf-document-wrapper"
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="pdf-preview-title"
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/60 sm:p-6"
+    >
+      <div className="max-w-4xl mx-auto space-y-3">
+        <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-2 bg-surface border-b sm:border border-line sm:rounded-xl pl-4 pr-2 py-1.5 print:hidden">
+          <h2 id="pdf-preview-title" className="text-sm font-semibold text-ink">
+            Pratinjau: {documentLabel}
+          </h2>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2">
             {pdfMode === 'lpj' && (
-              <button
-                onClick={() => exportLPJToExcel(event, registrations)}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-full text-xs font-semibold shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
-              >
-                <FileSpreadsheet size={13} />
-                <span className="hidden sm:inline">Download Excel</span>
-              </button>
+              <Button onClick={() => exportLPJToExcel(event, registrations)} aria-label="Unduh Excel">
+                <FileSpreadsheet size={14} aria-hidden />
+                <span className="hidden sm:inline">Unduh Excel</span>
+              </Button>
             )}
+            <Button data-autofocus variant="primary" onClick={() => window.print()}>
+              <Printer size={14} aria-hidden />
+              Cetak / PDF
+            </Button>
             <button
-              onClick={() => window.print()}
-              className="bg-white hover:bg-neutral-200 text-black px-4 py-1.5 rounded-full text-xs font-semibold shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
-            >
-              <Printer size={13} />
-              <span>Cetak / PDF</span>
-            </button>
-            <button
+              type="button"
               onClick={onClose}
-              className="p-1.5 text-[#86868b] hover:text-white rounded-full transition-colors cursor-pointer"
-              title="Tutup Pratinjau"
+              aria-label="Tutup pratinjau"
+              className="w-11 h-11 inline-flex items-center justify-center rounded-lg text-ink-2 hover:bg-surface-2 hover:text-ink cursor-pointer"
             >
-              <X size={18} />
+              <X size={18} aria-hidden />
             </button>
           </div>
         </div>
 
-        {/* PRINT PAPER CONTAINER (Clean, Legible, Professional A4 Document) */}
         <div id="printable-pdf-document" className="bg-white text-slate-900 p-8 sm:p-12 rounded-2xl shadow-xl space-y-6 print:p-0 print:shadow-none print:rounded-none">
           
           {/* KOP SURAT OFFISIAL (Clean, Professional, Institutional Header) */}
@@ -192,7 +236,7 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                       <tr key={reg.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'}>
                         <td className="p-2 border border-slate-300 text-center text-slate-500">{i + 1}</td>
                         <td className="p-2 border border-slate-300 font-semibold text-slate-900">
-                          {reg.profile?.full_name || 'Umat Vihara'}
+                          {reg.profile?.full_name || '-'}
                         </td>
                         <td className="p-2 border border-slate-300 text-center text-slate-600">
                           {reg.profile?.gender || '-'}
@@ -231,7 +275,7 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                   <p className="text-slate-500">Mengetahui,</p>
                   <p className="font-semibold text-slate-900 mt-0.5">Ketua Panitia Pelaksana</p>
                   <div className="h-16 flex items-end justify-center">
-                    <span className="font-bold text-slate-950 underline">{org?.ketua_name || 'Upasaka Hendra Kurniawan'}</span>
+                    <span className="font-bold text-slate-950 underline">{org?.ketua_name || '(......................)'}</span>
                   </div>
                 </div>
 
@@ -239,7 +283,7 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                   <p className="text-slate-500">Makassar, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                   <p className="font-semibold text-slate-900 mt-0.5">PJ Seksi Ritual / Acara</p>
                   <div className="h-16 flex items-end justify-center">
-                    <span className="font-bold text-slate-950 underline">{org?.pj_acara_name || 'Suryani Dewi'}</span>
+                    <span className="font-bold text-slate-950 underline">{org?.pj_acara_name || '(......................)'}</span>
                   </div>
                 </div>
               </div>
@@ -325,7 +369,7 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                         lpjSortedRegistrations.map((reg, idx) => (
                           <tr key={reg.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'}>
                             <td className="p-2 border border-slate-300 text-center text-slate-500">{idx + 1}</td>
-                            <td className="p-2 border border-slate-300 font-semibold text-slate-900">{reg.profile?.full_name || 'Umat Vihara'}</td>
+                            <td className="p-2 border border-slate-300 font-semibold text-slate-900">{reg.profile?.full_name || '-'}</td>
                             <td className="p-2 border border-slate-300 text-center font-medium text-slate-800">
                               {reg.profile?.bagian || 'Inspirasi'}
                             </td>
@@ -561,7 +605,7 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                   <p className="text-slate-500">Mengetahui,</p>
                   <p className="font-semibold text-slate-900 mt-0.5">Ketua Panitia Pelaksana</p>
                   <div className="h-16 flex items-end justify-center">
-                    <span className="font-bold text-slate-950 underline">{org?.ketua_name || 'Upasaka Hendra Kurniawan'}</span>
+                    <span className="font-bold text-slate-950 underline">{org?.ketua_name || '(......................)'}</span>
                   </div>
                 </div>
 
@@ -569,7 +613,7 @@ export const EventPdfModal: React.FC<EventPdfModalProps> = ({
                   <p className="text-slate-500">Makassar, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                   <p className="font-semibold text-slate-900 mt-0.5">Sekretaris Panitia</p>
                   <div className="h-16 flex items-end justify-center">
-                    <span className="font-bold text-slate-950 underline">{org?.sekretaris_name || 'Suryani Dewi'}</span>
+                    <span className="font-bold text-slate-950 underline">{org?.sekretaris_name || '(......................)'}</span>
                   </div>
                 </div>
               </div>

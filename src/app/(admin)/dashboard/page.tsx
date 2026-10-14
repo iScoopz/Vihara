@@ -1,212 +1,249 @@
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { 
-  Users, 
-  CalendarDays, 
-  HeartHandshake, 
-  Package, 
-  Building,
-  Plus
-} from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { getDashboardPageBundle } from '@/lib/actions/vihara-actions';
 import { Profile, ViharaEvent, Donation, InventoryItem } from '@/types/database';
+import { Button, PageHeader, Panel, StateMessage, buttonClass } from '@/components/ui/kit';
+
+const LOW_STOCK_LIMIT = 10;
+
+const formatRupiah = (n: number) => `Rp ${n.toLocaleString('id-ID')}`;
+
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+// birth_date is stored as YYYY-MM-DD; reading the parts avoids a timezone shift from new Date().
+const birthParts = (birthDate?: string) => {
+  if (!birthDate) return null;
+  const [, m, d] = birthDate.split('T')[0].split('-').map(Number);
+  if (!m || !d) return null;
+  return { month: m, day: d };
+};
+
+function CountBars({ counts, total }: { counts: [string, number][]; total: number }) {
+  return (
+    <ul className="space-y-3">
+      {counts.map(([name, count]) => (
+        <li key={name} className="space-y-1">
+          <div className="flex justify-between gap-3 text-sm">
+            <span className={name === 'Belum diisi' ? 'text-ink-3' : 'text-ink-2'}>{name}</span>
+            <span className="tabular-nums text-ink font-medium">{count} umat</span>
+          </div>
+          <div className="w-full bg-surface-2 h-2 rounded-md overflow-hidden">
+            <div className="bg-brand h-full rounded-md" style={{ width: `${Math.min(100, (count / (total || 1)) * 100)}%` }} />
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export default function AdminDashboardPage() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [events, setEvents] = useState<ViharaEvent[]>([]);
   const [donations, setDonations] = useState<Donation[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
 
-  useEffect(() => {
-    async function loadData() {
+  const loadData = useCallback(async () => {
+    setLoadState('loading');
+    try {
       const bundle = await getDashboardPageBundle();
       setProfiles(bundle.profiles);
       setEvents(bundle.events);
       setDonations(bundle.donations);
       setInventory(bundle.inventory);
+      setLoadState('ready');
+    } catch (e) {
+      console.error('Dashboard load error:', e);
+      setLoadState('error');
     }
-    loadData();
   }, []);
 
-  const totalUmat = profiles.length;
-  const activeEvents = events.filter(e => new Date(e.event_date) >= new Date()).length;
-  const totalDonations = donations.reduce((sum, d) => sum + Number(d.amount), 0);
-  const lowStockItems = inventory.filter(i => i.stock_quantity <= 10);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
-  const hanCounts: Record<string, number> = {};
-  profiles.forEach(p => {
-    const hanName = p.han || 'Tidak Terdaftar';
-    hanCounts[hanName] = (hanCounts[hanName] || 0) + 1;
-  });
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const thisMonth = now.getMonth() + 1;
+  const monthName = now.toLocaleDateString('id-ID', { month: 'long' });
 
-  const cetyaCounts: Record<string, number> = {};
-  profiles.forEach(p => {
-    const cetyaName = p.cetya || 'Cetya Utama';
-    cetyaCounts[cetyaName] = (cetyaCounts[cetyaName] || 0) + 1;
+  const nextEvent = events
+    .filter(e => new Date(e.event_date) >= startOfToday)
+    .sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime())[0];
+  const upcomingCount = events.filter(e => new Date(e.event_date) >= startOfToday).length;
+
+  const lowStockItems = inventory
+    .filter(i => i.stock_quantity <= LOW_STOCK_LIMIT)
+    .sort((a, b) => a.stock_quantity - b.stock_quantity);
+
+  const birthdays = profiles
+    .map(p => ({ profile: p, parts: birthParts(p.birth_date) }))
+    .filter((x): x is { profile: Profile; parts: { month: number; day: number } } => x.parts?.month === thisMonth)
+    .sort((a, b) => a.parts.day - b.parts.day);
+
+  const monthDonations = donations.filter(d => {
+    const dt = new Date(d.donation_date);
+    return dt.getFullYear() === now.getFullYear() && dt.getMonth() === now.getMonth();
   });
+  const monthDonationTotal = monthDonations.reduce((sum, d) => sum + Number(d.amount), 0);
+
+  const countBy = (pick: (p: Profile) => string | undefined) => {
+    const counts: Record<string, number> = {};
+    profiles.forEach(p => {
+      const key = pick(p) || 'Belum diisi';
+      counts[key] = (counts[key] || 0) + 1;
+    });
+    // Keep "Belum diisi" last so real groups read first.
+    return Object.entries(counts).sort((a, b) => {
+      if (a[0] === 'Belum diisi') return 1;
+      if (b[0] === 'Belum diisi') return -1;
+      return b[1] - a[1];
+    });
+  };
+  const hanCounts = countBy(p => p.han);
+  const cetyaCounts = countBy(p => p.cetya);
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      {/* Apple-style Overview Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-black/[0.06] dark:border-white/[0.08]">
-        <div className="space-y-1">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-[#86868b] block">
-            Pusat Kendali Pengurus
-          </span>
-          <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-neutral-900 dark:text-white">
-            Dashboard Utama Vihara
-          </h1>
-          <p className="text-xs sm:text-sm text-[#86868b] dark:text-[#a1a1a6]">
-            Ringkasan data keanggotaan umat, jadwal kegiatan, dana kebajikan, dan inventaris.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 shrink-0">
-          <Link
-            href="/events/new"
-            className="bg-[#1d1d1f] hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-semibold px-5 py-2.5 rounded-full text-xs shadow-xs flex items-center gap-1.5 transition-all"
-          >
-            <Plus size={14} />
-            <span>Buat Event Baru</span>
+    <div className="space-y-6 max-w-7xl mx-auto">
+      <PageHeader
+        title="Ringkasan"
+        description={`${profiles.length} umat terdata, ${upcomingCount} event mendatang.`}
+        actions={
+          <Link href="/events/new" className={buttonClass('primary')}>
+            <Plus size={14} aria-hidden />
+            Buat event
           </Link>
-        </div>
-      </div>
+        }
+      />
 
-      {/* 4 Apple-style Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-        {/* Card 1: Total Umat */}
-        <div className="p-6 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-4 hover:border-black/15 dark:hover:border-white/20 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-[#86868b] uppercase tracking-wider">Total Umat</span>
-            <div className="p-2 rounded-2xl bg-purple-500/[0.08] dark:bg-purple-400/[0.12] text-[#5e35b1] dark:text-purple-300">
-              <Users size={16} />
-            </div>
-          </div>
-          <div>
-            <p className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900 dark:text-white">{totalUmat}</p>
-            <p className="text-xs text-[#86868b] font-medium mt-1">Umat Terdaftar Aktif</p>
-          </div>
-        </div>
+      {loadState === 'loading' && (
+        <Panel>
+          <StateMessage kind="loading" title="Memuat ringkasan..." />
+        </Panel>
+      )}
 
-        {/* Card 2: Active Events */}
-        <div className="p-6 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-4 hover:border-black/15 dark:hover:border-white/20 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-[#86868b] uppercase tracking-wider">Event Mendatang</span>
-            <div className="p-2 rounded-2xl bg-amber-500/[0.1] dark:bg-amber-400/[0.12] text-amber-700 dark:text-amber-400">
-              <CalendarDays size={16} />
-            </div>
-          </div>
-          <div>
-            <p className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900 dark:text-white">{activeEvents}</p>
-            <p className="text-xs text-[#86868b] font-medium mt-1">Kegiatan Terjadwal</p>
-          </div>
-        </div>
+      {loadState === 'error' && (
+        <Panel>
+          <StateMessage
+            kind="error"
+            title="Ringkasan gagal dimuat."
+            description="Periksa koneksi lalu coba lagi."
+            action={<Button size="sm" onClick={loadData}>Coba lagi</Button>}
+          />
+        </Panel>
+      )}
 
-        {/* Card 3: Total Dana Paramita */}
-        <div className="p-6 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-4 hover:border-black/15 dark:hover:border-white/20 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-[#86868b] uppercase tracking-wider">Dana Paramita</span>
-            <div className="p-2 rounded-2xl bg-emerald-500/[0.1] dark:bg-emerald-400/[0.12] text-emerald-700 dark:text-emerald-400">
-              <HeartHandshake size={16} />
-            </div>
-          </div>
-          <div>
-            <p className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 dark:text-white">
-              Rp {totalDonations.toLocaleString('id-ID')}
-            </p>
-            <p className="text-xs text-[#86868b] font-medium mt-1">Akumulasi Terverifikasi</p>
-          </div>
-        </div>
-
-        {/* Card 4: Inventory Alert */}
-        <div className={`p-6 rounded-3xl border shadow-xs space-y-4 transition-all ${
-          lowStockItems.length > 0 
-            ? 'bg-amber-500/[0.04] dark:bg-amber-400/[0.06] border-amber-500/25' 
-            : 'bg-white dark:bg-[#161618] border-black/[0.06] dark:border-white/[0.08]'
-        }`}>
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-[#86868b] uppercase tracking-wider">Inventaris Vihara</span>
-            <div className="p-2 rounded-2xl bg-black/[0.04] dark:bg-white/[0.08] text-neutral-800 dark:text-neutral-200">
-              <Package size={16} />
-            </div>
-          </div>
-          <div>
-            <p className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900 dark:text-white">{inventory.length} Jenis</p>
-            <p className="text-xs text-[#86868b] font-medium mt-1">
-              {lowStockItems.length > 0 ? `${lowStockItems.length} item stok menipis` : 'Stok dalam batas aman'}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Grid distribution - Bento Style */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Distribusi Umat per HAN */}
-        <div className="p-7 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-5">
-          <div className="flex items-center justify-between pb-3 border-b border-black/[0.04] dark:border-white/[0.06]">
-            <h2 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-              <Building className="text-[#5e35b1] dark:text-purple-400" size={16} />
-              <span>Distribusi Umat per Kelompok HAN</span>
-            </h2>
-            <span className="text-[11px] text-[#86868b] font-medium">{Object.keys(hanCounts).length} Kelompok</span>
-          </div>
-
-          <div className="space-y-4">
-            {Object.keys(hanCounts).length > 0 ? (
-              Object.entries(hanCounts).map(([hanName, count]) => (
-                <div key={hanName} className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-medium">
-                    <span className="text-neutral-700 dark:text-neutral-300">{hanName}</span>
-                    <span className="text-neutral-900 dark:text-white font-semibold">{count} Umat</span>
+      {loadState === 'ready' && (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <Panel className="p-5 lg:col-span-2 space-y-3">
+              <h2 className="text-sm font-semibold text-ink">Event berikutnya</h2>
+              {nextEvent ? (
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-base font-semibold text-ink break-words">{nextEvent.title}</p>
+                    <p className="text-sm text-ink-2">{formatDate(nextEvent.event_date)}</p>
+                    {nextEvent.location && <p className="text-xs text-ink-3">{nextEvent.location}</p>}
                   </div>
-                  <div className="w-full bg-black/[0.04] dark:bg-white/[0.08] h-2 rounded-full overflow-hidden">
-                    <div 
-                      className="bg-[#5e35b1] dark:bg-purple-400 h-full rounded-full transition-all duration-300"
-                      style={{ width: `${Math.min(100, (count / (totalUmat || 1)) * 100)}%` }}
-                    />
-                  </div>
+                  <p className="text-sm text-ink-2">
+                    <span className="text-3xl font-bold tabular-nums text-brand">{nextEvent.registrations_count || 0}</span>{' '}
+                    umat terdaftar{nextEvent.quota ? ` dari kuota ${nextEvent.quota}` : ''}
+                  </p>
+                  <Link href={`/events/${nextEvent.id}`} className={buttonClass('secondary', 'sm')}>
+                    Buka detail event
+                  </Link>
                 </div>
-              ))
-            ) : (
-              <p className="text-xs text-[#86868b] italic">Belum ada data distribusi HAN.</p>
-            )}
-          </div>
-        </div>
+              ) : (
+                <p className="text-sm text-ink-3">Belum ada event terjadwal.</p>
+              )}
+            </Panel>
 
-        {/* Cetya Distribution */}
-        <div className="p-7 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-5">
-          <div className="flex items-center justify-between pb-3 border-b border-black/[0.04] dark:border-white/[0.06]">
-            <h2 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-              <Building className="text-amber-500" size={16} />
-              <span>Distribusi Umat per Cetya Naungan</span>
-            </h2>
-            <span className="text-[11px] text-[#86868b] font-medium">{Object.keys(cetyaCounts).length} Cetya</span>
+            <Panel className="p-5 space-y-2">
+              <h2 className="text-sm font-semibold text-ink">Dana masuk bulan {monthName}</h2>
+              <p className="text-2xl font-semibold tabular-nums text-ink">{formatRupiah(monthDonationTotal)}</p>
+              <p className="text-xs text-ink-3">{monthDonations.length} catatan dana bulan ini</p>
+              <Link href="/donations" className="inline-block text-sm font-medium text-brand hover:underline">
+                Lihat semua dana
+              </Link>
+            </Panel>
           </div>
 
-          <div className="space-y-4">
-            {Object.keys(cetyaCounts).length > 0 ? (
-              Object.entries(cetyaCounts).map(([cetyaName, count]) => (
-                <div key={cetyaName} className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-medium">
-                    <span className="text-neutral-700 dark:text-neutral-300">{cetyaName}</span>
-                    <span className="text-neutral-900 dark:text-white font-semibold">{count} Umat</span>
-                  </div>
-                  <div className="w-full bg-black/[0.04] dark:bg-white/[0.08] h-2 rounded-full overflow-hidden">
-                    <div 
-                      className="bg-amber-500 dark:bg-amber-400 h-full rounded-full transition-all duration-300"
-                      style={{ width: `${Math.min(100, (count / (totalUmat || 1)) * 100)}%` }}
-                    />
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-xs text-[#86868b] italic">Belum ada data distribusi Cetya.</p>
-            )}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Panel className="p-5 space-y-3">
+              <div className="flex items-baseline justify-between gap-3">
+                <h2 className="text-sm font-semibold text-ink">Stok menipis</h2>
+                <Link href="/inventory" className="text-sm font-medium text-brand hover:underline">Buka inventaris</Link>
+              </div>
+              {lowStockItems.length > 0 ? (
+                <>
+                  <p className="text-sm text-gold">
+                    {lowStockItems.length} barang tersisa {LOW_STOCK_LIMIT} atau kurang. Perlu ditambah sebelum event berikutnya.
+                  </p>
+                  <ul className="divide-y divide-line">
+                    {lowStockItems.map(item => (
+                      <li key={item.id} className="py-2 flex justify-between gap-3 text-sm">
+                        <span className="text-ink break-words">{item.item_name}</span>
+                        <span className="tabular-nums text-ink-2 shrink-0">{item.stock_quantity} {item.unit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p className="text-sm text-ink-3">Semua stok di atas {LOW_STOCK_LIMIT}.</p>
+              )}
+            </Panel>
+
+            <Panel className="p-5 space-y-3">
+              <h2 className="text-sm font-semibold text-ink">Ulang tahun bulan {monthName}</h2>
+              {birthdays.length > 0 ? (
+                <ul className="divide-y divide-line">
+                  {birthdays.map(({ profile, parts }) => (
+                    <li key={profile.id} className="py-2 flex justify-between gap-3 text-sm">
+                      <span className="text-ink break-words">{profile.full_name}</span>
+                      <span className="tabular-nums text-ink-2 shrink-0">
+                        {parts.day} {monthName}
+                        {parts.day === now.getDate() && <span className="ml-1.5 text-ok font-medium">hari ini</span>}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-ink-3">Tidak ada umat yang berulang tahun bulan ini.</p>
+              )}
+            </Panel>
           </div>
-        </div>
-      </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Panel className="p-5 space-y-4">
+              <div className="flex items-baseline justify-between gap-3">
+                <h2 className="text-sm font-semibold text-ink">Umat per HAN</h2>
+                <span className="text-xs text-ink-3">{hanCounts.length} kelompok</span>
+              </div>
+              {hanCounts.length > 0 ? (
+                <CountBars counts={hanCounts} total={profiles.length} />
+              ) : (
+                <p className="text-sm text-ink-3">Belum ada data umat.</p>
+              )}
+            </Panel>
+
+            <Panel className="p-5 space-y-4">
+              <div className="flex items-baseline justify-between gap-3">
+                <h2 className="text-sm font-semibold text-ink">Umat per Cetya</h2>
+                <span className="text-xs text-ink-3">{cetyaCounts.length} kelompok</span>
+              </div>
+              {cetyaCounts.length > 0 ? (
+                <CountBars counts={cetyaCounts} total={profiles.length} />
+              ) : (
+                <p className="text-sm text-ink-3">Belum ada data umat.</p>
+              )}
+            </Panel>
+          </div>
+        </>
+      )}
     </div>
   );
 }

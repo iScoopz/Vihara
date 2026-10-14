@@ -1,21 +1,29 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { UserCheck, MapPin, Building, Phone, Calendar, History, CheckCircle2, Compass, Home } from 'lucide-react';
 import { getProfileById, findLoginProfile, updateProfile, getUserRegistrationHistory } from '@/lib/actions/vihara-actions';
 import { Profile, ViharaEvent } from '@/types/database';
+import { Badge, Button, Field, Panel, StateMessage, inputClass } from '@/components/ui/kit';
+
+const METHOD_LABELS: Record<string, string> = {
+  self: 'Daftar sendiri',
+  admin: 'Didaftarkan pengurus'
+};
+
+function ValueOrEmpty({ value }: { value?: string | null }) {
+  return value ? <>{value}</> : <span className="text-ink-3">Belum diisi</span>;
+}
 
 export default function MemberProfilePage() {
   const [loggedUserId, setLoggedUserId] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userRegistrations, setUserRegistrations] = useState<{ event: ViharaEvent; method: string; isAttended: boolean }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
-  // Login form state for Umat
   const [loginInput, setLoginInput] = useState('');
   const [loginError, setLoginError] = useState('');
-  
-  // Edit Profile Form State
+
   const [editFullName, setEditFullName] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editPhone, setEditPhone] = useState('');
@@ -29,27 +37,32 @@ export default function MemberProfilePage() {
 
   const loadProfileData = async (userId: string) => {
     setLoading(true);
-    const [me, history] = await Promise.all([
-      getProfileById(userId),
-      getUserRegistrationHistory(userId)
-    ]);
-    if (!me) {
-      setLoading(false);
-      return;
+    setLoadError(false);
+    try {
+      const [me, history] = await Promise.all([
+        getProfileById(userId),
+        getUserRegistrationHistory(userId)
+      ]);
+      if (!me) {
+        setLoading(false);
+        return;
+      }
+
+      setProfile(me);
+      setEditFullName(me.full_name || '');
+      setEditEmail(me.email || '');
+      setEditPhone(me.phone || '');
+      setEditBirthDate(me.birth_date || '');
+      setEditAddress(me.address || '');
+      setEditSentra(me.sentra || 'Sentra Makassar');
+      setEditCetya(me.cetya || '');
+      setEditHan(me.han || '');
+      setEditEmergencyContact(me.emergency_contact || '');
+
+      setUserRegistrations(history);
+    } catch {
+      setLoadError(true);
     }
-
-    setProfile(me);
-    setEditFullName(me.full_name || '');
-    setEditEmail(me.email || '');
-    setEditPhone(me.phone || '');
-    setEditBirthDate(me.birth_date || '');
-    setEditAddress(me.address || '');
-    setEditSentra(me.sentra || 'Sentra Makassar');
-    setEditCetya(me.cetya || '');
-    setEditHan(me.han || '');
-    setEditEmergencyContact(me.emergency_contact || '');
-
-    setUserRegistrations(history);
     setLoading(false);
   };
 
@@ -77,7 +90,7 @@ export default function MemberProfilePage() {
       setLoggedUserId(found.id);
       loadProfileData(found.id);
     } else {
-      setLoginError('Profil Umat tidak ditemukan dengan Email, HAN, atau Nama tersebut.');
+      setLoginError('Profil tidak ditemukan. Periksa lagi email, kode HAN, atau nama yang Anda isi.');
     }
   };
 
@@ -104,306 +117,230 @@ export default function MemberProfilePage() {
       emergency_contact: editEmergencyContact
     });
 
-    setSaveSuccessMsg('Perubahan profil berhasil disimpan.');
+    setSaveSuccessMsg('Perubahan profil sudah disimpan.');
     setTimeout(() => setSaveSuccessMsg(''), 3000);
     loadProfileData(profile.id);
   };
 
   if (loading) {
-    return <div className="p-16 text-center text-xs font-medium text-[#86868b]">Memuat profil Umat...</div>;
+    return (
+      <Panel className="max-w-md mx-auto">
+        <StateMessage kind="loading" title="Memuat profil..." />
+      </Panel>
+    );
+  }
+
+  if (loadError && loggedUserId) {
+    return (
+      <Panel className="max-w-md mx-auto">
+        <StateMessage
+          kind="error"
+          title="Profil belum bisa dimuat"
+          description="Periksa koneksi internet, lalu coba lagi."
+          action={<Button onClick={() => loadProfileData(loggedUserId)}>Coba lagi</Button>}
+        />
+      </Panel>
+    );
   }
 
   if (!profile) {
     return (
-      <div className="max-w-md mx-auto my-12 p-8 sm:p-10 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-6 text-center">
-        <div className="w-12 h-12 rounded-full bg-[#1d1d1f] dark:bg-white text-white dark:text-black flex items-center justify-center mx-auto shadow-xs">
-          <UserCheck size={22} />
-        </div>
-
-        <div className="space-y-1.5">
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">Akses Profil Umat</h1>
-          <p className="text-xs text-[#86868b] dark:text-[#a1a1a6]">
-            Masukkan email terdaftar atau kode HAN untuk melihat riwayat kegiatan.
+      <Panel className="max-w-md mx-auto sm:my-8 p-6 space-y-5">
+        <div className="space-y-1">
+          <h1 className="text-xl font-bold tracking-tight text-ink">Profil umat</h1>
+          <p className="text-sm text-ink-2">
+            Masukkan email terdaftar atau kode HAN untuk melihat data diri dan riwayat kegiatan.
           </p>
         </div>
 
-        {loginError && (
-          <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-medium">
-            {loginError}
-          </div>
-        )}
-
-        <form onSubmit={handleUmatLogin} className="space-y-4 text-left">
-          <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
-              Email Umat / Kode HAN / Nama Lengkap
-            </label>
+        <form onSubmit={handleUmatLogin} className="space-y-4">
+          <Field label="Email, kode HAN, atau nama lengkap">
             <input
               type="text"
               required
               value={loginInput}
               onChange={(e) => setLoginInput(e.target.value)}
-              placeholder="Contoh: suryani@vihara.or.id atau HAN Makassar 02"
-              className="w-full bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.1] rounded-2xl px-4 py-2.5 text-xs text-neutral-900 dark:text-white focus:outline-none focus:border-black/30 dark:focus:border-white/30 font-medium transition-all"
+              placeholder="suryani@vihara.or.id"
+              className={inputClass}
             />
-          </div>
+          </Field>
 
-          <button
-            type="submit"
-            className="w-full py-2.5 rounded-full bg-[#1d1d1f] hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-semibold text-xs transition-all shadow-xs cursor-pointer"
-          >
-            Buka Profil Saya
-          </button>
+          {loginError && (
+            <p role="alert" className="text-sm text-danger">{loginError}</p>
+          )}
+
+          <Button type="submit" variant="primary" className="w-full">Buka profil</Button>
         </form>
 
-        <div className="pt-4 border-t border-black/[0.04] dark:border-white/[0.06] space-y-2 text-left">
-          <span className="text-[11px] font-semibold text-[#86868b] uppercase tracking-wider block">
-            Pilihan Cepat Profil Umat:
-          </span>
+        <div className="pt-4 border-t border-line space-y-2">
+          <p className="text-xs font-medium text-ink-2">Akun contoh</p>
           <div className="flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={() => { setLoginInput('suryani@vihara.or.id'); }}
-              className="w-full px-4 py-2 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] text-neutral-900 dark:text-white text-xs font-medium border border-black/[0.06] dark:border-white/[0.08] hover:bg-black/[0.04] dark:hover:bg-white/[0.08] text-left flex items-center justify-between cursor-pointer transition-all"
-            >
-              <span>Suryani Dewi (suryani@vihara.or.id)</span>
-              <span className="text-[11px] text-[#5e35b1] dark:text-amber-400 font-semibold">Pilih</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => { setLoginInput('budi@vihara.or.id'); }}
-              className="w-full px-4 py-2 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] text-neutral-900 dark:text-white text-xs font-medium border border-black/[0.06] dark:border-white/[0.08] hover:bg-black/[0.04] dark:hover:bg-white/[0.08] text-left flex items-center justify-between cursor-pointer transition-all"
-            >
-              <span>Budi Santoso (budi@vihara.or.id)</span>
-              <span className="text-[11px] text-[#5e35b1] dark:text-amber-400 font-semibold">Pilih</span>
-            </button>
+            <Button onClick={() => { setLoginInput('suryani@vihara.or.id'); }} className="w-full justify-between">
+              <span className="truncate">Suryani Dewi</span>
+              <span className="text-xs font-normal text-ink-3 truncate">suryani@vihara.or.id</span>
+            </Button>
+            <Button onClick={() => { setLoginInput('budi@vihara.or.id'); }} className="w-full justify-between">
+              <span className="truncate">Budi Santoso</span>
+              <span className="text-xs font-normal text-ink-3 truncate">budi@vihara.or.id</span>
+            </Button>
           </div>
         </div>
-      </div>
+      </Panel>
     );
   }
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
-      {saveSuccessMsg && (
-        <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs font-medium flex items-center gap-2">
-          <CheckCircle2 size={16} className="text-emerald-500" />
-          <span>{saveSuccessMsg}</span>
-        </div>
-      )}
-
-      {/* Apple-style Profile Summary Card */}
-      <div className="p-8 sm:p-9 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] text-neutral-900 dark:text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xs">
-        <div className="flex items-center gap-5">
-          <div className="w-16 h-16 rounded-full bg-[#1d1d1f] dark:bg-white text-white dark:text-black font-bold text-xl flex items-center justify-center shadow-xs shrink-0">
-            {profile.full_name.substring(0, 2).toUpperCase()}
-          </div>
-
-          <div className="space-y-1">
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">{profile.full_name}</h1>
-              <span className="text-[10px] font-semibold uppercase tracking-wider bg-black/[0.04] dark:bg-white/[0.08] text-neutral-700 dark:text-neutral-300 px-2.5 py-0.5 rounded-full border border-black/[0.06] dark:border-white/[0.08]">
-                Umat
-              </span>
-            </div>
-            <p className="text-xs text-[#86868b] dark:text-[#a1a1a6]">
-              {profile.bagian ? `Bagian ${profile.bagian}` : 'Umat Vihara'} &bull; {profile.email || 'Email belum diatur'}
-            </p>
-            <p className="text-xs text-[#86868b] dark:text-[#a1a1a6]">
-              HAN Naungan: <strong className="font-semibold text-neutral-900 dark:text-white">{profile.han || 'HAN Utama'}</strong> ({profile.cetya || 'Cetya Utama'})
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] text-center px-4">
-            <p className="text-[10px] text-[#86868b] font-semibold uppercase tracking-wider">Partisipasi</p>
-            <p className="text-lg font-bold text-neutral-900 dark:text-white">{userRegistrations.length} Event</p>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-semibold text-xs border border-rose-500/20 transition-all cursor-pointer"
+    <div className="space-y-6 max-w-5xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4 min-w-0">
+          <span
+            className="w-12 h-12 shrink-0 rounded-full bg-surface-2 border border-line text-ink font-semibold flex items-center justify-center"
+            aria-hidden
           >
-            Keluar Akun
-          </button>
+            {profile.full_name.substring(0, 2).toUpperCase()}
+          </span>
+          <div className="space-y-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl font-bold tracking-tight text-ink">{profile.full_name}</h1>
+              <Badge>Umat</Badge>
+            </div>
+            <p className="text-sm text-ink-2 break-words">
+              {profile.bagian ? `Bagian ${profile.bagian}` : 'Umat vihara'} · {profile.email || <span className="text-ink-3">Email belum diisi</span>}
+            </p>
+          </div>
         </div>
+
+        <Button variant="danger" onClick={handleLogout} className="self-start sm:self-auto">Keluar</Button>
       </div>
 
-      {/* Grid Profil & Data Diri Umat */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Kolom 1: Status Naungan Resmi (Read-Only) */}
-        <div className="space-y-6">
-          <div className="p-7 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-black/[0.04] dark:border-white/[0.06]">
-              <Compass className="text-[#5e35b1] dark:text-amber-400" size={16} />
-              <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Lokasi Naungan Vihara</h2>
-            </div>
+      <p className="text-sm text-ink-2">
+        <span className="text-3xl font-bold tabular-nums text-brand">{userRegistrations.length}</span>{' '}
+        kegiatan pernah Anda ikuti atau daftar
+      </p>
 
-            <p className="text-xs text-[#86868b] leading-relaxed">
-              Lokasi Sentra, Cetya, dan Kelompok HAN bersifat resmi dan diatur secara terpusat oleh Pengurus Admin Vihara.
-            </p>
+      {saveSuccessMsg && (
+        <p role="status" className="text-sm rounded-lg p-3 bg-ok-soft text-ok">{saveSuccessMsg}</p>
+      )}
 
-            <div className="space-y-3 text-xs">
-              <div className="p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08]">
-                <span className="text-[#86868b] text-[10px] font-semibold block uppercase mb-0.5">1. Sentra Wilayah</span>
-                <span className="font-semibold text-neutral-900 dark:text-white text-xs flex items-center gap-1.5">
-                  <Compass size={13} className="text-[#86868b]" />
-                  {profile.sentra || 'Sentra Makassar'}
-                </span>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08]">
-                <span className="text-[#86868b] text-[10px] font-semibold block uppercase mb-0.5">2. Cetya Bernaung</span>
-                <span className="font-semibold text-neutral-900 dark:text-white text-xs flex items-center gap-1.5">
-                  <Building size={13} className="text-[#86868b]" />
-                  {profile.cetya || 'Cetya Avalokitesvara Makassar'}
-                </span>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08]">
-                <span className="text-[#86868b] text-[10px] font-semibold block uppercase mb-0.5">3. Kelompok HAN</span>
-                <span className="font-semibold text-neutral-900 dark:text-white text-xs flex items-center gap-1.5">
-                  <Home size={13} className="text-[#86868b]" />
-                  {profile.han || 'HAN Makassar 01'}
-                </span>
-              </div>
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <Panel className="p-5 space-y-3">
+          <div className="space-y-1">
+            <h2 className="text-sm font-semibold text-ink">Naungan</h2>
+            <p className="text-xs text-ink-3">Diatur oleh pengurus vihara.</p>
           </div>
-        </div>
-
-        {/* Kolom 2 & 3: Form Edit Data Diri & Riwayat */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="p-7 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-5">
-            <div className="flex items-center gap-2 pb-3 border-b border-black/[0.04] dark:border-white/[0.06]">
-              <UserCheck size={16} className="text-amber-500" />
-              <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Pengaturan Data Diri Profil Umat</h2>
+          <dl className="divide-y divide-line text-sm">
+            <div className="py-2.5 flex justify-between gap-4">
+              <dt className="text-ink-3">Sentra</dt>
+              <dd className="text-ink font-medium text-right"><ValueOrEmpty value={profile.sentra} /></dd>
             </div>
+            <div className="py-2.5 flex justify-between gap-4">
+              <dt className="text-ink-3">Cetya</dt>
+              <dd className="text-ink font-medium text-right"><ValueOrEmpty value={profile.cetya} /></dd>
+            </div>
+            <div className="py-2.5 flex justify-between gap-4">
+              <dt className="text-ink-3">Kelompok HAN</dt>
+              <dd className="text-ink font-medium text-right"><ValueOrEmpty value={profile.han} /></dd>
+            </div>
+          </dl>
+        </Panel>
 
-            <form onSubmit={handleSaveProfile} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="block font-medium text-neutral-700 dark:text-neutral-300">Nama Lengkap Umat</label>
+        <div className="lg:col-span-2 space-y-6">
+          <Panel className="p-5 space-y-4">
+            <h2 className="text-sm font-semibold text-ink">Data diri</h2>
+
+            <form onSubmit={handleSaveProfile} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Nama lengkap">
                   <input
                     type="text"
                     required
                     value={editFullName}
                     onChange={(e) => setEditFullName(e.target.value)}
-                    className="w-full bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.1] rounded-2xl px-4 py-2.5 text-xs text-neutral-900 dark:text-white font-medium focus:outline-none focus:border-black/30 dark:focus:border-white/30"
+                    className={inputClass}
                   />
-                </div>
+                </Field>
 
-                <div className="space-y-1.5">
-                  <label className="block font-medium text-neutral-700 dark:text-neutral-300">Email Login Terdaftar</label>
+                <Field label="Email">
                   <input
                     type="email"
-                    placeholder="email@domain.com"
+                    placeholder="nama@email.com"
                     value={editEmail}
                     onChange={(e) => setEditEmail(e.target.value)}
-                    className="w-full bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.1] rounded-2xl px-4 py-2.5 text-xs text-neutral-900 dark:text-white font-medium focus:outline-none focus:border-black/30 dark:focus:border-white/30"
+                    className={inputClass}
                   />
-                </div>
+                </Field>
 
-                <div className="space-y-1.5">
-                  <label className="block font-medium text-neutral-700 dark:text-neutral-300">No. Handphone / WhatsApp</label>
+                <Field label="Nomor HP / WhatsApp">
                   <input
-                    type="text"
+                    type="tel"
                     value={editPhone}
                     onChange={(e) => setEditPhone(e.target.value)}
-                    className="w-full bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.1] rounded-2xl px-4 py-2.5 text-xs text-neutral-900 dark:text-white font-medium focus:outline-none focus:border-black/30 dark:focus:border-white/30"
+                    className={inputClass}
                   />
-                </div>
+                </Field>
 
-                <div className="space-y-1.5">
-                  <label className="block font-medium text-neutral-700 dark:text-neutral-300">Tanggal Lahir</label>
+                <Field label="Tanggal lahir">
                   <input
                     type="date"
                     required
                     value={editBirthDate}
                     onChange={(e) => setEditBirthDate(e.target.value)}
-                    className="w-full bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.1] rounded-2xl px-4 py-2.5 text-xs text-neutral-900 dark:text-white font-medium focus:outline-none focus:border-black/30 dark:focus:border-white/30"
+                    className={inputClass}
                   />
-                </div>
+                </Field>
 
-                <div className="md:col-span-2 space-y-1.5">
-                  <label className="block font-medium text-neutral-700 dark:text-neutral-300">Alamat Tempat Tinggal</label>
+                <Field label="Alamat" className="sm:col-span-2">
                   <input
                     type="text"
                     value={editAddress}
                     onChange={(e) => setEditAddress(e.target.value)}
-                    className="w-full bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.1] rounded-2xl px-4 py-2.5 text-xs text-neutral-900 dark:text-white font-medium focus:outline-none focus:border-black/30 dark:focus:border-white/30"
+                    className={inputClass}
                   />
-                </div>
+                </Field>
 
-                <div className="md:col-span-2 space-y-1.5">
-                  <label className="block font-medium text-neutral-700 dark:text-neutral-300">Kontak Darurat</label>
+                <Field label="Kontak darurat" className="sm:col-span-2">
                   <input
                     type="text"
                     value={editEmergencyContact}
                     onChange={(e) => setEditEmergencyContact(e.target.value)}
-                    className="w-full bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.1] rounded-2xl px-4 py-2.5 text-xs text-neutral-900 dark:text-white font-medium focus:outline-none focus:border-black/30 dark:focus:border-white/30"
+                    className={inputClass}
                   />
-                </div>
+                </Field>
               </div>
 
-              <div className="flex justify-end pt-2">
-                <button
-                  type="submit"
-                  className="bg-[#1d1d1f] hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-semibold px-6 py-2.5 rounded-full text-xs shadow-xs transition-all cursor-pointer"
-                >
-                  Simpan Perubahan Profil
-                </button>
+              <div className="flex justify-end">
+                <Button type="submit" variant="primary" className="w-full sm:w-auto">Simpan perubahan</Button>
               </div>
             </form>
-          </div>
+          </Panel>
 
-          {/* Riwayat Activity Event */}
-          <div className="p-7 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-black/[0.04] dark:border-white/[0.06]">
-              <History className="text-amber-500" size={16} />
-              <h2 className="text-sm font-bold text-neutral-900 dark:text-white">Riwayat Kebaktian & Event Umat</h2>
-            </div>
+          <Panel>
+            <h2 className="text-sm font-semibold text-ink px-5 pt-5 pb-3">Riwayat kegiatan</h2>
 
             {userRegistrations.length === 0 ? (
-              <div className="p-8 text-center text-[#86868b] text-xs">
-                Belum ada riwayat partisipasi event.
-              </div>
+              <StateMessage
+                kind="empty"
+                title="Belum ada riwayat kegiatan"
+                description="Kegiatan yang Anda daftar akan muncul di sini."
+              />
             ) : (
-              <div className="space-y-2.5">
+              <ul className="divide-y divide-line border-t border-line">
                 {userRegistrations.map(({ event, method, isAttended }) => (
-                  <div key={event.id} className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-neutral-900 dark:text-white text-xs">{event.title}</h3>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.08] text-[#86868b]">
-                          {method}
-                        </span>
-                      </div>
-
-                      <p className="text-[11px] text-[#86868b]">
-                        {new Date(event.event_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} &bull; {event.location}
+                  <li key={event.id} className="px-5 py-3.5 flex items-start justify-between gap-3">
+                    <div className="space-y-0.5 min-w-0">
+                      <h3 className="text-sm font-medium text-ink">{event.title}</h3>
+                      <p className="text-xs text-ink-3">
+                        {new Date(event.event_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} · {event.location}
                       </p>
+                      <p className="text-xs text-ink-3">{METHOD_LABELS[method] || method}</p>
                     </div>
-
-                    <div>
-                      {isAttended ? (
-                        <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1">
-                          <CheckCircle2 size={13} /> Hadir
-                        </span>
-                      ) : (
-                        <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
-                          Terdaftar
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                    {isAttended ? <Badge tone="ok">Hadir</Badge> : <Badge>Terdaftar</Badge>}
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
-          </div>
+          </Panel>
         </div>
-
       </div>
     </div>
   );

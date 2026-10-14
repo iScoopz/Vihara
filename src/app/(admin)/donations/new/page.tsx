@@ -1,18 +1,20 @@
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { HeartHandshake, ArrowLeft, CheckCircle2, UserCheck, CreditCard, Sparkles, Receipt } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { getProfiles, addDonation } from '@/lib/actions/vihara-actions';
 import { SearchableUmatSelect } from '@/components/ui/SearchableUmatSelect';
 import { Profile } from '@/types/database';
 import { useToast } from '@/components/ui/ToastNotification';
+import { Button, Field, PageHeader, Panel, inputClass, selectClass } from '@/components/ui/kit';
 
 export default function NewDonationPage() {
   const router = useRouter();
   const { showToast } = useToast();
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [profilesError, setProfilesError] = useState(false);
   const [selectedUmatId, setSelectedUmatId] = useState('');
   const [donorName, setDonorName] = useState('');
   const [amount, setAmount] = useState('');
@@ -21,17 +23,26 @@ export default function NewDonationPage() {
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    async function loadUmat() {
+  const loadUmat = useCallback(async () => {
+    setProfilesError(false);
+    try {
       const data = await getProfiles();
       setProfiles(data);
+    } catch (e) {
+      console.error('Load umat error:', e);
+      setProfilesError(true);
     }
-    loadUmat();
   }, []);
+
+  useEffect(() => {
+    loadUmat();
+  }, [loadUmat]);
 
   const handleSelectPresetAmount = (preset: number) => {
     setAmount(preset.toString());
   };
+
+  const numAmount = parseFloat(amount) || 0;
 
   const handleSubmitDonation = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,200 +60,144 @@ export default function NewDonationPage() {
       notes: notes
     });
 
-    showToast(`Donasi Dana Paramita sebesar Rp ${numAmount.toLocaleString('id-ID')} berhasil dicatat.`, 'success', 'Donasi Berhasil');
+    showToast(`Dana Rp ${numAmount.toLocaleString('id-ID')} dari ${finalDonorName} tercatat.`, 'success', 'Dana tersimpan');
     setLoading(false);
     router.push('/donations');
   };
 
-  const numAmount = parseFloat(amount) || 0;
+  const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Top Bar */}
-      <div className="flex items-center justify-between">
-        <Link 
-          href="/donations"
-          className="inline-flex items-center gap-2 text-xs font-bold text-purple-700 dark:text-purple-300 hover:underline"
-        >
-          <ArrowLeft size={16} />
-          <span>Kembali ke Log Dana Paramita</span>
-        </Link>
+      <Link href="/donations" className="inline-flex items-center gap-1.5 min-h-[44px] sm:min-h-0 text-sm font-medium text-brand hover:underline">
+        <ArrowLeft size={14} aria-hidden />
+        Kembali ke daftar dana
+      </Link>
 
-        <span className="text-xs bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-extrabold px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
-          Form Input Kebajikan
-        </span>
-      </div>
+      <PageHeader title="Catat dana" description="Dana dari umat terdaftar atau donatur lain." />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Form */}
-        <div className="lg:col-span-2 p-6 rounded-2xl bg-white dark:bg-[#1e1b4b] border border-purple-100 dark:border-indigo-900 shadow-xl space-y-6">
-          <div>
-            <h1 className="text-xl font-extrabold text-purple-950 dark:text-white flex items-center gap-2">
-              <HeartHandshake className="text-emerald-500" size={24} />
-              <span>Tambah Pencatatan Dana Paramita Baru</span>
-            </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Catat sumbangan kebajikan dari Umat atau Donatur Anonim</p>
-          </div>
-
-          <form onSubmit={handleSubmitDonation} className="space-y-4 text-xs">
-            {/* Umat Autocomplete Select */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Panel className="lg:col-span-2 p-5">
+          <form onSubmit={handleSubmitDonation} className="space-y-4">
             <div>
               <SearchableUmatSelect
-                label="Pilih Umat Terdaftar (Opsional)"
+                label="Umat terdaftar (opsional)"
                 profiles={profiles}
                 value={selectedUmatId}
                 onChange={(id, profile) => {
                   setSelectedUmatId(id);
                   if (profile) setDonorName(profile.full_name);
                 }}
-                placeholder="-- Donatur Anonim / Cari Umat --"
+                placeholder="Cari nama umat"
               />
+              {profilesError && (
+                <p role="alert" className="mt-1 text-xs text-danger">
+                  Daftar umat gagal dimuat. Nama donatur tetap bisa diisi manual.{' '}
+                  <button type="button" onClick={loadUmat} className="underline font-medium cursor-pointer">Coba lagi</button>
+                </p>
+              )}
             </div>
 
-            {/* Nama Donatur */}
-            <div>
-              <label className="block font-extrabold text-slate-700 dark:text-slate-300 mb-1">
-                Nama Donatur (Tampilan Kuitansi)
-              </label>
+            <Field label="Nama donatur di kuitansi">
               <input
                 type="text"
                 required
-                placeholder="Suryani Dewi / Anonim"
+                placeholder="Nama lengkap atau Anonim"
                 value={donorName}
                 onChange={(e) => setDonorName(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-indigo-950 border border-purple-100 dark:border-indigo-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-semibold"
+                className={inputClass}
               />
-            </div>
+            </Field>
 
-            {/* Nominal Dana & Quick Presets */}
             <div className="space-y-2">
-              <label className="block font-extrabold text-slate-700 dark:text-slate-300">
-                Nominal Dana Paramita (Rp)
-              </label>
-              <input
-                type="number"
-                required
-                placeholder="500000"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-indigo-950 border border-purple-100 dark:border-indigo-800 rounded-xl px-3.5 py-2.5 text-sm font-bold font-mono text-emerald-600 dark:text-emerald-400 focus:outline-none focus:border-purple-600"
-              />
+              <Field label="Nominal (Rp)">
+                <input
+                  type="number"
+                  required
+                  min={0}
+                  inputMode="numeric"
+                  placeholder="500000"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className={`${inputClass} tabular-nums`}
+                />
+              </Field>
 
-              {/* Preset Buttons */}
-              <div className="flex items-center gap-2 pt-1 flex-wrap">
-                <span className="text-[11px] text-slate-400 font-semibold">Preset Instant:</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-ink-3">Isi cepat:</span>
                 {[50000, 100000, 500000, 1000000, 5000000].map(preset => (
-                  <button
-                    key={preset}
-                    type="button"
-                    onClick={() => handleSelectPresetAmount(preset)}
-                    className="px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 font-bold text-[11px] hover:bg-purple-100 transition"
-                  >
-                    +Rp {preset.toLocaleString('id-ID')}
-                  </button>
+                  <Button key={preset} size="sm" onClick={() => handleSelectPresetAmount(preset)} className="tabular-nums">
+                    Rp {preset.toLocaleString('id-ID')}
+                  </Button>
                 ))}
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block font-extrabold text-slate-700 dark:text-slate-300 mb-1">
-                  Peruntukan Dana
-                </label>
-                <select
-                  value={purpose}
-                  onChange={(e) => setPurpose(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-indigo-950 border border-purple-100 dark:border-indigo-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Peruntukan">
+                <select value={purpose} onChange={(e) => setPurpose(e.target.value)} className={selectClass}>
                   <option value="Dana Operasional Vihara">Dana Operasional Vihara</option>
                   <option value="Dana Pembangunan Cetya">Dana Pembangunan Cetya</option>
                   <option value="Dana Pelita Asadha">Dana Pelita Asadha</option>
                   <option value="Dana Sosmas & Sangha">Dana Sosmas & Sangha</option>
                 </select>
-              </div>
+              </Field>
 
-              <div>
-                <label className="block font-extrabold text-slate-700 dark:text-slate-300 mb-1">
-                  Metode Pembayaran
-                </label>
+              <Field label="Cara bayar">
                 <select
                   value={paymentMethod}
-                  onChange={(e: any) => setPaymentMethod(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-indigo-950 border border-purple-100 dark:border-indigo-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
+                  onChange={(e) => setPaymentMethod(e.target.value as 'Transfer Bank' | 'Tunai' | 'QRIS')}
+                  className={selectClass}
                 >
-                  <option value="Transfer Bank">Transfer Bank (BCA/Mandiri)</option>
-                  <option value="Tunai">Tunai di Sekretariat</option>
-                  <option value="QRIS">Scan QRIS</option>
+                  <option value="Transfer Bank">Transfer bank</option>
+                  <option value="Tunai">Tunai di sekretariat</option>
+                  <option value="QRIS">QRIS</option>
                 </select>
-              </div>
+              </Field>
             </div>
 
-            <div>
-              <label className="block font-extrabold text-slate-700 dark:text-slate-300 mb-1">
-                Catatan / Keterangan Tambahan
-              </label>
+            <Field label="Catatan (opsional)">
               <input
                 type="text"
-                placeholder="Contoh: Atas nama keluarga Alm. Tan Sri"
+                placeholder="Contoh: atas nama keluarga Alm. Tan Sri"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-indigo-950 border border-purple-100 dark:border-indigo-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
+                className={inputClass}
               />
-            </div>
+            </Field>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm transition shadow-lg flex items-center justify-center gap-2"
-            >
-              <CheckCircle2 size={18} />
-              <span>{loading ? 'Menyimpan Dana...' : 'Simpan Transaksi Dana Paramita'}</span>
-            </button>
+            <div className="pt-2 flex justify-end">
+              <Button type="submit" variant="primary" disabled={loading} className="w-full sm:w-auto">
+                {loading ? 'Menyimpan...' : 'Simpan dana'}
+              </Button>
+            </div>
           </form>
-        </div>
+        </Panel>
 
-        {/* Live Invoice Preview */}
-        <div className="p-6 rounded-2xl bg-gradient-to-b from-purple-900 to-indigo-950 text-white space-y-4 border border-purple-700/50 shadow-xl flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between border-b border-purple-700/50 pb-3">
-              <span className="text-xs font-mono font-bold text-amber-300 flex items-center gap-1">
-                <Receipt size={14} /> KUITANSI DIGITAL
-              </span>
-              <span className="text-[10px] bg-amber-400 text-slate-950 font-black px-2 py-0.5 rounded">
-                PREVIEW
-              </span>
+        <Panel className="p-5 space-y-4 h-fit">
+          <h2 className="text-sm font-semibold text-ink">Pratinjau kuitansi</h2>
+          <dl className="space-y-3 text-sm">
+            <div>
+              <dt className="text-xs text-ink-3">Diterima dari</dt>
+              <dd className={donorName ? 'font-medium text-ink break-words' : 'text-ink-3'}>{donorName || 'Belum diisi'}</dd>
             </div>
-
-            <div className="pt-4 space-y-3 text-xs">
-              <div>
-                <span className="text-purple-300 block font-semibold">Telah Diterima Dari:</span>
-                <p className="text-base font-extrabold text-white">{donorName || 'Hamba Buddha (Anonim)'}</p>
-              </div>
-
-              <div>
-                <span className="text-purple-300 block font-semibold">Jumlah Dana:</span>
-                <p className="text-2xl font-black font-mono text-amber-300">
-                  Rp {numAmount.toLocaleString('id-ID')}
-                </p>
-              </div>
-
-              <div>
-                <span className="text-purple-300 block font-semibold">Peruntukan:</span>
-                <p className="font-bold text-purple-100">{purpose}</p>
-              </div>
-
-              <div>
-                <span className="text-purple-300 block font-semibold">Metode & Waktu:</span>
-                <p className="font-semibold">{paymentMethod} • {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-              </div>
+            <div>
+              <dt className="text-xs text-ink-3">Jumlah</dt>
+              <dd className="text-2xl font-semibold tabular-nums text-ink">Rp {numAmount.toLocaleString('id-ID')}</dd>
             </div>
-          </div>
-
-          <div className="border-t border-purple-700/50 pt-3 text-[11px] text-purple-300 text-center">
-            Sabbe Satta Bhavantu Sukhitatta<br />
-            Semua Makhluk Hidup Berbahagia
-          </div>
-        </div>
+            <div>
+              <dt className="text-xs text-ink-3">Peruntukan</dt>
+              <dd className="text-ink-2">{purpose}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-ink-3">Cara bayar dan tanggal</dt>
+              <dd className="text-ink-2">{paymentMethod}, {today}</dd>
+            </div>
+          </dl>
+          <p className="border-t border-line pt-3 text-xs text-ink-3 text-center">
+            Sabbe Satta Bhavantu Sukhitatta. Semoga semua makhluk hidup berbahagia.
+          </p>
+        </Panel>
       </div>
     </div>
   );

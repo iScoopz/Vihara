@@ -32,8 +32,7 @@ import {
   HanProfile,
   EventProposalRundown,
   EventSkenarioKerja,
-  EventExtraFee,
-  EventOption
+  EventExtraFee
 } from '@/types/database';
 
 let profilesStore = [...INITIAL_PROFILES];
@@ -84,66 +83,6 @@ export async function getEventDetailPageBundle(eventId: string) {
     registrations: rawRegs.map(r => ({ ...r, profile: byId.get(r.profile_id) })),
     profiles: profilesList
   };
-}
-
-export async function getBelumDaftarPageBundle() {
-  const [eventsList, profilesList, sentrasList, cetyasList, hansList] = await Promise.all([
-    getEventOptions(),
-    getProfiles(),
-    getSentras(),
-    getCetyas(),
-    getHans()
-  ]);
-  return {
-    events: eventsList,
-    profiles: profilesList,
-    sentras: sentrasList,
-    cetyas: cetyasList,
-    hans: hansList
-  };
-}
-
-async function getEventOptions(): Promise<EventOption[]> {
-  if (isSupabaseConfigured()) {
-    try {
-      const supabase = await createClient();
-      const { data, error } = await supabase
-        .from('events')
-        .select('id, title, event_date, is_published, is_completed, category')
-        .order('event_date', { ascending: false });
-      if (error) {
-        console.error('Supabase getEventOptions error:', error);
-      } else if (data) {
-        return data;
-      }
-    } catch (e) {
-      console.error('getEventOptions exception:', e);
-    }
-  }
-  return [...eventsStore]
-    .sort((a, b) => b.event_date.localeCompare(a.event_date))
-    .map(({ id, title, event_date, is_published, is_completed, category }) => ({ id, title, event_date, is_published, is_completed, category }));
-}
-
-export async function getRegisteredProfileIds(eventId: string): Promise<string[]> {
-  if (!eventId) return [];
-  if (isSupabaseConfigured()) {
-    try {
-      const supabase = await createClient();
-      const { data, error } = await supabase
-        .from('event_registrations')
-        .select('profile_id')
-        .eq('event_id', eventId);
-      if (error) {
-        console.error('Supabase getRegisteredProfileIds error:', error);
-      } else if (data) {
-        return data.map(r => r.profile_id);
-      }
-    } catch (e) {
-      console.error('getRegisteredProfileIds exception:', e);
-    }
-  }
-  return registrationsStore.filter(r => r.event_id === eventId).map(r => r.profile_id);
 }
 
 async function fetchRawRegistrations(eventId: string): Promise<EventRegistration[]> {
@@ -1306,6 +1245,37 @@ export async function getUserRegistrationHistory(profileId: string): Promise<{ e
     }
   }
   return history;
+}
+
+// The umat portal only knows the event and the umat, not the registration id.
+export async function cancelOwnRegistration(eventId: string, profileId: string) {
+  if (!eventId || !profileId) return { error: 'Data pendaftaran tidak lengkap.' };
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { error } = await supabase
+        .from('event_registrations')
+        .delete()
+        .eq('event_id', eventId)
+        .eq('profile_id', profileId);
+      if (error) {
+        console.error('Supabase cancelOwnRegistration error:', error);
+        return { error: 'Pendaftaran belum bisa dibatalkan.' };
+      }
+    } catch (e) {
+      console.error('cancelOwnRegistration exception:', e);
+      return { error: 'Pendaftaran belum bisa dibatalkan.' };
+    }
+  }
+
+  registrationsStore = registrationsStore.filter(r => !(r.event_id === eventId && r.profile_id === profileId));
+
+  revalidatePath('/events');
+  revalidatePath(`/events/${eventId}`);
+  revalidatePath('/kegiatan');
+  revalidatePath('/profil');
+  return { success: true };
 }
 
 export async function cancelRegistration(registrationId: string) {

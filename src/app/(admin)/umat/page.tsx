@@ -1,26 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react';
-import { 
-  Users, 
-  UserPlus, 
-  Search, 
-  Trash2, 
-  Edit2, 
-  CheckCircle, 
-  XCircle, 
-  Phone, 
-  Calendar, 
-  MapPin, 
-  Building,
-  Filter,
-  Eye,
-  Plus,
-  Compass,
-  Home,
-  ShieldCheck,
-  X
-} from 'lucide-react';
+import { UserPlus, Search, Trash2, Edit2, Eye, Plus } from 'lucide-react';
 import { 
   getUmatPageBundle,
   addProfile, 
@@ -35,7 +16,22 @@ import {
 } from '@/lib/actions/vihara-actions';
 import { Profile, CetyaProfile, HanProfile, UmatBagian } from '@/types/database';
 import ConfirmModal from '@/components/ui/confirm-modal';
-import { NO_CETYA, UNAFFILIATED_CETYA_OPTIONS } from '@/lib/umat-options';
+import { BAGIAN_OPTIONS, NO_CETYA, UNAFFILIATED_CETYA_OPTIONS } from '@/lib/umat-options';
+import { Badge, Button, Field, Modal, ModalActions, PageHeader, Panel, StateMessage, inputClass, selectClass } from '@/components/ui/kit';
+
+const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+const iconButton =
+  'inline-flex items-center justify-center w-11 h-11 sm:w-9 sm:h-9 rounded-lg text-ink-2 hover:bg-surface-2 hover:text-ink cursor-pointer';
+const iconButtonDanger =
+  'inline-flex items-center justify-center w-11 h-11 sm:w-9 sm:h-9 rounded-lg text-ink-2 hover:bg-danger-soft hover:text-danger cursor-pointer';
+
+const th = 'py-2.5 px-4 text-xs font-medium text-ink-3 whitespace-nowrap';
+const td = 'py-2.5 px-4 text-ink-2';
+
+function Empty() {
+  return <span className="text-ink-3">-</span>;
+}
 
 export default function UmatDirectoryPage() {
   const [activeMainTab, setActiveMainTab] = useState<'umat' | 'cetya' | 'han'>('umat');
@@ -111,7 +107,8 @@ export default function UmatDirectoryPage() {
   const [hanSentraInput, setHanSentraInput] = useState('Sentra Makassar');
   const [hanLeaderInput, setHanLeaderInput] = useState('');
 
-  // BEAUTIFUL CONFIRM MODAL STATE
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
+
   const [confirmConfig, setConfirmConfig] = useState<{
     isOpen: boolean;
     title: string;
@@ -125,19 +122,43 @@ export default function UmatDirectoryPage() {
   });
 
   const loadAllData = async () => {
-    const bundle = await getUmatPageBundle();
-    setProfiles(bundle.profiles);
-    setSentras(bundle.sentras);
-    setCetyas(bundle.cetyas);
-    if (bundle.cetyas.length > 0) {
-      setHanCetyaInput(prev => prev || bundle.cetyas[0].name);
+    try {
+      const bundle = await getUmatPageBundle();
+      setProfiles(bundle.profiles);
+      setSentras(bundle.sentras);
+      setCetyas(bundle.cetyas);
+      if (bundle.cetyas.length > 0) {
+        setHanCetyaInput(prev => prev || bundle.cetyas[0].name);
+      }
+      setHans(bundle.hans);
+      setLoadState('ready');
+    } catch {
+      setLoadState('error');
     }
-    setHans(bundle.hans);
+  };
+
+  const retryLoad = () => {
+    setLoadState('loading');
+    loadAllData();
   };
 
   useEffect(() => {
     loadAllData();
   }, []);
+
+  const counts = useMemo(() => {
+    const umatByCetya = new Map<string, number>();
+    const umatByHan = new Map<string, number>();
+    const hanByCetya = new Map<string, number>();
+    for (const p of profiles) {
+      if (p.cetya) umatByCetya.set(p.cetya, (umatByCetya.get(p.cetya) || 0) + 1);
+      if (p.han) umatByHan.set(p.han, (umatByHan.get(p.han) || 0) + 1);
+    }
+    for (const h of hans) {
+      hanByCetya.set(h.cetya_name, (hanByCetya.get(h.cetya_name) || 0) + 1);
+    }
+    return { umatByCetya, umatByHan, hanByCetya };
+  }, [profiles, hans]);
 
   // Filter Cetya options based on selected Sentra
   const availableCetyasForAdd = cetyas.filter(c => c.sentra === sentra);
@@ -205,7 +226,7 @@ export default function UmatDirectoryPage() {
       created_at: new Date().toISOString()
     };
 
-    // Instant Optimistic State Update
+    // Show the row right away; the temp id is swapped for the real one when the server answers.
     setProfiles(prev => [newProfile, ...prev]);
 
     setIsAddUmatModalOpen(false);
@@ -218,7 +239,6 @@ export default function UmatDirectoryPage() {
     setAddress('');
     setEmergencyContact('');
 
-    // Background server call
     const res = await addProfile({
       role: role,
       full_name: fullName,
@@ -279,23 +299,20 @@ export default function UmatDirectoryPage() {
       is_active: editIsActive
     };
 
-    // Instant Optimistic State Update
     setProfiles(prev => prev.map(p => p.id === targetId ? { ...p, ...updateData } : p));
 
     setIsEditUmatModalOpen(false);
     setEditingProfile(null);
 
-    // Background server call
     await updateProfile(targetId, updateData);
   };
 
   const handleDeleteUmat = (profile: Profile) => {
     setConfirmConfig({
       isOpen: true,
-      title: 'Hapus Data Umat?',
-      message: `Apakah Anda yakin ingin menghapus data umat "${profile.full_name}"? Tindakan ini tidak dapat dibatalkan.`,
+      title: 'Hapus data umat?',
+      message: `Data umat "${profile.full_name}" akan dihapus dan tidak bisa dikembalikan.`,
       onConfirm: async () => {
-        // Instant Optimistic Update
         setProfiles(prev => prev.filter(p => p.id !== profile.id));
         await deleteProfile(profile.id);
       }
@@ -348,8 +365,8 @@ export default function UmatDirectoryPage() {
   const handleDeleteCetya = (cetyaItem: CetyaProfile) => {
     setConfirmConfig({
       isOpen: true,
-      title: 'Hapus Master Cetya?',
-      message: `Apakah Anda yakin ingin menghapus Cetya "${cetyaItem.name}" dari master data?`,
+      title: 'Hapus Cetya?',
+      message: `Cetya "${cetyaItem.name}" akan dihapus dari daftar Cetya.`,
       onConfirm: async () => {
         await deleteCetya(cetyaItem.id);
         loadAllData();
@@ -363,7 +380,8 @@ export default function UmatDirectoryPage() {
     await addHan({
       name: hanNameInput,
       cetya_name: hanCetyaInput,
-      sentra: hanSentraInput,
+      // A HAN sits in the Sentra of its parent Cetya.
+      sentra: cetyas.find(c => c.name === hanCetyaInput)?.sentra || hanSentraInput,
       leader_name: hanLeaderInput
     });
     setIsAddHanModalOpen(false);
@@ -387,7 +405,8 @@ export default function UmatDirectoryPage() {
     await updateHan(editingHan.id, {
       name: hanNameInput,
       cetya_name: hanCetyaInput,
-      sentra: hanSentraInput,
+      // A HAN sits in the Sentra of its parent Cetya.
+      sentra: cetyas.find(c => c.name === hanCetyaInput)?.sentra || hanSentraInput,
       leader_name: hanLeaderInput
     });
     setIsEditHanModalOpen(false);
@@ -398,8 +417,8 @@ export default function UmatDirectoryPage() {
   const handleDeleteHan = (hanItem: HanProfile) => {
     setConfirmConfig({
       isOpen: true,
-      title: 'Hapus Master HAN?',
-      message: `Apakah Anda yakin ingin menghapus kelompok HAN "${hanItem.name}" dari master data?`,
+      title: 'Hapus HAN?',
+      message: `HAN "${hanItem.name}" akan dihapus dari daftar HAN.`,
       onConfirm: async () => {
         await deleteHan(hanItem.id);
         loadAllData();
@@ -407,7 +426,6 @@ export default function UmatDirectoryPage() {
     });
   };
 
-  // Filter Umat with useMemo for high performance
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 25;
 
@@ -448,9 +466,119 @@ export default function UmatDirectoryPage() {
     return filteredProfiles.slice(start, start + pageSize);
   }, [filteredProfiles, currentPage, pageSize]);
 
+  const hasFilter =
+    searchTerm.trim() !== '' ||
+    selectedSentraFilter !== 'all' ||
+    selectedCetyaFilter !== 'all' ||
+    selectedHanFilter !== 'all' ||
+    selectedBagianFilter !== 'all' ||
+    selectedStatus !== 'all' ||
+    selectedMonth !== 'all';
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setSelectedSentraFilter('all');
+    setSelectedCetyaFilter('all');
+    setSelectedHanFilter('all');
+    setSelectedBagianFilter('all');
+    setSelectedStatus('all');
+    setSelectedMonth('all');
+  };
+
+  const openAddCetyaModal = () => {
+    setCetyaNameInput('');
+    setCetyaAddressInput('');
+    setCetyaLeaderInput('');
+    setCetyaPhoneInput('');
+    setIsAddCetyaModalOpen(true);
+  };
+
+  const openAddHanModal = () => {
+    setHanNameInput('');
+    setHanLeaderInput('');
+    setIsAddHanModalOpen(true);
+  };
+
+  const tabs = [
+    { id: 'umat', label: 'Umat', count: profiles.length },
+    { id: 'cetya', label: 'Cetya', count: cetyas.length },
+    { id: 'han', label: 'HAN', count: hans.length }
+  ] as const;
+
+  const headerAction =
+    activeMainTab === 'umat' ? (
+      <Button variant="primary" onClick={openAddUmatModal}>
+        <UserPlus size={16} aria-hidden />
+        Tambah umat
+      </Button>
+    ) : activeMainTab === 'cetya' ? (
+      <Button variant="primary" onClick={openAddCetyaModal}>
+        <Plus size={16} aria-hidden />
+        Tambah Cetya
+      </Button>
+    ) : (
+      <Button variant="primary" onClick={openAddHanModal}>
+        <Plus size={16} aria-hidden />
+        Tambah HAN
+      </Button>
+    );
+
+  const cetyaFormFields = (
+    <div className="space-y-3">
+      <Field label="Nama Cetya">
+        <input
+          type="text"
+          required
+          placeholder="Contoh: Cetya Avalokitesvara Makassar"
+          value={cetyaNameInput}
+          onChange={(e) => setCetyaNameInput(e.target.value)}
+          className={inputClass}
+        />
+      </Field>
+      <Field label="Sentra">
+        <select value={cetyaSentraInput} onChange={(e) => setCetyaSentraInput(e.target.value)} className={selectClass}>
+          {sentras.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </Field>
+      <Field label="Ketua / penanggung jawab">
+        <input type="text" value={cetyaLeaderInput} onChange={(e) => setCetyaLeaderInput(e.target.value)} className={inputClass} />
+      </Field>
+      <Field label="Alamat">
+        <input type="text" value={cetyaAddressInput} onChange={(e) => setCetyaAddressInput(e.target.value)} className={inputClass} />
+      </Field>
+      <Field label="Telepon sekretariat">
+        <input type="tel" value={cetyaPhoneInput} onChange={(e) => setCetyaPhoneInput(e.target.value)} className={inputClass} />
+      </Field>
+    </div>
+  );
+
+  const hanFormFields = (
+    <div className="space-y-3">
+      <Field label="Nama HAN">
+        <input
+          type="text"
+          required
+          placeholder="Contoh: HAN Makassar 01"
+          value={hanNameInput}
+          onChange={(e) => setHanNameInput(e.target.value)}
+          className={inputClass}
+        />
+      </Field>
+      <Field label="Cetya induk">
+        <select value={hanCetyaInput} onChange={(e) => setHanCetyaInput(e.target.value)} className={selectClass}>
+          {cetyas.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+        </select>
+      </Field>
+      <Field label="Pembina">
+        <input type="text" value={hanLeaderInput} onChange={(e) => setHanLeaderInput(e.target.value)} className={inputClass} />
+      </Field>
+    </div>
+  );
+
+  const bagianOptions = BAGIAN_OPTIONS.map(b => <option key={b} value={b}>{b}</option>);
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* BEAUTIFUL REUSABLE CONFIRM MODAL */}
+    <div className="space-y-6 max-w-7xl mx-auto min-w-0">
       <ConfirmModal
         isOpen={confirmConfig.isOpen}
         title={confirmConfig.title}
@@ -459,1107 +587,592 @@ export default function UmatDirectoryPage() {
         onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
       />
 
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-purple-950 dark:text-white tracking-tight flex items-center gap-2">
-            <Users className="text-purple-600 dark:text-purple-400" size={28} />
-            <span>Struktur & Direktori Umat MNSBDI</span>
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Hierarki Lokasi: <strong>Sentra ➔ Cetya ➔ HAN</strong> (Pusat Sentra Makassar)</p>
-        </div>
+      <PageHeader
+        title="Data Umat"
+        description="Umat dikelompokkan per Sentra, Cetya, lalu HAN."
+        actions={loadState === 'ready' ? headerAction : undefined}
+      />
 
-        {/* Dynamic Add Button based on Active Tab */}
-        {activeMainTab === 'umat' && (
-          <button
-            onClick={openAddUmatModal}
-            className="inline-flex items-center gap-2 bg-purple-900 hover:bg-purple-800 text-amber-300 font-black px-4 py-2.5 rounded-xl transition shadow-sm border border-purple-700/60 text-xs active:scale-95 cursor-pointer"
-          >
-            <UserPlus size={16} />
-            <span>Tambah Umat Baru</span>
-          </button>
-        )}
+      {loadState === 'loading' && (
+        <Panel>
+          <StateMessage kind="loading" title="Memuat data umat..." />
+        </Panel>
+      )}
 
-        {activeMainTab === 'cetya' && (
-          <button
-            onClick={() => {
-              setCetyaNameInput('');
-              setCetyaAddressInput('');
-              setCetyaLeaderInput('');
-              setCetyaPhoneInput('');
-              setIsAddCetyaModalOpen(true);
-            }}
-            className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-4 py-2.5 rounded-xl transition shadow-sm text-xs active:scale-95 cursor-pointer"
-          >
-            <Building size={16} />
-            <span>Tambah Cetya Baru</span>
-          </button>
-        )}
+      {loadState === 'error' && (
+        <Panel>
+          <StateMessage
+            kind="error"
+            title="Data umat gagal dimuat."
+            description="Periksa koneksi internet, lalu coba lagi."
+            action={<Button size="sm" onClick={retryLoad}>Coba lagi</Button>}
+          />
+        </Panel>
+      )}
 
-        {activeMainTab === 'han' && (
-          <button
-            onClick={() => {
-              setHanNameInput('');
-              setHanLeaderInput('');
-              setIsAddHanModalOpen(true);
-            }}
-            className="inline-flex items-center gap-2 bg-purple-900 hover:bg-purple-800 text-amber-300 font-black px-4 py-2.5 rounded-xl transition shadow-sm border border-purple-700/60 text-xs active:scale-95 cursor-pointer"
-          >
-            <Home size={16} />
-            <span>Tambah HAN Baru</span>
-          </button>
-        )}
-      </div>
+      {loadState === 'ready' && (
+        <>
+          <div role="tablist" aria-label="Jenis data" className="flex gap-1 border-b border-line relative overflow-x-auto">
+            {tabs.map(t => {
+              const selected = activeMainTab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  role="tab"
+                  id={`tab-${t.id}`}
+                  aria-selected={selected}
+                  aria-controls={`panel-${t.id}`}
+                  onClick={() => setActiveMainTab(t.id)}
+                  className={`min-h-[44px] px-3 -mb-px border-b-2 text-sm font-medium whitespace-nowrap cursor-pointer ${
+                    selected ? 'border-brand text-ink' : 'border-transparent text-ink-2 hover:text-ink'
+                  }`}
+                >
+                  {t.label} <span className="text-ink-3 tabular-nums">{t.count}</span>
+                </button>
+              );
+            })}
+          </div>
 
-      {/* Main Hierarchy Tabs (Sleek Segmented Pill Container) */}
-      <div className="bg-slate-100/90 dark:bg-purple-950/40 p-1.5 rounded-2xl border border-slate-200/80 dark:border-purple-900/50 inline-flex flex-wrap gap-1.5 shadow-xs">
-        <button
-          onClick={() => setActiveMainTab('umat')}
-          className={`py-2 px-4 rounded-xl text-xs transition flex items-center gap-2 cursor-pointer active:scale-95 ${
-            activeMainTab === 'umat'
-              ? 'bg-white dark:bg-[#1f1338] text-purple-950 dark:text-amber-300 font-black shadow-xs border border-slate-200/80 dark:border-purple-700/60'
-              : 'text-slate-600 dark:text-purple-300/80 font-bold hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-purple-900/30'
-          }`}
-        >
-          <Users size={15} />
-          <span>Data Umat ({profiles.length})</span>
-        </button>
+          {activeMainTab === 'umat' && (
+            <div role="tabpanel" id="panel-umat" aria-labelledby="tab-umat" className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-2">
+                <label className="relative sm:col-span-2">
+                  <span className="sr-only">Cari umat</span>
+                  <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" aria-hidden />
+                  <input
+                    type="search"
+                    placeholder="Cari nama, HAN, Cetya, atau telepon"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className={`${inputClass} pl-9`}
+                  />
+                </label>
 
-        <button
-          onClick={() => setActiveMainTab('cetya')}
-          className={`py-2 px-4 rounded-xl text-xs transition flex items-center gap-2 cursor-pointer active:scale-95 ${
-            activeMainTab === 'cetya'
-              ? 'bg-white dark:bg-[#1f1338] text-purple-950 dark:text-amber-300 font-black shadow-xs border border-slate-200/80 dark:border-purple-700/60'
-              : 'text-slate-600 dark:text-purple-300/80 font-bold hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-purple-900/30'
-          }`}
-        >
-          <Building size={15} />
-          <span>Kelola Cetya ({cetyas.length})</span>
-        </button>
+                <select aria-label="Filter Sentra" value={selectedSentraFilter} onChange={(e) => setSelectedSentraFilter(e.target.value)} className={selectClass}>
+                  <option value="all">Semua Sentra</option>
+                  {sentras.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
 
-        <button
-          onClick={() => setActiveMainTab('han')}
-          className={`py-2 px-4 rounded-xl text-xs transition flex items-center gap-2 cursor-pointer active:scale-95 ${
-            activeMainTab === 'han'
-              ? 'bg-white dark:bg-[#1f1338] text-purple-950 dark:text-amber-300 font-black shadow-xs border border-slate-200/80 dark:border-purple-700/60'
-              : 'text-slate-600 dark:text-purple-300/80 font-bold hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-purple-900/30'
-          }`}
-        >
-          <Home size={15} />
-          <span>Kelola HAN ({hans.length})</span>
-        </button>
-      </div>
+                <select aria-label="Filter Cetya" value={selectedCetyaFilter} onChange={(e) => setSelectedCetyaFilter(e.target.value)} className={selectClass}>
+                  <option value="all">Semua Cetya</option>
+                  {cetyas.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  {UNAFFILIATED_CETYA_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                </select>
 
-      {/* TAB 1: DATA UMAT */}
-      {activeMainTab === 'umat' && (
-        <div className="space-y-6">
-          {/* Advanced Filter Toolbar */}
-          <div className="p-5 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-purple-100 dark:border-purple-900/60 pb-3">
-              <span className="text-xs font-extrabold text-purple-950 dark:text-white flex items-center gap-1.5">
-                <Filter size={16} className="text-amber-500" />
-                <span>Filter Umat berdasarkan Hierarki: Sentra ➔ Cetya ➔ HAN</span>
-              </span>
+                <select aria-label="Filter HAN" value={selectedHanFilter} onChange={(e) => setSelectedHanFilter(e.target.value)} className={selectClass}>
+                  <option value="all">Semua HAN</option>
+                  {hans.map(h => <option key={h.id} value={h.name}>{h.name}</option>)}
+                </select>
 
-              <span className="text-xs text-slate-500 dark:text-slate-400">
-                Ditemukan: <strong className="text-purple-700 dark:text-purple-300 font-extrabold">{filteredProfiles.length}</strong> Umat
-              </span>
-            </div>
+                <select aria-label="Filter Bagian" value={selectedBagianFilter} onChange={(e) => setSelectedBagianFilter(e.target.value)} className={selectClass}>
+                  <option value="all">Semua Bagian</option>
+                  {bagianOptions}
+                </select>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
-              {/* Search Bar */}
-              <div className="relative col-span-1 sm:col-span-2">
-                <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
-                <input
-                  type="text"
-                  placeholder="Cari Nama / HAN / Cetya / Telepon..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-purple-600"
-                />
+                <select aria-label="Filter bulan lahir" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className={selectClass}>
+                  <option value="all">Semua bulan lahir</option>
+                  {MONTHS.map((m, i) => <option key={m} value={String(i + 1)}>{m}</option>)}
+                </select>
               </div>
 
-              {/* Filter Sentra */}
-              <select
-                value={selectedSentraFilter}
-                onChange={(e) => setSelectedSentraFilter(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-              >
-                <option value="all">Semua Sentra</option>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm text-ink-2">
+                  <span className="tabular-nums">{filteredProfiles.length}</span> umat
+                </p>
+                {hasFilter && (
+                  <Button variant="ghost" size="sm" onClick={resetFilters}>
+                    Reset filter
+                  </Button>
+                )}
+              </div>
+
+              {filteredProfiles.length === 0 ? (
+                <Panel>
+                  {profiles.length === 0 ? (
+                    <StateMessage
+                      kind="empty"
+                      title="Belum ada data umat."
+                      action={
+                        <Button variant="primary" size="sm" onClick={openAddUmatModal}>
+                          Tambah umat
+                        </Button>
+                      }
+                    />
+                  ) : (
+                    <StateMessage
+                      kind="empty"
+                      title="Tidak ada umat yang cocok dengan filter ini."
+                      action={hasFilter ? <Button size="sm" onClick={resetFilters}>Reset filter</Button> : undefined}
+                    />
+                  )}
+                </Panel>
+              ) : (
+                <Panel className="overflow-hidden">
+                  <div className="relative overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead>
+                        <tr className="border-b border-line">
+                          <th scope="col" className={th}>Nama</th>
+                          <th scope="col" className={th}>Sentra</th>
+                          <th scope="col" className={th}>Cetya</th>
+                          <th scope="col" className={th}>HAN</th>
+                          <th scope="col" className={th}>Bagian</th>
+                          <th scope="col" className={th}>Tgl lahir</th>
+                          <th scope="col" className={th}>Status</th>
+                          <th scope="col" className={th}><span className="sr-only">Aksi</span></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-line">
+                        {paginatedProfiles.map((umat) => (
+                          <tr key={umat.id} className="hover:bg-surface-2">
+                            <td className="py-2.5 px-4 font-medium text-ink min-w-[12rem]">
+                              {umat.full_name}
+                              {umat.role === 'admin' && <Badge tone="brand" className="ml-2 align-middle">Pengurus</Badge>}
+                            </td>
+                            <td className={`${td} whitespace-nowrap`}>{umat.sentra || <Empty />}</td>
+                            <td className={`${td} whitespace-nowrap`}>{umat.cetya || <Empty />}</td>
+                            <td className={`${td} whitespace-nowrap`}>{umat.han || <Empty />}</td>
+                            <td className={`${td} whitespace-nowrap`}>{umat.bagian || <Empty />}</td>
+                            <td className={`${td} whitespace-nowrap tabular-nums`}>
+                              {umat.birth_date
+                                ? new Date(umat.birth_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+                                : <Empty />}
+                            </td>
+                            <td className="py-2.5 px-4">
+                              {umat.is_active ? <Badge tone="ok">Aktif</Badge> : <Badge>Non-aktif</Badge>}
+                            </td>
+                            <td className="py-1 px-2">
+                              <div className="flex items-center justify-end gap-0.5">
+                                <button type="button" onClick={() => setSelectedUmatDetail(umat)} className={iconButton} aria-label={`Lihat detail ${umat.full_name}`}>
+                                  <Eye size={16} aria-hidden />
+                                </button>
+                                <button type="button" onClick={() => openEditUmatModal(umat)} className={iconButton} aria-label={`Ubah data ${umat.full_name}`}>
+                                  <Edit2 size={16} aria-hidden />
+                                </button>
+                                <button type="button" onClick={() => handleDeleteUmat(umat)} className={iconButtonDanger} aria-label={`Hapus ${umat.full_name}`}>
+                                  <Trash2 size={16} aria-hidden />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {totalPages > 1 && (
+                    <div className="p-3 border-t border-line flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-ink-2">
+                      <span className="tabular-nums">
+                        {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, filteredProfiles.length)} dari {filteredProfiles.length} umat
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}>
+                          Sebelumnya
+                        </Button>
+                        <span className="px-1 tabular-nums whitespace-nowrap">
+                          Halaman {currentPage} dari {totalPages}
+                        </span>
+                        <Button disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}>
+                          Berikutnya
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </Panel>
+              )}
+            </div>
+          )}
+
+          {activeMainTab === 'cetya' && (
+            <div role="tabpanel" id="panel-cetya" aria-labelledby="tab-cetya">
+              {cetyas.length === 0 ? (
+                <Panel>
+                  <StateMessage
+                    kind="empty"
+                    title="Belum ada Cetya."
+                    action={<Button variant="primary" size="sm" onClick={openAddCetyaModal}>Tambah Cetya</Button>}
+                  />
+                </Panel>
+              ) : (
+                <Panel className="overflow-hidden">
+                  <div className="relative overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead>
+                        <tr className="border-b border-line">
+                          <th scope="col" className={th}>Nama</th>
+                          <th scope="col" className={th}>Sentra</th>
+                          <th scope="col" className={th}>Ketua / PJ</th>
+                          <th scope="col" className={th}>Telepon</th>
+                          <th scope="col" className={th}>Alamat</th>
+                          <th scope="col" className={`${th} text-right`}>Jumlah HAN</th>
+                          <th scope="col" className={`${th} text-right`}>Jumlah umat</th>
+                          <th scope="col" className={th}><span className="sr-only">Aksi</span></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-line">
+                        {cetyas.map(c => (
+                          <tr key={c.id} className="hover:bg-surface-2">
+                            <td className="py-2.5 px-4 font-medium text-ink min-w-[12rem]">{c.name}</td>
+                            <td className={`${td} whitespace-nowrap`}>{c.sentra || <Empty />}</td>
+                            <td className={`${td} whitespace-nowrap`}>{c.leader_name || <Empty />}</td>
+                            <td className={`${td} whitespace-nowrap tabular-nums`}>{c.phone || <Empty />}</td>
+                            <td className={`${td} min-w-[14rem]`}>{c.address || <Empty />}</td>
+                            <td className={`${td} text-right tabular-nums`}>{counts.hanByCetya.get(c.name) || 0}</td>
+                            <td className={`${td} text-right tabular-nums`}>{counts.umatByCetya.get(c.name) || 0}</td>
+                            <td className="py-1 px-2">
+                              <div className="flex items-center justify-end gap-0.5">
+                                <button type="button" onClick={() => openEditCetyaModal(c)} className={iconButton} aria-label={`Ubah ${c.name}`}>
+                                  <Edit2 size={16} aria-hidden />
+                                </button>
+                                <button type="button" onClick={() => handleDeleteCetya(c)} className={iconButtonDanger} aria-label={`Hapus ${c.name}`}>
+                                  <Trash2 size={16} aria-hidden />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Panel>
+              )}
+            </div>
+          )}
+
+          {activeMainTab === 'han' && (
+            <div role="tabpanel" id="panel-han" aria-labelledby="tab-han">
+              {hans.length === 0 ? (
+                <Panel>
+                  <StateMessage
+                    kind="empty"
+                    title="Belum ada HAN."
+                    action={<Button variant="primary" size="sm" onClick={openAddHanModal}>Tambah HAN</Button>}
+                  />
+                </Panel>
+              ) : (
+                <Panel className="overflow-hidden">
+                  <div className="relative overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead>
+                        <tr className="border-b border-line">
+                          <th scope="col" className={th}>Nama</th>
+                          <th scope="col" className={th}>Cetya induk</th>
+                          <th scope="col" className={th}>Sentra</th>
+                          <th scope="col" className={th}>Pembina</th>
+                          <th scope="col" className={`${th} text-right`}>Jumlah umat</th>
+                          <th scope="col" className={th}><span className="sr-only">Aksi</span></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-line">
+                        {hans.map(h => (
+                          <tr key={h.id} className="hover:bg-surface-2">
+                            <td className="py-2.5 px-4 font-medium text-ink whitespace-nowrap">{h.name}</td>
+                            <td className={`${td} whitespace-nowrap`}>{h.cetya_name || <Empty />}</td>
+                            <td className={`${td} whitespace-nowrap`}>{h.sentra || <Empty />}</td>
+                            <td className={`${td} whitespace-nowrap`}>{h.leader_name || <Empty />}</td>
+                            <td className={`${td} text-right tabular-nums`}>{counts.umatByHan.get(h.name) || 0}</td>
+                            <td className="py-1 px-2">
+                              <div className="flex items-center justify-end gap-0.5">
+                                <button type="button" onClick={() => openEditHanModal(h)} className={iconButton} aria-label={`Ubah ${h.name}`}>
+                                  <Edit2 size={16} aria-hidden />
+                                </button>
+                                <button type="button" onClick={() => handleDeleteHan(h)} className={iconButtonDanger} aria-label={`Hapus ${h.name}`}>
+                                  <Trash2 size={16} aria-hidden />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Panel>
+              )}
+            </div>
+          )}
+        </>
+      )}
+
+      <Modal
+        open={isEditUmatModalOpen && !!editingProfile}
+        onClose={() => setIsEditUmatModalOpen(false)}
+        title={editingProfile ? `Ubah data ${editingProfile.full_name}` : 'Ubah data umat'}
+        size="lg"
+      >
+        <form onSubmit={handleUpdateUmat} className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Nama lengkap">
+              <input type="text" required value={editFullName} onChange={(e) => setEditFullName(e.target.value)} className={inputClass} />
+            </Field>
+            <Field label="Email login">
+              <input
+                type="email"
+                placeholder="contoh: hendra@vihara.or.id"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Field label="Sentra">
+              <select value={editSentra} onChange={(e) => changeEditSentra(e.target.value)} className={selectClass}>
                 {sentras.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
-
-              {/* Filter Cetya */}
-              <select
-                value={selectedCetyaFilter}
-                onChange={(e) => setSelectedCetyaFilter(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-              >
-                <option value="all">Semua Cetya</option>
-                {cetyas.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                {UNAFFILIATED_CETYA_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+            </Field>
+            <Field label="Cetya">
+              <select value={editCetya} onChange={(e) => changeEditCetya(e.target.value)} className={selectClass}>
+                {editCetya && !UNAFFILIATED_CETYA_OPTIONS.includes(editCetya) && !availableCetyasForEdit.some(c => c.name === editCetya) && (
+                  <option value={editCetya}>{editCetya}</option>
+                )}
+                {availableCetyasForEdit.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                <optgroup label="Tanpa naungan">
+                  {UNAFFILIATED_CETYA_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                </optgroup>
               </select>
-
-              {/* Filter HAN */}
-              <select
-                value={selectedHanFilter}
-                onChange={(e) => setSelectedHanFilter(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-              >
-                <option value="all">Semua HAN</option>
-                {hans.map(h => <option key={h.id} value={h.name}>{h.name}</option>)}
+            </Field>
+            <Field label="HAN">
+              <select value={editHan} onChange={(e) => setEditHan(e.target.value)} className={selectClass}>
+                {editHan && !availableHansForEdit.some(h => h.name === editHan) && (
+                  <option value={editHan}>{editHan}</option>
+                )}
+                {availableHansForEdit.map(h => <option key={h.id} value={h.name}>{h.name}</option>)}
+                <option value="">Tidak ada HAN</option>
+                {otherHansForEdit.length > 0 && (
+                  <optgroup label="HAN di Cetya lain">
+                    {otherHansForEdit.map(h => <option key={h.id} value={h.name}>{h.name}</option>)}
+                  </optgroup>
+                )}
               </select>
+            </Field>
+          </div>
 
-              {/* Filter Bagian */}
-              <select
-                value={selectedBagianFilter}
-                onChange={(e) => setSelectedBagianFilter(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-              >
-                <option value="all">Semua Bagian</option>
-                <option value="Pria">Pria</option>
-                <option value="Wanita">Wanita</option>
-                <option value="Inspirasi">Inspirasi</option>
-                <option value="Pro-M 40s">Pro-M 40s</option>
-                <option value="Pro-M Progresif">Pro-M Progresif</option>
-                <option value="GM">GM</option>
-                <option value="Bintang">Bintang</option>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="No. HP">
+              <input type="tel" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} className={inputClass} />
+            </Field>
+            <Field label="Bagian">
+              <select value={editBagian} onChange={(e) => setEditBagian(e.target.value as UmatBagian | '')} className={selectClass}>
+                <option value="">Pilih bagian</option>
+                {bagianOptions}
               </select>
-
-              {/* Filter Bulan Ultah */}
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-              >
-                <option value="all">Semua Ultah</option>
-                <option value="1">Januari</option>
-                <option value="2">Februari</option>
-                <option value="3">Maret</option>
-                <option value="4">April</option>
-                <option value="5">Mei</option>
-                <option value="6">Juni</option>
-                <option value="7">Juli</option>
-                <option value="8">Agustus</option>
-                <option value="9">September</option>
-                <option value="10">Oktober</option>
-                <option value="11">November</option>
-                <option value="12">Desember</option>
+            </Field>
+            <Field label="Tanggal lahir">
+              <input type="date" required value={editBirthDate} onChange={(e) => setEditBirthDate(e.target.value)} className={inputClass} />
+            </Field>
+            <Field label="Jenis kelamin">
+              <select value={editGender} onChange={(e) => setEditGender(e.target.value as 'L' | 'P')} className={selectClass}>
+                <option value="L">Laki-laki</option>
+                <option value="P">Perempuan</option>
               </select>
-            </div>
+            </Field>
           </div>
 
-          {/* Umat Table */}
-          <div className="rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-purple-50 dark:bg-purple-950/60 border-b border-purple-100 dark:border-purple-900/60 text-xs font-bold text-purple-950 dark:text-purple-200 uppercase tracking-wider">
-                    <th className="py-4 px-6">Nama Umat & Role</th>
-                    <th className="py-4 px-6">Sentra Utama</th>
-                    <th className="py-4 px-6">Cetya Bernaung</th>
-                    <th className="py-4 px-6">Bagian & HAN</th>
-                    <th className="py-4 px-6">Tanggal Lahir</th>
-                    <th className="py-4 px-6">Status</th>
-                    <th className="py-4 px-6 text-center">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-purple-100 dark:divide-purple-900/60 text-sm">
-                  {paginatedProfiles.map((umat) => (
-                    <tr key={umat.id} className="hover:bg-purple-50/40 dark:hover:bg-purple-950/40 transition">
-                      <td className="py-4 px-6 font-bold text-slate-900 dark:text-white flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-extrabold flex items-center justify-center text-xs border border-purple-200 dark:border-purple-800">
-                          {umat.full_name.substring(0, 2).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="font-extrabold text-slate-900 dark:text-slate-100">{umat.full_name}</p>
-                          <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${
-                            umat.role === 'admin' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
-                          }`}>
-                            {umat.role}
-                          </span>
-                        </div>
-                      </td>
+          <Field label="Alamat">
+            <input type="text" value={editAddress} onChange={(e) => setEditAddress(e.target.value)} className={inputClass} />
+          </Field>
 
-                      <td className="py-4 px-6 font-semibold text-xs text-purple-900 dark:text-purple-200">
-                        <span className="flex items-center gap-1 font-extrabold">
-                          <Compass size={14} className="text-purple-600" />
-                          {umat.sentra || 'Sentra Makassar'}
-                        </span>
-                      </td>
-
-                      <td className="py-4 px-6 text-slate-700 dark:text-slate-300 text-xs font-semibold">
-                        <span className="flex items-center gap-1">
-                          <Building size={14} className="text-amber-500" />
-                          {umat.cetya || '-'}
-                        </span>
-                      </td>
-
-                      <td className="py-4 px-6 font-bold text-xs">
-                        <div className="space-y-0.5">
-                          <p className="text-purple-900 dark:text-purple-300 flex items-center gap-1">
-                            <Home size={12} className="text-purple-600" /> {umat.han || '-'}
-                          </p>
-                          {umat.bagian && (
-                            <span className="text-[10px] bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-300 font-extrabold px-2 py-0.5 rounded inline-block">
-                              {umat.bagian}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-
-                      <td className="py-4 px-6 text-xs text-slate-600 dark:text-slate-400 font-medium">
-                        {umat.birth_date ? (
-                          <span className="flex items-center gap-1">
-                            <Calendar size={13} className="text-purple-500" />
-                            {new Date(umat.birth_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400">-</span>
-                        )}
-                      </td>
-
-                      <td className="py-4 px-6">
-                        {umat.is_active ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded">
-                            <CheckCircle size={12} /> Aktif
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
-                            <XCircle size={12} /> Non-aktif
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="py-4 px-6 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => openEditUmatModal(umat)}
-                            className="p-1.5 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/60 rounded-lg transition cursor-pointer"
-                            title="Edit Data Umat"
-                          >
-                            <Edit2 size={16} />
-                          </button>
-
-                          <button
-                            onClick={() => setSelectedUmatDetail(umat)}
-                            className="p-1.5 text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900 rounded-lg transition cursor-pointer"
-                            title="Lihat Detail Umat"
-                          >
-                            <Eye size={16} />
-                          </button>
-
-                          <button
-                            onClick={() => handleDeleteUmat(umat)}
-                            className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950 rounded-lg transition cursor-pointer"
-                            title="Hapus Data Umat"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="p-4 bg-purple-50/50 dark:bg-purple-950/40 border-t border-purple-100 dark:border-purple-900/60 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs">
-                <span className="font-bold text-slate-600 dark:text-slate-400">
-                  Menampilkan {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, filteredProfiles.length)} dari {filteredProfiles.length} Data Umat
-                </span>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    className="px-3 py-1.5 rounded-lg bg-white dark:bg-purple-900 border border-purple-200 dark:border-purple-800 text-slate-700 dark:text-slate-200 font-extrabold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-purple-100 dark:hover:bg-purple-800 transition cursor-pointer"
-                  >
-                    ← Sebelumnya
-                  </button>
-
-                  <span className="font-black px-2 text-purple-950 dark:text-purple-200">
-                    Halaman {currentPage} / {totalPages}
-                  </span>
-
-                  <button
-                    disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    className="px-3 py-1.5 rounded-lg bg-white dark:bg-purple-900 border border-purple-200 dark:border-purple-800 text-slate-700 dark:text-slate-200 font-extrabold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-purple-100 dark:hover:bg-purple-800 transition cursor-pointer"
-                  >
-                    Selanjutnya →
-                  </button>
-                </div>
-              </div>
-            )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Hak akses">
+              <select value={editRole} onChange={(e) => setEditRole(e.target.value as 'umat' | 'admin')} className={selectClass}>
+                <option value="umat">Umat (portal umat)</option>
+                <option value="admin">Pengurus (akses admin)</option>
+              </select>
+            </Field>
+            <Field label="Status">
+              <select value={editIsActive ? 'true' : 'false'} onChange={(e) => setEditIsActive(e.target.value === 'true')} className={selectClass}>
+                <option value="true">Aktif</option>
+                <option value="false">Non-aktif</option>
+              </select>
+            </Field>
           </div>
-        </div>
-      )}
 
-      {/* TAB 2: KELOLA & PROFIL CETYA */}
-      {activeMainTab === 'cetya' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {cetyas.map(c => {
-            const umatCount = profiles.filter(p => p.cetya === c.name).length;
-            const hanCount = hans.filter(h => h.cetya_name === c.name).length;
+          <ModalActions>
+            <Button variant="ghost" onClick={() => setIsEditUmatModalOpen(false)}>Batal</Button>
+            <Button type="submit" variant="primary">Simpan perubahan</Button>
+          </ModalActions>
+        </form>
+      </Modal>
 
-            return (
-              <div key={c.id} className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4 relative group">
-                <div className="flex justify-between items-start border-b border-purple-100 dark:border-purple-900/60 pb-3">
-                  <div>
-                    <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-200">
-                      {c.sentra}
-                    </span>
-                    <h3 className="text-lg font-black text-slate-900 dark:text-white mt-1 flex items-center gap-2">
-                      <Building className="text-amber-500" size={20} />
-                      <span>{c.name}</span>
-                    </h3>
-                  </div>
+      <Modal open={isAddUmatModalOpen} onClose={() => setIsAddUmatModalOpen(false)} title="Tambah umat" size="lg">
+        <form onSubmit={handleAddUmat} className="space-y-3">
+          <Field label="Nama lengkap">
+            <input
+              type="text"
+              required
+              placeholder="Contoh: Upasaka Hendra Kurniawan"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className={inputClass}
+            />
+          </Field>
 
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => openEditCetyaModal(c)}
-                      className="p-1.5 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950 rounded-lg transition cursor-pointer"
-                      title="Edit Profile Cetya"
-                    >
-                      <Edit2 size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteCetya(c)}
-                      className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950 rounded-lg transition cursor-pointer"
-                      title="Hapus Cetya"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
-                  <p><span className="text-slate-400 font-semibold mr-1">Alamat:</span> {c.address || '-'}</p>
-                  <p><span className="text-slate-400 font-semibold mr-1">Ketua / PJ Cetya:</span> {c.leader_name || '-'}</p>
-                  <p><span className="text-slate-400 font-semibold mr-1">Telepon:</span> {c.phone || '-'}</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-purple-100 dark:border-purple-900/60 text-xs">
-                  <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/60">
-                    <span className="text-[10px] text-slate-400 font-bold block">JUMLAH HAN NAUNGAN</span>
-                    <strong className="text-purple-900 dark:text-purple-200 text-base">{hanCount} HAN</strong>
-                  </div>
-                  <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40">
-                    <span className="text-[10px] text-amber-800 dark:text-amber-400 font-bold block">TOTAL UMAT BERNAUNG</span>
-                    <strong className="text-amber-950 dark:text-amber-200 text-base">{umatCount} Umat</strong>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* TAB 3: KELOLA & PROFIL HAN */}
-      {activeMainTab === 'han' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {hans.map(h => {
-            const umatInHan = profiles.filter(p => p.han === h.name).length;
-
-            return (
-              <div key={h.id} className="p-5 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-3">
-                <div className="flex justify-between items-start border-b border-purple-100 dark:border-purple-900/60 pb-2">
-                  <div>
-                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-200 font-mono">
-                      {h.sentra}
-                    </span>
-                    <h4 className="text-base font-black text-slate-900 dark:text-white mt-1 flex items-center gap-1.5">
-                      <Home className="text-purple-600" size={18} />
-                      <span>{h.name}</span>
-                    </h4>
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => openEditHanModal(h)}
-                      className="p-1 text-amber-600 dark:text-amber-400 hover:bg-amber-50 rounded transition cursor-pointer"
-                      title="Edit HAN"
-                    >
-                      <Edit2 size={15} />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteHan(h)}
-                      className="p-1 text-rose-500 hover:bg-rose-50 rounded transition cursor-pointer"
-                      title="Hapus HAN"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
-                  <p><span className="text-slate-400 font-semibold mr-1">Cetya Induk:</span> {h.cetya_name}</p>
-                  <p><span className="text-slate-400 font-semibold mr-1">Pembina HAN:</span> {h.leader_name || '-'}</p>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-xs font-bold text-purple-900 dark:text-purple-200 flex justify-between items-center">
-                  <span>Anggota Umat:</span>
-                  <span className="text-sm font-black">{umatInHan} Umat</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* MODAL EDIT UMAT (Sentra -> Cetya -> HAN Sequence) */}
-      {isEditUmatModalOpen && editingProfile && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#160e29] border border-purple-200 dark:border-purple-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex justify-between items-center border-b border-purple-100 dark:border-purple-900/60 pb-3">
-              <h3 className="text-lg font-extrabold text-purple-950 dark:text-white flex items-center gap-2">
-                <Edit2 size={18} className="text-amber-500" />
-                <span>Edit Data Umat ({editingProfile.full_name})</span>
-              </h3>
-              <button onClick={() => setIsEditUmatModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-xs cursor-pointer">Tutup ✕</button>
-            </div>
-            
-            <form onSubmit={handleUpdateUmat} className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Lengkap Umat / Pengurus</label>
-                  <input
-                    type="text"
-                    required
-                    value={editFullName}
-                    onChange={(e) => setEditFullName(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Email Login Terdaftar</label>
-                  <input
-                    type="email"
-                    placeholder="contoh: hendra@vihara.or.id"
-                    value={editEmail}
-                    onChange={(e) => setEditEmail(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-semibold"
-                  />
-                </div>
-              </div>
-
-              {/* HIERARKI URUTAN LOKASI: SENTRA -> CETYA -> HAN */}
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">1. Sentra Utama</label>
-                  <select
-                    value={editSentra}
-                    onChange={(e) => changeEditSentra(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-2.5 py-2 text-xs font-extrabold text-purple-950 dark:text-purple-200 focus:outline-none focus:border-purple-600"
-                  >
-                    {sentras.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">2. Cetya</label>
-                  <select
-                    value={editCetya}
-                    onChange={(e) => changeEditCetya(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-2.5 py-2 text-xs font-extrabold text-amber-700 dark:text-amber-300 focus:outline-none focus:border-purple-600"
-                  >
-                    {editCetya && !UNAFFILIATED_CETYA_OPTIONS.includes(editCetya) && !availableCetyasForEdit.some(c => c.name === editCetya) && (
-                      <option value={editCetya}>{editCetya}</option>
-                    )}
-                    {availableCetyasForEdit.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                    <optgroup label="Tanpa naungan">
-                      {UNAFFILIATED_CETYA_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                    </optgroup>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">3. Kelompok HAN</label>
-                  <select
-                    value={editHan}
-                    onChange={(e) => setEditHan(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                  >
-                    {editHan && !availableHansForEdit.some(h => h.name === editHan) && (
-                      <option value={editHan}>{editHan}</option>
-                    )}
-                    {availableHansForEdit.map(h => <option key={h.id} value={h.name}>{h.name}</option>)}
-                    <option value="">Tidak ada HAN</option>
-                    {otherHansForEdit.length > 0 && (
-                      <optgroup label="HAN di Cetya lain">
-                        {otherHansForEdit.map(h => <option key={h.id} value={h.name}>{h.name}</option>)}
-                      </optgroup>
-                    )}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-4 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">No. HP</label>
-                  <input
-                    type="text"
-                    value={editPhone}
-                    onChange={(e) => setEditPhone(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Bagian</label>
-                  <select
-                    value={editBagian}
-                    onChange={(e: any) => setEditBagian(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                  >
-                    <option value="">-- Pilih --</option>
-                    <option value="Pria">Pria</option>
-                    <option value="Wanita">Wanita</option>
-                    <option value="Inspirasi">Inspirasi</option>
-                    <option value="Pro-M 40s">Pro-M 40s</option>
-                    <option value="Pro-M Progresif">Pro-M Progresif</option>
-                    <option value="GM">GM</option>
-                    <option value="Bintang">Bintang</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tgl Lahir</label>
-                  <input
-                    type="date"
-                    required
-                    value={editBirthDate}
-                    onChange={(e) => setEditBirthDate(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Gender</label>
-                  <select
-                    value={editGender}
-                    onChange={(e: any) => setEditGender(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                  >
-                    <option value="L">Laki-laki</option>
-                    <option value="P">Perempuan</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Alamat Tempat Tinggal</label>
-                <input
-                  type="text"
-                  value={editAddress}
-                  onChange={(e) => setEditAddress(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Role Pengguna</label>
-                  <select
-                    value={editRole}
-                    onChange={(e: any) => setEditRole(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                  >
-                    <option value="umat">Umat Biasa</option>
-                    <option value="admin">Administrator (Pengurus)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Status Keaktifan</label>
-                  <select
-                    value={editIsActive ? 'true' : 'false'}
-                    onChange={(e) => setEditIsActive(e.target.value === 'true')}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                  >
-                    <option value="true">Aktif</option>
-                    <option value="false">Non-Aktif</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-purple-100 dark:border-purple-900/60">
-                <button
-                  type="button"
-                  onClick={() => setIsEditUmatModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="bg-[#1d1d1f] hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-semibold px-5 py-2 rounded-full text-xs shadow-xs transition-all cursor-pointer"
-                >
-                  Simpan Perubahan
-                </button>
-              </div>
-            </form>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Hak akses">
+              <select value={role} onChange={(e) => setRole(e.target.value as 'umat' | 'admin')} className={selectClass}>
+                <option value="umat">Umat (portal umat)</option>
+                <option value="admin">Pengurus (akses admin)</option>
+              </select>
+            </Field>
+            <Field label="Email login">
+              <input
+                type="email"
+                placeholder="contoh: nama@vihara.or.id"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
           </div>
-        </div>
-      )}
 
-      {/* MODAL ADD UMAT (Sentra -> Cetya -> HAN Sequence) */}
-      {isAddUmatModalOpen && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#160e29] border border-purple-200 dark:border-purple-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <h3 className="text-lg font-extrabold text-purple-950 dark:text-white border-b border-purple-100 dark:border-purple-900/60 pb-3">Input Data Umat Baru</h3>
-            
-            <form onSubmit={handleAddUmat} className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Role Hak Akses System</label>
-                  <select
-                    value={role}
-                    onChange={(e: any) => setRole(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs font-extrabold text-amber-600 dark:text-amber-300 focus:outline-none focus:border-purple-600"
-                  >
-                    <option value="umat">Umat Biasa (Portal Umat)</option>
-                    <option value="admin">⭐ Pengurus Admin (Akses Kelola Vihara)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Email Login Terdaftar</label>
-                  <input
-                    type="email"
-                    placeholder="contoh: admin.baru@vihara.or.id"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-semibold"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Lengkap Umat / Pengurus</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Contoh: Upasaka Hendra Kurniawan"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600 font-bold"
-                />
-              </div>
-
-              {/* HIERARKI URUTAN LOKASI: SENTRA -> CETYA -> HAN */}
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">1. Sentra Utama</label>
-                  <select
-                    value={sentra}
-                    onChange={(e) => changeAddSentra(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-2.5 py-2 text-xs font-extrabold text-purple-950 dark:text-purple-200 focus:outline-none focus:border-purple-600"
-                  >
-                    {sentras.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">2. Cetya</label>
-                  <select
-                    value={cetya}
-                    onChange={(e) => changeAddCetya(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-2.5 py-2 text-xs font-extrabold text-amber-700 dark:text-amber-300 focus:outline-none focus:border-purple-600"
-                  >
-                    {availableCetyasForAdd.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                    <optgroup label="Tanpa naungan">
-                      {UNAFFILIATED_CETYA_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                    </optgroup>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">3. Kelompok HAN</label>
-                  <select
-                    value={han}
-                    onChange={(e) => setHan(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                  >
-                    {availableHansForAdd.map(h => <option key={h.id} value={h.name}>{h.name}</option>)}
-                    <option value="">Tidak ada HAN</option>
-                    {otherHansForAdd.length > 0 && (
-                      <optgroup label="HAN di Cetya lain">
-                        {otherHansForAdd.map(h => <option key={h.id} value={h.name}>{h.name}</option>)}
-                      </optgroup>
-                    )}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-4 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">No. HP</label>
-                  <input
-                    type="text"
-                    placeholder="0812..."
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Bagian</label>
-                  <select
-                    value={bagian}
-                    onChange={(e: any) => setBagian(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                  >
-                    <option value="">-- Pilih --</option>
-                    <option value="Pria">Pria</option>
-                    <option value="Wanita">Wanita</option>
-                    <option value="Inspirasi">Inspirasi</option>
-                    <option value="Pro-M 40s">Pro-M 40s</option>
-                    <option value="Pro-M Progresif">Pro-M Progresif</option>
-                    <option value="GM">GM</option>
-                    <option value="Bintang">Bintang</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tgl Lahir</label>
-                  <input
-                    type="date"
-                    required
-                    value={birthDate}
-                    onChange={(e) => setBirthDate(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Gender</label>
-                  <select
-                    value={gender}
-                    onChange={(e: any) => setGender(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                  >
-                    <option value="L">Laki-laki</option>
-                    <option value="P">Perempuan</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Alamat Tempat Tinggal</label>
-                <input
-                  type="text"
-                  placeholder="Jl. Pluit Kencana No..."
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-purple-100 dark:border-purple-900/60">
-                <button
-                  type="button"
-                  onClick={() => setIsAddUmatModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="bg-[#1d1d1f] hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-semibold px-5 py-2 rounded-full text-xs shadow-xs transition-all cursor-pointer"
-                >
-                  Simpan Data Umat
-                </button>
-              </div>
-            </form>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Field label="Sentra">
+              <select value={sentra} onChange={(e) => changeAddSentra(e.target.value)} className={selectClass}>
+                {sentras.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </Field>
+            <Field label="Cetya">
+              <select value={cetya} onChange={(e) => changeAddCetya(e.target.value)} className={selectClass}>
+                {availableCetyasForAdd.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                <optgroup label="Tanpa naungan">
+                  {UNAFFILIATED_CETYA_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                </optgroup>
+              </select>
+            </Field>
+            <Field label="HAN">
+              <select value={han} onChange={(e) => setHan(e.target.value)} className={selectClass}>
+                {availableHansForAdd.map(h => <option key={h.id} value={h.name}>{h.name}</option>)}
+                <option value="">Tidak ada HAN</option>
+                {otherHansForAdd.length > 0 && (
+                  <optgroup label="HAN di Cetya lain">
+                    {otherHansForAdd.map(h => <option key={h.id} value={h.name}>{h.name}</option>)}
+                  </optgroup>
+                )}
+              </select>
+            </Field>
           </div>
-        </div>
-      )}
 
-      {/* MODAL ADD CETYA */}
-      {isAddCetyaModalOpen && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#160e29] border border-purple-200 dark:border-purple-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <h3 className="text-lg font-extrabold text-purple-950 dark:text-white border-b border-purple-100 dark:border-purple-900/60 pb-3">Tambah Cetya Baru</h3>
-            <form onSubmit={handleAddCetya} className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Nama Cetya</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Contoh: Cetya Avalokitesvara Makassar"
-                  value={cetyaNameInput}
-                  onChange={(e) => setCetyaNameInput(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Sentra Utama Naungan</label>
-                <select
-                  value={cetyaSentraInput}
-                  onChange={(e) => setCetyaSentraInput(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                >
-                  {sentras.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Ketua / Penanggung Jawab Cetya</label>
-                <input
-                  type="text"
-                  placeholder="Nama Penanggung Jawab"
-                  value={cetyaLeaderInput}
-                  onChange={(e) => setCetyaLeaderInput(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Alamat Cetya</label>
-                <input
-                  type="text"
-                  placeholder="Jl. Sulawesi No. 88, Makassar"
-                  value={cetyaAddressInput}
-                  onChange={(e) => setCetyaAddressInput(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">No. HP Sekretariat Cetya</label>
-                <input
-                  type="text"
-                  placeholder="0411-876543"
-                  value={cetyaPhoneInput}
-                  onChange={(e) => setCetyaPhoneInput(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t border-purple-100 dark:border-purple-900/60">
-                <button type="button" onClick={() => setIsAddCetyaModalOpen(false)} className="px-4 py-2 rounded-xl font-bold text-slate-500 cursor-pointer">Batal</button>
-                <button type="submit" className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold px-4 py-2 rounded-xl text-xs shadow-md cursor-pointer">Simpan Cetya</button>
-              </div>
-            </form>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="No. HP">
+              <input type="tel" placeholder="0812..." value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} />
+            </Field>
+            <Field label="Bagian">
+              <select value={bagian} onChange={(e) => setBagian(e.target.value as UmatBagian | '')} className={selectClass}>
+                <option value="">Pilih bagian</option>
+                {bagianOptions}
+              </select>
+            </Field>
+            <Field label="Tanggal lahir">
+              <input type="date" required value={birthDate} onChange={(e) => setBirthDate(e.target.value)} className={inputClass} />
+            </Field>
+            <Field label="Jenis kelamin">
+              <select value={gender} onChange={(e) => setGender(e.target.value as 'L' | 'P')} className={selectClass}>
+                <option value="L">Laki-laki</option>
+                <option value="P">Perempuan</option>
+              </select>
+            </Field>
           </div>
-        </div>
-      )}
 
-      {/* MODAL EDIT CETYA */}
-      {isEditCetyaModalOpen && editingCetya && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#160e29] border border-purple-200 dark:border-purple-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <h3 className="text-lg font-extrabold text-purple-950 dark:text-white border-b border-purple-100 dark:border-purple-900/60 pb-3">Edit Profile Cetya ({editingCetya.name})</h3>
-            <form onSubmit={handleUpdateCetya} className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Nama Cetya</label>
-                <input
-                  type="text"
-                  required
-                  value={cetyaNameInput}
-                  onChange={(e) => setCetyaNameInput(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                />
-              </div>
+          <Field label="Alamat">
+            <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} className={inputClass} />
+          </Field>
 
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Sentra Utama Naungan</label>
-                <select
-                  value={cetyaSentraInput}
-                  onChange={(e) => setCetyaSentraInput(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                >
-                  {sentras.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
+          <ModalActions>
+            <Button variant="ghost" onClick={() => setIsAddUmatModalOpen(false)}>Batal</Button>
+            <Button type="submit" variant="primary">Simpan umat</Button>
+          </ModalActions>
+        </form>
+      </Modal>
 
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Ketua / Penanggung Jawab Cetya</label>
-                <input
-                  type="text"
-                  value={cetyaLeaderInput}
-                  onChange={(e) => setCetyaLeaderInput(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                />
-              </div>
+      <Modal open={isAddCetyaModalOpen} onClose={() => setIsAddCetyaModalOpen(false)} title="Tambah Cetya">
+        <form onSubmit={handleAddCetya}>
+          {cetyaFormFields}
+          <ModalActions>
+            <Button variant="ghost" onClick={() => setIsAddCetyaModalOpen(false)}>Batal</Button>
+            <Button type="submit" variant="primary">Simpan Cetya</Button>
+          </ModalActions>
+        </form>
+      </Modal>
 
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Alamat Cetya</label>
-                <input
-                  type="text"
-                  value={cetyaAddressInput}
-                  onChange={(e) => setCetyaAddressInput(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                />
-              </div>
+      <Modal
+        open={isEditCetyaModalOpen && !!editingCetya}
+        onClose={() => setIsEditCetyaModalOpen(false)}
+        title={editingCetya ? `Ubah ${editingCetya.name}` : 'Ubah Cetya'}
+      >
+        <form onSubmit={handleUpdateCetya}>
+          {cetyaFormFields}
+          <ModalActions>
+            <Button variant="ghost" onClick={() => setIsEditCetyaModalOpen(false)}>Batal</Button>
+            <Button type="submit" variant="primary">Simpan perubahan</Button>
+          </ModalActions>
+        </form>
+      </Modal>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-purple-100 dark:border-purple-900/60">
-                <button type="button" onClick={() => setIsEditCetyaModalOpen(false)} className="px-4 py-2 rounded-xl font-bold text-slate-500 cursor-pointer">Batal</button>
-                <button type="submit" className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold px-4 py-2 rounded-xl text-xs shadow-md cursor-pointer">Simpan Perubahan</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <Modal open={isAddHanModalOpen} onClose={() => setIsAddHanModalOpen(false)} title="Tambah HAN">
+        <form onSubmit={handleAddHan}>
+          {hanFormFields}
+          <ModalActions>
+            <Button variant="ghost" onClick={() => setIsAddHanModalOpen(false)}>Batal</Button>
+            <Button type="submit" variant="primary">Simpan HAN</Button>
+          </ModalActions>
+        </form>
+      </Modal>
 
-      {/* MODAL ADD HAN */}
-      {isAddHanModalOpen && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#160e29] border border-purple-200 dark:border-purple-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <h3 className="text-lg font-extrabold text-purple-950 dark:text-white border-b border-purple-100 dark:border-purple-900/60 pb-3">Tambah HAN Baru</h3>
-            <form onSubmit={handleAddHan} className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Kode / Nama HAN</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Contoh: HAN Makassar 01"
-                  value={hanNameInput}
-                  onChange={(e) => setHanNameInput(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                />
-              </div>
+      <Modal
+        open={isEditHanModalOpen && !!editingHan}
+        onClose={() => setIsEditHanModalOpen(false)}
+        title={editingHan ? `Ubah ${editingHan.name}` : 'Ubah HAN'}
+      >
+        <form onSubmit={handleUpdateHan}>
+          {hanFormFields}
+          <ModalActions>
+            <Button variant="ghost" onClick={() => setIsEditHanModalOpen(false)}>Batal</Button>
+            <Button type="submit" variant="primary">Simpan perubahan</Button>
+          </ModalActions>
+        </form>
+      </Modal>
 
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Cetya Induk Naungan</label>
-                <select
-                  value={hanCetyaInput}
-                  onChange={(e) => setHanCetyaInput(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                >
-                  {cetyas.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Pembina / PJ HAN</label>
-                <input
-                  type="text"
-                  placeholder="Nama Pembina HAN"
-                  value={hanLeaderInput}
-                  onChange={(e) => setHanLeaderInput(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t border-purple-100 dark:border-purple-900/60">
-                <button type="button" onClick={() => setIsAddHanModalOpen(false)} className="px-4 py-2 rounded-xl font-bold text-slate-500 cursor-pointer">Batal</button>
-                <button type="submit" className="bg-purple-700 hover:bg-purple-800 text-white font-extrabold px-4 py-2 rounded-xl text-xs shadow-md cursor-pointer">Simpan HAN</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL EDIT HAN */}
-      {isEditHanModalOpen && editingHan && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#160e29] border border-purple-200 dark:border-purple-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <h3 className="text-lg font-extrabold text-purple-950 dark:text-white border-b border-purple-100 dark:border-purple-900/60 pb-3">Edit Profile HAN ({editingHan.name})</h3>
-            <form onSubmit={handleUpdateHan} className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Kode / Nama HAN</label>
-                <input
-                  type="text"
-                  required
-                  value={hanNameInput}
-                  onChange={(e) => setHanNameInput(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Cetya Induk Naungan</label>
-                <select
-                  value={hanCetyaInput}
-                  onChange={(e) => setHanCetyaInput(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                >
-                  {cetyas.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Pembina / PJ HAN</label>
-                <input
-                  type="text"
-                  value={hanLeaderInput}
-                  onChange={(e) => setHanLeaderInput(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t border-purple-100 dark:border-purple-900/60">
-                <button type="button" onClick={() => setIsEditHanModalOpen(false)} className="px-4 py-2 rounded-xl font-bold text-slate-500 cursor-pointer">Batal</button>
-                <button type="submit" className="bg-purple-700 hover:bg-purple-800 text-white font-extrabold px-4 py-2 rounded-xl text-xs shadow-md cursor-pointer">Simpan Perubahan</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL UMAT DETAIL DRAWER */}
-      {selectedUmatDetail && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#160e29] border border-purple-200 dark:border-purple-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex justify-between items-center border-b border-purple-100 dark:border-purple-900/60 pb-3">
-              <h3 className="text-lg font-extrabold text-purple-950 dark:text-white">Detail Profil Umat</h3>
-              <button onClick={() => setSelectedUmatDetail(null)} className="text-slate-400 hover:text-slate-600 text-xs cursor-pointer">✕</button>
-            </div>
-
-            <div className="space-y-3 text-xs text-slate-700 dark:text-slate-300">
-              <div>
-                <span className="text-slate-400 block font-semibold">Nama Lengkap</span>
-                <p className="text-base font-extrabold text-purple-950 dark:text-white">{selectedUmatDetail.full_name}</p>
-              </div>
-
-              <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/60 space-y-1 border border-purple-100 dark:border-purple-900">
-                <span className="text-[10px] text-purple-900 dark:text-purple-300 font-extrabold uppercase">HIERARKI LOKASI MNSBDI</span>
-                <p className="font-extrabold text-purple-950 dark:text-white text-xs">
-                  {selectedUmatDetail.sentra || 'Sentra Makassar'} ➔ {selectedUmatDetail.cetya} ➔ {selectedUmatDetail.han}
-                </p>
-              </div>
-
-              <div>
-                <span className="text-slate-400 block font-semibold">Alamat Lengkap</span>
-                <p>{selectedUmatDetail.address || 'Belum diisi'}</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <span className="text-slate-400 block font-semibold">Jenis Kelamin</span>
-                  <p className="font-bold">{selectedUmatDetail.gender === 'L' ? 'Laki-laki' : 'Perempuan'}</p>
+      <Modal open={!!selectedUmatDetail} onClose={() => setSelectedUmatDetail(null)} title="Detail umat">
+        {selectedUmatDetail && (
+          <>
+            <p className="text-base font-semibold text-ink">
+              {selectedUmatDetail.full_name}
+              {selectedUmatDetail.role === 'admin' && <Badge tone="brand" className="ml-2 align-middle">Pengurus</Badge>}
+            </p>
+            <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+              {([
+                ['Sentra', selectedUmatDetail.sentra],
+                ['Cetya', selectedUmatDetail.cetya],
+                ['HAN', selectedUmatDetail.han],
+                ['Bagian', selectedUmatDetail.bagian],
+                ['Jenis kelamin', selectedUmatDetail.gender === 'L' ? 'Laki-laki' : selectedUmatDetail.gender === 'P' ? 'Perempuan' : undefined],
+                ['Alamat', selectedUmatDetail.address],
+                ['Kontak darurat', selectedUmatDetail.emergency_contact]
+              ] as [string, string | undefined][]).map(([label, value]) => (
+                <div key={label} className="contents">
+                  <dt className="text-ink-3">{label}</dt>
+                  <dd className={`break-words ${value ? 'text-ink' : 'text-ink-3'}`}>{value || 'Belum diisi'}</dd>
                 </div>
-                <div>
-                  <span className="text-slate-400 block font-semibold">Kontak Darurat</span>
-                  <p>{selectedUmatDetail.emergency_contact || '-'}</p>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-purple-100 dark:border-purple-900/60 flex justify-end">
-                <button
-                  onClick={() => {
-                    const target = selectedUmatDetail;
-                    setSelectedUmatDetail(null);
-                    openEditUmatModal(target);
-                  }}
-                  className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow cursor-pointer"
-                >
-                  <Edit2 size={14} />
-                  <span>Edit Data Umat Ini</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+              ))}
+            </dl>
+            <ModalActions>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  const target = selectedUmatDetail;
+                  setSelectedUmatDetail(null);
+                  openEditUmatModal(target);
+                }}
+              >
+                <Edit2 size={14} aria-hidden />
+                Ubah data
+              </Button>
+            </ModalActions>
+          </>
+        )}
+      </Modal>
     </div>
   );
 }

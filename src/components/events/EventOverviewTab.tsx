@@ -1,5 +1,6 @@
 import React from 'react';
 import { ViharaEvent, EventRegistration } from '@/types/database';
+import { Panel } from '@/components/ui/kit';
 
 interface EventOverviewTabProps {
   event: ViharaEvent;
@@ -12,51 +13,52 @@ export const EventOverviewTab: React.FC<EventOverviewTabProps> = ({ event, regis
   const percentage = Math.min(100, (registrations.length / quota) * 100);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 print:hidden">
-      <div className="md:col-span-2 p-7 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-4 text-xs text-neutral-700 dark:text-neutral-300">
-        <h2 className="text-sm font-bold text-neutral-900 dark:text-white border-b border-black/[0.04] dark:border-white/[0.06] pb-3">
-          Informasi Kegiatan
-        </h2>
-        <p className="leading-relaxed text-[#86868b] dark:text-[#a1a1a6]">{event.description}</p>
-        
-        <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] space-y-2 border border-black/[0.06] dark:border-white/[0.08]">
-          <h3 className="font-semibold text-neutral-900 dark:text-white text-xs">Catatan & Ketentuan:</h3>
-          <ul className="list-disc list-inside space-y-1 text-[#86868b] dark:text-[#a1a1a6]">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 print:hidden">
+      <Panel className="md:col-span-2 p-5 space-y-4">
+        <h2 className="text-base font-semibold text-ink">Informasi kegiatan</h2>
+        {event.description ? (
+          <p className="text-sm leading-relaxed text-ink-2 whitespace-pre-line">{event.description}</p>
+        ) : (
+          <p className="text-sm text-ink-3">Deskripsi belum diisi.</p>
+        )}
+
+        <div className="border-t border-line pt-4 space-y-2">
+          <h3 className="text-sm font-semibold text-ink">Catatan dan ketentuan</h3>
+          <ul className="list-disc pl-5 space-y-1 text-sm text-ink-2">
             <li>Umat diimbau berbusana rapi dan bersahaja.</li>
             <li>Harap hadir 15 menit sebelum pembacaan Paritta dimulai.</li>
-            <li>Pendaftaran dapat dilakukan mandiri via Portal Umat atau di lokasi via Admin.</li>
+            <li>Pendaftaran dapat dilakukan mandiri lewat Portal Umat atau di lokasi lewat pengurus.</li>
           </ul>
         </div>
-      </div>
+      </Panel>
 
-      <div className="p-7 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-4">
-        <h2 className="text-sm font-bold text-neutral-900 dark:text-white border-b border-black/[0.04] dark:border-white/[0.06] pb-3">
-          Kuota Peserta
-        </h2>
-        <div className="space-y-3 text-xs">
-          <div className="flex justify-between items-center">
-            <span className="text-[#86868b]">Kapasitas Maksimal:</span>
-            <strong className="text-neutral-900 dark:text-white">{quota} Orang</strong>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-[#86868b]">Terdaftar Saat Ini:</span>
-            <strong className="text-neutral-900 dark:text-white">{registrations.length} Orang</strong>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-[#86868b]">Peserta Hadir:</span>
-            <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">
-              {attendedCount} Orang
-            </strong>
-          </div>
+      <Panel className="p-5 space-y-4">
+        <h2 className="text-base font-semibold text-ink">Kuota peserta</h2>
+        <p className="text-sm text-ink-2">
+          <span className="text-3xl font-bold tabular-nums text-brand">{registrations.length}</span> terdaftar
+        </p>
+        <dl className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-2 text-sm">
+          <dt className="text-ink-2">Kapasitas</dt>
+          <dd className="text-right tabular-nums text-ink">
+            {event.quota ? `${event.quota} orang` : <span className="text-ink-3">Belum diisi</span>}
+          </dd>
+          <dt className="text-ink-2">Hadir</dt>
+          <dd className="text-right tabular-nums text-ink">{attendedCount} orang</dd>
+        </dl>
 
-          <div className="w-full bg-black/[0.04] dark:bg-white/[0.08] h-2 rounded-full overflow-hidden mt-2">
-            <div 
-              className="bg-[#5e35b1] dark:bg-purple-400 h-full rounded-full transition-all duration-300" 
-              style={{ width: `${percentage}%` }}
-            />
+        {event.quota ? (
+          <div
+            role="progressbar"
+            aria-label="Kuota terisi"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(percentage)}
+            className="w-full h-2 rounded-sm bg-surface-2 overflow-hidden"
+          >
+            <div className="h-full bg-brand" style={{ width: `${percentage}%` }} />
           </div>
-        </div>
-      </div>
+        ) : null}
+      </Panel>
     </div>
   );
 };

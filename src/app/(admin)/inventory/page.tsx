@@ -1,21 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react';
-import { 
-  Package, 
-  PlusCircle, 
-  Search, 
-  AlertTriangle, 
-  Flame, 
-  BookOpen, 
-  Droplet,
-  ShoppingCart,
-  History,
-  Receipt,
-  UserCheck,
-  CheckCircle2
-} from 'lucide-react';
-import { 
+import { useState, useEffect, useCallback } from 'react';
+import { Plus, Minus, Search, ShoppingCart } from 'lucide-react';
+import {
   getInventoryPageBundle,
   updateStockQuantity,
   addInventoryItem,
@@ -23,52 +10,67 @@ import {
 } from '@/lib/actions/vihara-actions';
 import { InventoryItem, InventoryTransaction, Profile } from '@/types/database';
 import { SearchableUmatSelect } from '@/components/ui/SearchableUmatSelect';
+import { Button, Field, Modal, ModalActions, PageHeader, Panel, StateMessage, inputClass, selectClass } from '@/components/ui/kit';
+
+const LOW_STOCK_LIMIT = 10;
+
+const formatRupiah = (n: number) => `Rp ${n.toLocaleString('id-ID')}`;
 
 export default function InventoryPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [activeTab, setActiveTab] = useState<'stok' | 'transaksi'>('stok');
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  
-  // Modals
+
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [selectedItemForPurchase, setSelectedItemForPurchase] = useState<InventoryItem | null>(null);
 
-  // New Item Form
   const [itemName, setItemName] = useState('');
   const [category, setCategory] = useState('Dupa');
   const [stockQty, setStockQty] = useState('');
   const [pricePerUnit, setPricePerUnit] = useState('');
   const [unit, setUnit] = useState('Karton');
 
-  // Purchase Form
   const [purchaseQty, setPurchaseQty] = useState('1');
   const [selectedUmatId, setSelectedUmatId] = useState('');
   const [customBuyerName, setCustomBuyerName] = useState('');
   const [purchaseNotes, setPurchaseNotes] = useState('');
   const [purchaseError, setPurchaseError] = useState('');
 
-  const loadData = async () => {
-    const bundle = await getInventoryPageBundle();
-    setItems(bundle.inventory);
-    setTransactions(bundle.transactions);
-    setProfiles(bundle.profiles);
-  };
+  const loadData = useCallback(async () => {
+    try {
+      const bundle = await getInventoryPageBundle();
+      setItems(bundle.inventory);
+      setTransactions(bundle.transactions);
+      setProfiles(bundle.profiles);
+      setLoadState('ready');
+    } catch (e) {
+      console.error('Inventory load error:', e);
+      setLoadState(prev => (prev === 'ready' ? prev : 'error'));
+    }
+  }, []);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
+  const retryLoad = () => {
+    setLoadState('loading');
+    loadData();
+  };
+
+  // Update the row first so the number changes on tap; reload from the server only if the save fails.
   const handleStockAdjust = async (id: string, delta: number) => {
     setItems(prev => prev.map(item => item.id === id ? { ...item, stock_quantity: Math.max(0, item.stock_quantity + delta) } : item));
     try {
       const res = await updateStockQuantity(id, delta);
       if (res.error) loadData();
-    } catch (e) {
+    } catch {
       loadData();
     }
   };
@@ -130,424 +132,382 @@ export default function InventoryPage() {
     return matchesSearch && matchesCat;
   });
 
-  const lowStockCount = items.filter(i => i.stock_quantity <= 10).length;
+  const lowStockCount = items.filter(i => i.stock_quantity <= LOW_STOCK_LIMIT).length;
+
+  const tabClass = (active: boolean) =>
+    `min-h-[44px] sm:min-h-[38px] px-3 text-sm rounded-md cursor-pointer ${
+      active ? 'bg-surface text-ink font-semibold border border-line' : 'text-ink-2 font-medium hover:text-ink'
+    }`;
+
+  const chipClass = (active: boolean) =>
+    `min-h-[44px] sm:min-h-[32px] px-3 rounded-lg text-xs whitespace-nowrap cursor-pointer border ${
+      active ? 'bg-brand text-on-brand border-brand font-semibold' : 'bg-surface text-ink-2 border-line-strong hover:bg-surface-2 font-medium'
+    }`;
+
+  const stepperButtonClass =
+    'w-11 h-11 sm:w-8 sm:h-8 inline-flex items-center justify-center rounded-lg border border-line-strong bg-surface text-ink hover:bg-surface-2 disabled:opacity-50 cursor-pointer';
+
+  const renderStockStepper = (item: InventoryItem) => (
+    <div className="inline-flex items-center gap-1.5">
+      <button
+        type="button"
+        onClick={() => handleStockAdjust(item.id, -1)}
+        disabled={item.stock_quantity <= 0}
+        aria-label={`Kurangi stok ${item.item_name}`}
+        className={stepperButtonClass}
+      >
+        <Minus size={14} aria-hidden />
+      </button>
+      <span className={`min-w-[4.5rem] text-center text-sm tabular-nums ${item.stock_quantity <= LOW_STOCK_LIMIT ? 'text-gold font-semibold' : 'text-ink'}`}>
+        {item.stock_quantity} {item.unit}
+      </span>
+      <button
+        type="button"
+        onClick={() => handleStockAdjust(item.id, 1)}
+        aria-label={`Tambah stok ${item.item_name}`}
+        className={stepperButtonClass}
+      >
+        <Plus size={14} aria-hidden />
+      </button>
+    </div>
+  );
+
+  const purchaseTotal = selectedItemForPurchase
+    ? (parseInt(purchaseQty, 10) || 0) * selectedItemForPurchase.price_per_unit
+    : 0;
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-purple-950 dark:text-white tracking-tight flex items-center gap-2">
-            <Package className="text-purple-600 dark:text-purple-400" size={28} />
-            <span>Manajemen Inventaris & POS Pembelian Umat</span>
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Pencatatan barang kebaktian, harga unit, & pengurangan stok otomatis saat pembelian</p>
-        </div>
+      <PageHeader
+        title="Inventaris"
+        description="Stok barang kebaktian dan pembelian oleh umat. Stok berkurang otomatis saat pembelian dicatat."
+        actions={
+          <Button variant="primary" onClick={() => setIsAddItemModalOpen(true)}>
+            <Plus size={14} aria-hidden />
+            Tambah barang
+          </Button>
+        }
+      />
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsAddItemModalOpen(true)}
-            className="inline-flex items-center gap-2 bg-purple-900 hover:bg-purple-800 text-amber-300 font-black px-4 py-2.5 rounded-xl transition shadow-sm border border-purple-700/60 text-xs active:scale-95 cursor-pointer"
-          >
-            <PlusCircle size={16} />
-            <span>Tambah Barang</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Low Stock Alert */}
-      {lowStockCount > 0 && (
-        <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-200 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <AlertTriangle size={20} className="text-rose-600 dark:text-rose-400 shrink-0" />
-            <div>
-              <p className="text-sm font-extrabold">Peringatan Stok Menipis!</p>
-              <p className="text-xs text-rose-700 dark:text-rose-300">
-                Terdapat <strong className="font-extrabold">{lowStockCount} item</strong> barang di bawah batas minimum stok alert.
-              </p>
-            </div>
-          </div>
-          <span className="text-xs bg-rose-600 text-white font-extrabold px-3 py-1 rounded-lg">
-            Action Required
-          </span>
-        </div>
+      {loadState === 'loading' && (
+        <Panel><StateMessage kind="loading" title="Memuat inventaris..." /></Panel>
       )}
 
-      {/* Tabs Navigation (Sleek Segmented Pill Container) */}
-      <div className="bg-slate-100/90 dark:bg-purple-950/40 p-1.5 rounded-2xl border border-slate-200/80 dark:border-purple-900/50 inline-flex flex-wrap gap-1.5 shadow-xs">
-        <button
-          onClick={() => setActiveTab('stok')}
-          className={`py-2 px-4 rounded-xl text-xs transition flex items-center gap-2 cursor-pointer active:scale-95 ${
-            activeTab === 'stok'
-              ? 'bg-white dark:bg-[#1f1338] text-purple-950 dark:text-amber-300 font-black shadow-xs border border-slate-200/80 dark:border-purple-700/60'
-              : 'text-slate-600 dark:text-purple-300/80 font-bold hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-purple-900/30'
-          }`}
-        >
-          <Package size={15} />
-          <span>Daftar Stok Barang ({items.length})</span>
-        </button>
+      {loadState === 'error' && (
+        <Panel>
+          <StateMessage
+            kind="error"
+            title="Inventaris gagal dimuat."
+            description="Periksa koneksi lalu coba lagi."
+            action={<Button size="sm" onClick={retryLoad}>Coba lagi</Button>}
+          />
+        </Panel>
+      )}
 
-        <button
-          onClick={() => setActiveTab('transaksi')}
-          className={`py-2 px-4 rounded-xl text-xs transition flex items-center gap-2 cursor-pointer active:scale-95 ${
-            activeTab === 'transaksi'
-              ? 'bg-white dark:bg-[#1f1338] text-purple-950 dark:text-amber-300 font-black shadow-xs border border-slate-200/80 dark:border-purple-700/60'
-              : 'text-slate-600 dark:text-purple-300/80 font-bold hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-purple-900/30'
-          }`}
-        >
-          <History size={15} />
-          <span>Riwayat Transaksi ({transactions.length})</span>
-        </button>
-      </div>
+      {loadState === 'ready' && (
+        <>
+          {lowStockCount > 0 && (
+            <p className="rounded-lg bg-gold-soft text-gold px-4 py-3 text-sm">
+              {lowStockCount} barang tersisa {LOW_STOCK_LIMIT} atau kurang. Tambah stoknya sebelum kegiatan berikutnya.
+            </p>
+          )}
 
-      {/* TAB 1: STOK BARANG */}
-      {activeTab === 'stok' && (
-        <div className="space-y-4">
-          {/* Search & Category Filter */}
-          <div className="p-4 rounded-2xl bg-white dark:bg-[#1e1b4b] border border-purple-100 dark:border-indigo-900 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="relative flex-1 max-w-md w-full">
-              <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
-              <input
-                type="text"
-                placeholder="Cari Dupa, Lilin, Minyak, Buku..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-indigo-950 border border-purple-100 dark:border-indigo-800 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-purple-600"
-              />
-            </div>
-
-            <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto">
-              <button
-                onClick={() => setSelectedCategory('all')}
-                className={`px-3.5 py-1.5 rounded-full text-xs transition-all whitespace-nowrap cursor-pointer font-medium ${
-                  selectedCategory === 'all'
-                    ? 'bg-[#1d1d1f] text-white dark:bg-white dark:text-black font-semibold shadow-xs'
-                    : 'bg-black/[0.03] dark:bg-white/[0.06] text-neutral-700 dark:text-neutral-300 hover:bg-black/[0.06] dark:hover:bg-white/[0.1]'
-                }`}
-              >
-                Semua Kategori
-              </button>
-              {categories.map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs transition-all whitespace-nowrap cursor-pointer font-medium ${
-                    selectedCategory === cat
-                      ? 'bg-[#1d1d1f] text-white dark:bg-white dark:text-black font-semibold shadow-xs'
-                      : 'bg-black/[0.03] dark:bg-white/[0.06] text-neutral-700 dark:text-neutral-300 hover:bg-black/[0.06] dark:hover:bg-white/[0.1]'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
+          <div role="tablist" aria-label="Tampilan inventaris" className="inline-flex gap-1 p-1 rounded-lg bg-surface-2">
+            <button role="tab" type="button" aria-selected={activeTab === 'stok'} onClick={() => setActiveTab('stok')} className={tabClass(activeTab === 'stok')}>
+              Stok barang <span className="tabular-nums text-ink-3">({items.length})</span>
+            </button>
+            <button role="tab" type="button" aria-selected={activeTab === 'transaksi'} onClick={() => setActiveTab('transaksi')} className={tabClass(activeTab === 'transaksi')}>
+              Riwayat pembelian <span className="tabular-nums text-ink-3">({transactions.length})</span>
+            </button>
           </div>
 
-          {/* Table */}
-          <div className="rounded-2xl bg-white dark:bg-[#1e1b4b] border border-purple-100 dark:border-indigo-900 overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-purple-50 dark:bg-indigo-950/60 border-b border-purple-100 dark:border-indigo-900 text-xs font-bold text-purple-950 dark:text-purple-200 uppercase tracking-wider">
-                    <th className="py-4 px-6">Nama Barang Inventaris</th>
-                    <th className="py-4 px-6">Kategori</th>
-                    <th className="py-4 px-6">Harga per Unit</th>
-                    <th className="py-4 px-6">Sisa Stok</th>
-                    <th className="py-4 px-6 text-center">Aksi POS Pembelian & Restok</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-purple-100 dark:divide-indigo-900/60 text-sm">
-                  {filteredItems.map((item) => {
-                    const isLow = item.stock_quantity <= 10;
-                    return (
-                      <tr key={item.id} className="hover:bg-purple-50/40 dark:hover:bg-indigo-900/40 transition">
-                        <td className="py-4 px-6 font-bold text-slate-900 dark:text-white flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 flex items-center justify-center font-bold">
-                            {item.category === 'Dupa' ? <Flame size={18} /> :
-                             item.category === 'Lilin' ? <Flame size={18} /> :
-                             item.category === 'Minyak' ? <Droplet size={18} /> :
-                             <BookOpen size={18} />}
-                          </div>
-                          <div>
-                            <p className="font-extrabold text-slate-900 dark:text-slate-100">{item.item_name}</p>
-                            <p className="text-[11px] text-slate-400">Min. Alert: 10 {item.unit}</p>
-                          </div>
-                        </td>
+          {activeTab === 'stok' && (
+            <div className="space-y-3">
+              <div className="flex flex-col md:flex-row md:items-center gap-2">
+                <label className="relative flex-1 md:max-w-md">
+                  <span className="sr-only">Cari barang</span>
+                  <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" aria-hidden />
+                  <input
+                    type="search"
+                    placeholder="Cari dupa, lilin, minyak, buku"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className={`${inputClass} pl-9`}
+                  />
+                </label>
 
-                        <td className="py-4 px-6">
-                          <span className="text-xs font-bold px-2.5 py-1 rounded bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                            {item.category}
-                          </span>
-                        </td>
+                <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filter kategori">
+                  <button type="button" aria-pressed={selectedCategory === 'all'} onClick={() => setSelectedCategory('all')} className={chipClass(selectedCategory === 'all')}>
+                    Semua kategori
+                  </button>
+                  {categories.map(cat => (
+                    <button key={cat} type="button" aria-pressed={selectedCategory === cat} onClick={() => setSelectedCategory(cat)} className={chipClass(selectedCategory === cat)}>
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-                        <td className="py-4 px-6 font-mono font-bold text-purple-900 dark:text-purple-200">
-                          Rp {Number(item.price_per_unit).toLocaleString('id-ID')} / {item.unit}
-                        </td>
-
-                        <td className="py-4 px-6 font-mono">
-                          <span className={`text-sm font-extrabold px-2.5 py-1 rounded ${
-                            isLow ? 'text-rose-600 bg-rose-50 dark:bg-rose-950 border border-rose-200' : 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950'
-                          }`}>
-                            {item.stock_quantity} {item.unit}
-                          </span>
-                        </td>
-
-                        <td className="py-4 px-6">
-                          <div className="flex items-center justify-center gap-2">
-                            <button
-                              onClick={() => openPurchaseModal(item)}
-                              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow transition flex items-center gap-1.5"
-                            >
-                              <ShoppingCart size={14} />
-                              <span>Catat Pembelian Umat</span>
-                            </button>
-
-                            <button
-                              onClick={() => handleStockAdjust(item.id, 10)}
-                              className="px-2.5 py-1.5 rounded-lg bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-bold text-xs hover:bg-purple-200 transition"
-                              title="Restok +10"
-                            >
-                              +10 Restok
-                            </button>
-                          </div>
-                        </td>
+              {filteredItems.length === 0 ? (
+                <Panel>
+                  <StateMessage
+                    kind="empty"
+                    title={items.length === 0 ? 'Belum ada barang di inventaris.' : 'Tidak ada barang yang cocok dengan pencarian ini.'}
+                    action={
+                      items.length === 0 ? (
+                        <Button variant="primary" size="sm" onClick={() => setIsAddItemModalOpen(true)}>Tambah barang</Button>
+                      ) : (
+                        <Button size="sm" onClick={() => { setSearchTerm(''); setSelectedCategory('all'); }}>Reset filter</Button>
+                      )
+                    }
+                  />
+                </Panel>
+              ) : (
+                <Panel className="overflow-hidden">
+                  <table className="hidden md:table w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-line text-xs text-ink-3">
+                        <th scope="col" className="py-2.5 px-4 font-medium">Barang</th>
+                        <th scope="col" className="py-2.5 px-4 font-medium">Kategori</th>
+                        <th scope="col" className="py-2.5 px-4 font-medium text-right">Harga per unit</th>
+                        <th scope="col" className="py-2.5 px-4 font-medium text-center">Stok</th>
+                        <th scope="col" className="py-2.5 px-4"><span className="sr-only">Aksi</span></th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {filteredItems.map((item) => (
+                        <tr key={item.id} className="hover:bg-surface-2">
+                          <td className="py-2.5 px-4 font-medium text-ink">{item.item_name}</td>
+                          <td className="py-2.5 px-4 text-ink-2">{item.category}</td>
+                          <td className="py-2.5 px-4 text-ink-2 tabular-nums text-right whitespace-nowrap">
+                            {formatRupiah(Number(item.price_per_unit))} / {item.unit}
+                          </td>
+                          <td className="py-2 px-4 text-center">{renderStockStepper(item)}</td>
+                          <td className="py-2 px-4 text-right">
+                            <div className="inline-flex items-center gap-2">
+                              <Button size="sm" onClick={() => handleStockAdjust(item.id, 10)}>Restok +10</Button>
+                              <Button variant="primary" size="sm" onClick={() => openPurchaseModal(item)}>
+                                <ShoppingCart size={14} aria-hidden />
+                                Catat pembelian
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  <ul className="md:hidden divide-y divide-line">
+                    {filteredItems.map((item) => (
+                      <li key={item.id} className="p-3.5 space-y-2.5">
+                        <div>
+                          <p className="text-sm font-medium text-ink break-words">{item.item_name}</p>
+                          <p className="text-xs text-ink-2">
+                            {item.category}, <span className="tabular-nums">{formatRupiah(Number(item.price_per_unit))}</span> / {item.unit}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          {renderStockStepper(item)}
+                          <div className="flex gap-2">
+                            <Button onClick={() => handleStockAdjust(item.id, 10)}>+10</Button>
+                            <Button variant="primary" onClick={() => openPurchaseModal(item)}>Catat pembelian</Button>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </Panel>
+              )}
             </div>
-          </div>
-        </div>
+          )}
+
+          {activeTab === 'transaksi' && (
+            transactions.length === 0 ? (
+              <Panel><StateMessage kind="empty" title="Belum ada pembelian yang dicatat." /></Panel>
+            ) : (
+              <Panel className="overflow-hidden">
+                <table className="hidden md:table w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-line text-xs text-ink-3">
+                      <th scope="col" className="py-2.5 px-4 font-medium">Waktu</th>
+                      <th scope="col" className="py-2.5 px-4 font-medium">Pembeli</th>
+                      <th scope="col" className="py-2.5 px-4 font-medium">Barang</th>
+                      <th scope="col" className="py-2.5 px-4 font-medium text-right">Jumlah</th>
+                      <th scope="col" className="py-2.5 px-4 font-medium text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line">
+                    {transactions.map(tx => (
+                      <tr key={tx.id} className="hover:bg-surface-2">
+                        <td className="py-2.5 px-4 text-ink-2 whitespace-nowrap">
+                          {new Date(tx.transaction_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                        <td className="py-2.5 px-4 font-medium text-ink">{tx.buyer_name}</td>
+                        <td className="py-2.5 px-4 text-ink-2">{tx.item_name}</td>
+                        <td className="py-2.5 px-4 text-ink tabular-nums text-right">{tx.quantity}</td>
+                        <td className="py-2.5 px-4 text-ink tabular-nums text-right whitespace-nowrap">{formatRupiah(Number(tx.total_price))}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                <ul className="md:hidden divide-y divide-line">
+                  {transactions.map(tx => (
+                    <li key={tx.id} className="p-3.5 space-y-0.5">
+                      <div className="flex justify-between gap-3">
+                        <p className="text-sm font-medium text-ink break-words">{tx.buyer_name}</p>
+                        <p className="text-sm tabular-nums text-ink shrink-0">{formatRupiah(Number(tx.total_price))}</p>
+                      </div>
+                      <p className="text-xs text-ink-2">
+                        <span className="tabular-nums">{tx.quantity}</span> x {tx.item_name}
+                      </p>
+                      <p className="text-xs text-ink-3">
+                        {new Date(tx.transaction_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </Panel>
+            )
+          )}
+        </>
       )}
 
-      {/* TAB 2: RIWAYAT TRANSAKSI PEMBELIAN UMAT */}
-      {activeTab === 'transaksi' && (
-        <div className="rounded-2xl bg-white dark:bg-[#1e1b4b] border border-purple-100 dark:border-indigo-900 overflow-hidden shadow-sm">
-          <div className="p-4 bg-purple-50 dark:bg-indigo-950/60 border-b border-purple-100 dark:border-indigo-900 flex justify-between items-center">
-            <h3 className="text-sm font-extrabold text-purple-950 dark:text-white flex items-center gap-2">
-              <Receipt size={18} className="text-amber-500" />
-              <span>Log Pembelian Inventaris Umat (Otomatis Potong Stok)</span>
-            </h3>
-            <span className="text-xs text-slate-500">POS Sales History</span>
-          </div>
-
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-purple-100 dark:border-indigo-900 text-slate-400 uppercase font-bold">
-                <th className="p-4">Tanggal & Waktu</th>
-                <th className="p-4">Nama Pembeli (Umat)</th>
-                <th className="p-4">Barang Terbeli</th>
-                <th className="p-4">Jumlah</th>
-                <th className="p-4">Total Harga (Rp)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-purple-100 dark:divide-indigo-900/60">
-              {transactions.map(tx => (
-                <tr key={tx.id} className="hover:bg-purple-50/40 dark:hover:bg-indigo-900/40">
-                  <td className="p-4 font-mono text-slate-500">
-                    {new Date(tx.transaction_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                  </td>
-                  <td className="p-4 font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <UserCheck size={14} className="text-purple-500" />
-                    <span>{tx.buyer_name}</span>
-                  </td>
-                  <td className="p-4 font-semibold text-purple-950 dark:text-purple-200">
-                    {tx.item_name}
-                  </td>
-                  <td className="p-4 font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                    {tx.quantity} Unit
-                  </td>
-                  <td className="p-4 font-extrabold font-mono text-purple-900 dark:text-purple-100">
-                    Rp {Number(tx.total_price).toLocaleString('id-ID')}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Modal POS Process Purchase */}
-      {isPurchaseModalOpen && selectedItemForPurchase && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#1e1b4b] border border-purple-200 dark:border-indigo-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <h3 className="text-lg font-extrabold text-purple-950 dark:text-white border-b border-purple-100 dark:border-indigo-900 pb-3 flex items-center gap-2">
-              <ShoppingCart className="text-emerald-500" size={20} />
-              <span>Catat Pembelian Barang Umat</span>
-            </h3>
-
-            <div className="p-3 rounded-xl bg-purple-50 dark:bg-indigo-950 border border-purple-100 dark:border-indigo-900 space-y-1 text-xs">
-              <p className="font-extrabold text-purple-950 dark:text-white text-sm">{selectedItemForPurchase.item_name}</p>
-              <p className="text-slate-500">Harga Unit: <strong className="text-purple-700 dark:text-purple-300">Rp {Number(selectedItemForPurchase.price_per_unit).toLocaleString('id-ID')}</strong></p>
-              <p className="text-slate-500">Sisa Stok Tersebar: <strong className="text-emerald-600 dark:text-emerald-400">{selectedItemForPurchase.stock_quantity} {selectedItemForPurchase.unit}</strong></p>
-            </div>
+      <Modal
+        open={isPurchaseModalOpen && !!selectedItemForPurchase}
+        onClose={() => setIsPurchaseModalOpen(false)}
+        title="Catat pembelian"
+      >
+        {selectedItemForPurchase && (
+          <form onSubmit={handleProcessPurchase} className="space-y-4">
+            <dl className="rounded-lg bg-surface-2 p-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
+              <dt className="text-ink-3">Barang</dt>
+              <dd className="font-medium text-ink break-words">{selectedItemForPurchase.item_name}</dd>
+              <dt className="text-ink-3">Harga</dt>
+              <dd className="tabular-nums text-ink">{formatRupiah(Number(selectedItemForPurchase.price_per_unit))} / {selectedItemForPurchase.unit}</dd>
+              <dt className="text-ink-3">Sisa stok</dt>
+              <dd className="tabular-nums text-ink">{selectedItemForPurchase.stock_quantity} {selectedItemForPurchase.unit}</dd>
+            </dl>
 
             {purchaseError && (
-              <div className="text-xs p-2.5 rounded-lg bg-rose-100 text-rose-800 font-bold border border-rose-200">
-                {purchaseError}
-              </div>
+              <p role="alert" className="rounded-lg bg-danger-soft text-danger px-3 py-2 text-sm">{purchaseError}</p>
             )}
 
-            <form onSubmit={handleProcessPurchase} className="space-y-3 text-xs">
-              <div>
-                <SearchableUmatSelect
-                  label="Pilih Umat Pembeli"
-                  profiles={profiles}
-                  value={selectedUmatId}
-                  onChange={(id, profile) => {
-                    setSelectedUmatId(id);
-                    if (profile) setCustomBuyerName(profile.full_name);
-                  }}
-                  placeholder="-- Non-Umat / Cari Umat --"
-                />
-              </div>
+            <SearchableUmatSelect
+              label="Umat pembeli (opsional)"
+              profiles={profiles}
+              value={selectedUmatId}
+              onChange={(id, profile) => {
+                setSelectedUmatId(id);
+                if (profile) setCustomBuyerName(profile.full_name);
+              }}
+              placeholder="Cari nama umat"
+            />
 
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Nama Pembeli (Tampilan)</label>
+            <Field label="Nama pembeli">
+              <input
+                type="text"
+                required
+                placeholder="Nama umat atau pembeli umum"
+                value={customBuyerName}
+                onChange={(e) => setCustomBuyerName(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Jumlah">
                 <input
-                  type="text"
+                  type="number"
+                  min="1"
+                  max={selectedItemForPurchase.stock_quantity}
                   required
-                  placeholder="Suryani Dewi / Pembeli Umum"
-                  value={customBuyerName}
-                  onChange={(e) => setCustomBuyerName(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-indigo-950 border border-purple-100 dark:border-indigo-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
+                  value={purchaseQty}
+                  onChange={(e) => setPurchaseQty(e.target.value)}
+                  className={`${inputClass} tabular-nums`}
                 />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Jumlah Pembelian</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max={selectedItemForPurchase.stock_quantity}
-                    required
-                    value={purchaseQty}
-                    onChange={(e) => setPurchaseQty(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-indigo-950 border border-purple-100 dark:border-indigo-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Total Pembayaran</label>
-                  <div className="w-full bg-purple-100 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 rounded-xl px-3 py-2 text-xs font-extrabold text-purple-900 dark:text-purple-200">
-                    Rp {((parseInt(purchaseQty, 10) || 0) * selectedItemForPurchase.price_per_unit).toLocaleString('id-ID')}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t border-purple-100 dark:border-indigo-900">
-                <button
-                  type="button"
-                  onClick={() => setIsPurchaseModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-4 py-2 rounded-xl text-xs shadow-md"
-                >
-                  Konfirmasi & Potong Stok
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Add Inventory */}
-      {isAddItemModalOpen && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#1e1b4b] border border-purple-200 dark:border-indigo-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <h3 className="text-lg font-extrabold text-purple-950 dark:text-white border-b border-purple-100 dark:border-indigo-900 pb-3">Input Barang Inventaris Baru</h3>
-            <form onSubmit={handleAddItem} className="space-y-3">
+              </Field>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Barang</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Contoh: Dupa Gaharu Asli 500g"
-                  value={itemName}
-                  onChange={(e) => setItemName(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-indigo-950 border border-purple-100 dark:border-indigo-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                />
+                <span className="block text-xs font-medium text-ink-2 mb-1">Total bayar</span>
+                <p className="min-h-[44px] sm:min-h-[38px] flex items-center text-base font-semibold tabular-nums text-ink" aria-live="polite">
+                  {formatRupiah(purchaseTotal)}
+                </p>
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kategori</label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-indigo-950 border border-purple-100 dark:border-indigo-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                  >
-                    <option value="Dupa">Dupa</option>
-                    <option value="Lilin">Lilin</option>
-                    <option value="Minyak">Minyak Pelita</option>
-                    <option value="Buku">Buku Paritta</option>
-                  </select>
-                </div>
+            <ModalActions>
+              <Button onClick={() => setIsPurchaseModalOpen(false)}>Batal</Button>
+              <Button type="submit" variant="primary">Simpan dan kurangi stok</Button>
+            </ModalActions>
+          </form>
+        )}
+      </Modal>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Satuan</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Karton / Pasang"
-                    value={unit}
-                    onChange={(e) => setUnit(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-indigo-950 border border-purple-100 dark:border-indigo-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                  />
-                </div>
-              </div>
+      <Modal open={isAddItemModalOpen} onClose={() => setIsAddItemModalOpen(false)} title="Tambah barang">
+        <form onSubmit={handleAddItem} className="space-y-4">
+          <Field label="Nama barang">
+            <input
+              type="text"
+              required
+              placeholder="Contoh: Dupa Gaharu 500 g"
+              value={itemName}
+              onChange={(e) => setItemName(e.target.value)}
+              className={inputClass}
+            />
+          </Field>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Stok Awal</label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="100"
-                    value={stockQty}
-                    onChange={(e) => setStockQty(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-indigo-950 border border-purple-100 dark:border-indigo-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Harga per Unit (Rp)</label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="45000"
-                    value={pricePerUnit}
-                    onChange={(e) => setPricePerUnit(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-indigo-950 border border-purple-100 dark:border-indigo-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t border-purple-100 dark:border-indigo-900">
-                <button
-                  type="button"
-                  onClick={() => setIsAddItemModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="bg-[#1d1d1f] hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 font-semibold px-5 py-2 rounded-full text-xs shadow-xs transition-all cursor-pointer"
-                >
-                  Simpan Barang
-                </button>
-              </div>
-            </form>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Kategori">
+              <select value={category} onChange={(e) => setCategory(e.target.value)} className={selectClass}>
+                <option value="Dupa">Dupa</option>
+                <option value="Lilin">Lilin</option>
+                <option value="Minyak">Minyak pelita</option>
+                <option value="Buku">Buku paritta</option>
+              </select>
+            </Field>
+            <Field label="Satuan">
+              <input
+                type="text"
+                required
+                placeholder="Karton, pasang"
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
           </div>
-        </div>
-      )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Stok awal">
+              <input
+                type="number"
+                required
+                min={0}
+                placeholder="100"
+                value={stockQty}
+                onChange={(e) => setStockQty(e.target.value)}
+                className={`${inputClass} tabular-nums`}
+              />
+            </Field>
+            <Field label="Harga per unit (Rp)">
+              <input
+                type="number"
+                required
+                min={0}
+                placeholder="45000"
+                value={pricePerUnit}
+                onChange={(e) => setPricePerUnit(e.target.value)}
+                className={`${inputClass} tabular-nums`}
+              />
+            </Field>
+          </div>
+
+          <ModalActions>
+            <Button onClick={() => setIsAddItemModalOpen(false)}>Batal</Button>
+            <Button type="submit" variant="primary">Simpan barang</Button>
+          </ModalActions>
+        </form>
+      </Modal>
     </div>
   );
 }

@@ -1,36 +1,54 @@
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { 
-  HeartHandshake, 
-  Plus, 
-  Search, 
-  Filter, 
-  Calendar, 
-  DollarSign, 
-  User, 
-  FileText,
-  TrendingUp,
-  Receipt
-} from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { getDonations } from '@/lib/actions/vihara-actions';
 import { Donation } from '@/types/database';
+import { Button, PageHeader, Panel, StateMessage, buttonClass, inputClass, selectClass } from '@/components/ui/kit';
+
+const TYPE_LABELS: Record<string, string> = {
+  paramita: 'Paramita',
+  operasional: 'Operasional',
+  pembangunan: 'Pembangunan',
+  lainnya: 'Lainnya'
+};
+
+const formatRupiah = (n: number) => `Rp ${n.toLocaleString('id-ID')}`;
+const formatDate = (iso: string) => new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
 export default function DonationsListPage() {
   const [donations, setDonations] = useState<Donation[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPurpose, setSelectedPurpose] = useState('all');
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
 
-  useEffect(() => {
-    async function loadData() {
+  const loadData = useCallback(async () => {
+    setLoadState('loading');
+    try {
       const data = await getDonations();
       setDonations(data);
+      setLoadState('ready');
+    } catch (e) {
+      console.error('Donations load error:', e);
+      setLoadState('error');
     }
-    loadData();
   }, []);
 
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
   const totalAmount = donations.reduce((sum, d) => sum + Number(d.amount), 0);
+
+  const now = new Date();
+  const monthName = now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+  const monthTotal = donations
+    .filter(d => {
+      const dt = new Date(d.donation_date);
+      return dt.getFullYear() === now.getFullYear() && dt.getMonth() === now.getMonth();
+    })
+    .reduce((sum, d) => sum + Number(d.amount), 0);
 
   const filteredDonations = donations.filter(d => {
     const purposeStr = (d.purpose || d.donation_type || '');
@@ -40,115 +58,138 @@ export default function DonationsListPage() {
     return matchSearch && matchPurpose;
   });
 
+  const purposeLabel = (d: Donation) => {
+    const raw = d.purpose || d.donation_type;
+    if (!raw) return null;
+    return TYPE_LABELS[raw] || raw;
+  };
+
+  const hasFilter = searchTerm.trim() !== '' || selectedPurpose !== 'all';
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-purple-950 dark:text-white tracking-tight flex items-center gap-2">
-            <HeartHandshake className="text-emerald-500" size={28} />
-            <span>Pencatatan Dana Paramita & Donasi</span>
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Rekapitulasi dana paramita, operasional, & pembangunan vihara</p>
-        </div>
+      <PageHeader
+        title="Dana Paramita"
+        description="Catatan dana paramita, operasional, dan pembangunan vihara."
+        actions={
+          <Link href="/donations/new" className={buttonClass('primary')}>
+            <Plus size={14} aria-hidden />
+            Catat dana
+          </Link>
+        }
+      />
 
-        <Link
-          href="/donations/new"
-          className="inline-flex items-center gap-2 bg-purple-900 hover:bg-purple-800 text-amber-300 font-black px-4 py-2.5 rounded-xl transition shadow-sm border border-purple-700/60 text-xs active:scale-95 cursor-pointer"
-        >
-          <Plus size={16} />
-          <span>Tambah Dana Paramita Baru</span>
-        </Link>
-      </div>
+      {loadState === 'loading' && (
+        <Panel><StateMessage kind="loading" title="Memuat catatan dana..." /></Panel>
+      )}
 
-      {/* Stats Summary */}
-      <div className="p-6 rounded-2xl bg-slate-900 dark:bg-[#150d28] text-white shadow-md border border-purple-800/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-purple-300">Total Akumulasi Dana Paramita</span>
-          <p className="text-3xl font-black text-amber-300">Rp {totalAmount.toLocaleString('id-ID')}</p>
-        </div>
-        <div className="text-xs text-purple-200 font-semibold">
-          Tercatat {donations.length} transaksi dana paramita terverifikasi.
-        </div>
-      </div>
+      {loadState === 'error' && (
+        <Panel>
+          <StateMessage
+            kind="error"
+            title="Catatan dana gagal dimuat."
+            description="Periksa koneksi lalu coba lagi."
+            action={<Button size="sm" onClick={loadData}>Coba lagi</Button>}
+          />
+        </Panel>
+      )}
 
-      {/* Filter Toolbar */}
-      <div className="p-5 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-purple-100 dark:border-purple-900/60 pb-3">
-          <span className="text-xs font-extrabold text-purple-950 dark:text-white flex items-center gap-1.5">
-            <Filter size={16} className="text-amber-500" />
-            <span>Filter Transaksi Donasi</span>
-          </span>
-          <span className="text-xs text-slate-500 dark:text-slate-400">
-            Ditemukan: <strong className="text-purple-700 dark:text-purple-300 font-extrabold">{filteredDonations.length}</strong> Transaksi
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
-            <input
-              type="text"
-              placeholder="Cari Nama Donatur / Peruntukan..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-purple-600"
-            />
+      {loadState === 'ready' && (
+        <>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+            <p className="text-sm text-ink-2">
+              <span className="text-3xl font-bold tabular-nums text-brand">{formatRupiah(monthTotal)}</span>{' '}
+              masuk bulan {monthName}
+            </p>
+            <p className="text-xs text-ink-3">
+              Total seluruhnya <span className="tabular-nums text-ink-2">{formatRupiah(totalAmount)}</span> dari {donations.length} catatan
+            </p>
           </div>
 
-          <select
-            value={selectedPurpose}
-            onChange={(e) => setSelectedPurpose(e.target.value)}
-            className="w-full bg-slate-50 dark:bg-purple-950 border border-purple-100 dark:border-purple-900 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
-          >
-            <option value="all">Semua Peruntukan</option>
-            <option value="paramita">Dana Paramita Utama</option>
-            <option value="operasional">Operasional Cetya & Vihara</option>
-            <option value="pembangunan">Pembangunan / Renovasi</option>
-            <option value="lainnya">Lainnya</option>
-          </select>
-        </div>
-      </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <label className="relative">
+              <span className="sr-only">Cari donatur atau peruntukan</span>
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" aria-hidden />
+              <input
+                type="search"
+                placeholder="Cari donatur atau peruntukan"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={`${inputClass} pl-9`}
+              />
+            </label>
 
-      {/* Donations Table */}
-      <div className="rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-purple-50 dark:bg-purple-950/60 border-b border-purple-100 dark:border-purple-900/60 text-xs font-bold text-purple-950 dark:text-purple-200 uppercase tracking-wider">
-                <th className="py-4 px-6">Donatur</th>
-                <th className="py-4 px-6">Nominal (Rp)</th>
-                <th className="py-4 px-6">Peruntukan Dana</th>
-                <th className="py-4 px-6">Tanggal Transaksi</th>
-                <th className="py-4 px-6">Catatan / Keterangan</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-purple-100 dark:divide-purple-900/60 text-sm">
-              {filteredDonations.map((d) => (
-                <tr key={d.id} className="hover:bg-purple-50/40 dark:hover:bg-purple-950/40 transition">
-                  <td className="py-4 px-6 font-extrabold text-slate-900 dark:text-white">
-                    {d.donor_name}
-                  </td>
-                  <td className="py-4 px-6 font-mono font-black text-emerald-700 dark:text-emerald-400">
-                    Rp {Number(d.amount).toLocaleString('id-ID')}
-                  </td>
-                  <td className="py-4 px-6">
-                    <span className="inline-block px-2.5 py-1 rounded bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-200 font-extrabold text-xs uppercase">
-                      {d.purpose || d.donation_type || 'Paramita'}
-                    </span>
-                  </td>
-                  <td className="py-4 px-6 text-slate-600 dark:text-slate-400 text-xs font-semibold">
-                    {new Date(d.donation_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  </td>
-                  <td className="py-4 px-6 text-slate-600 dark:text-slate-400 text-xs">
-                    {d.notes || '-'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            <select
+              aria-label="Filter peruntukan"
+              value={selectedPurpose}
+              onChange={(e) => setSelectedPurpose(e.target.value)}
+              className={selectClass}
+            >
+              <option value="all">Semua peruntukan</option>
+              <option value="paramita">Paramita</option>
+              <option value="operasional">Operasional Cetya dan vihara</option>
+              <option value="pembangunan">Pembangunan atau renovasi</option>
+              <option value="lainnya">Lainnya</option>
+            </select>
+          </div>
+
+          {filteredDonations.length === 0 ? (
+            <Panel>
+              <StateMessage
+                kind="empty"
+                title={donations.length === 0 ? 'Belum ada dana yang dicatat.' : 'Tidak ada catatan yang cocok dengan filter ini.'}
+                action={
+                  hasFilter && donations.length > 0 ? (
+                    <Button size="sm" onClick={() => { setSearchTerm(''); setSelectedPurpose('all'); }}>Reset filter</Button>
+                  ) : undefined
+                }
+              />
+            </Panel>
+          ) : (
+            <Panel className="overflow-hidden">
+              <p className="px-4 pt-3 text-xs text-ink-3">{filteredDonations.length} catatan</p>
+              <table className="hidden md:table w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-line text-xs text-ink-3">
+                    <th scope="col" className="py-2.5 px-4 font-medium">Donatur</th>
+                    <th scope="col" className="py-2.5 px-4 font-medium text-right">Nominal</th>
+                    <th scope="col" className="py-2.5 px-4 font-medium">Peruntukan</th>
+                    <th scope="col" className="py-2.5 px-4 font-medium">Tanggal</th>
+                    <th scope="col" className="py-2.5 px-4 font-medium">Catatan</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {filteredDonations.map((d) => (
+                    <tr key={d.id} className="hover:bg-surface-2">
+                      <td className="py-2.5 px-4 font-medium text-ink">{d.donor_name}</td>
+                      <td className="py-2.5 px-4 tabular-nums text-ink text-right whitespace-nowrap">{formatRupiah(Number(d.amount))}</td>
+                      <td className="py-2.5 px-4 text-ink-2">{purposeLabel(d) || <span className="text-ink-3">-</span>}</td>
+                      <td className="py-2.5 px-4 text-ink-2 whitespace-nowrap">{formatDate(d.donation_date)}</td>
+                      <td className="py-2.5 px-4 text-ink-2">{d.notes || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <ul className="md:hidden divide-y divide-line">
+                {filteredDonations.map((d) => (
+                  <li key={d.id} className="p-3.5 space-y-1">
+                    <div className="flex justify-between gap-3">
+                      <p className="text-sm font-medium text-ink break-words">{d.donor_name}</p>
+                      <p className="text-sm tabular-nums text-ink shrink-0">{formatRupiah(Number(d.amount))}</p>
+                    </div>
+                    <p className="text-xs text-ink-2">
+                      {formatDate(d.donation_date)}
+                      {purposeLabel(d) ? `, ${purposeLabel(d)}` : ''}
+                    </p>
+                    {d.notes && <p className="text-xs text-ink-3 break-words">{d.notes}</p>}
+                  </li>
+                ))}
+              </ul>
+            </Panel>
+          )}
+        </>
+      )}
     </div>
   );
 }

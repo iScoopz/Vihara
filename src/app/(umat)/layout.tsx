@@ -2,91 +2,79 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CalendarDays, UserCheck, Calendar as CalendarIcon, Shield } from 'lucide-react';
+import { CalendarDays, UserCheck, Calendar as CalendarIcon } from 'lucide-react';
 import ThemeToggle from '@/components/ui/theme-toggle';
+import { buttonClass } from '@/components/ui/kit';
+
+const UMAT_NAV = [
+  { href: '/kegiatan', label: 'Kegiatan', icon: CalendarDays },
+  { href: '/kegiatan/kalender', label: 'Kalender', icon: CalendarIcon },
+  { href: '/profil', label: 'Profil saya', icon: UserCheck }
+];
 
 export default function UmatLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  const navItems = [
-    { href: '/kegiatan', label: 'Katalog Event', icon: CalendarDays },
-    { href: '/kegiatan/kalender', label: 'Kalender', icon: CalendarIcon },
-    { href: '/profil', label: 'Profil Saya', icon: UserCheck },
-  ];
+  const navLinks = (mobile: boolean) =>
+    UMAT_NAV.map(item => {
+      const Icon = item.icon;
+      const isActive = pathname === item.href;
+      return (
+        <Link
+          key={item.href}
+          href={item.href}
+          aria-current={isActive ? 'page' : undefined}
+          className={`flex items-center justify-center gap-2 px-3 rounded-lg text-sm ${
+            mobile ? 'flex-1 min-h-[44px]' : 'min-h-[36px]'
+          } ${isActive ? 'bg-brand-soft text-brand-ink font-semibold' : 'text-ink-2 hover:text-ink hover:bg-surface-2'}`}
+        >
+          <Icon size={16} aria-hidden className={isActive ? 'text-brand-ink' : 'text-ink-3'} />
+          <span>{item.label}</span>
+        </Link>
+      );
+    });
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#000000] text-[#1d1d1f] dark:text-[#f5f5f7] flex flex-col font-sans transition-colors duration-200">
-      {/* Apple-style Translucent Navbar */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#f5f5f7]/80 dark:bg-black/80 border-b border-black/[0.06] dark:border-white/[0.08] transition-all">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/kegiatan" className="flex items-center gap-2.5 group">
-              <div className="w-8 h-8 rounded-full bg-[#2e1065] text-amber-300 flex items-center justify-center font-bold text-xs shadow-xs group-hover:scale-105 transition-transform">
-                MN
-              </div>
-              <div className="flex flex-col">
-                <span className="font-semibold text-xs sm:text-sm tracking-tight text-neutral-900 dark:text-white leading-none">
-                  Portal Umat MNSBDI
-                </span>
-                <span className="text-[10px] text-[#86868b] tracking-normal font-medium mt-0.5">
-                  Sentra Makassar
-                </span>
-              </div>
-            </Link>
-          </div>
+    <div className="min-h-screen bg-canvas text-ink flex flex-col">
+      <header className="bg-surface border-b border-line sticky top-0 z-40">
+        <div className="max-w-5xl mx-auto h-14 px-4 sm:px-6 flex items-center justify-between gap-3">
+          <Link href="/" className="flex items-center gap-2.5 min-w-0">
+            <span className="w-8 h-8 shrink-0 rounded-lg bg-brand text-on-brand flex items-center justify-center font-bold text-xs" aria-hidden>
+              MN
+            </span>
+            <span className="leading-tight min-w-0">
+              <span className="block font-semibold text-sm text-ink truncate">Portal Umat MNSBDI</span>
+              <span className="block text-xs text-ink-3">Sentra Makassar</span>
+            </span>
+          </Link>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Apple Segmented Pill Navigation */}
-            <nav className="p-1 bg-black/[0.04] dark:bg-white/[0.08] rounded-full flex items-center gap-0.5">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`px-3 py-1 rounded-full text-xs transition-all flex items-center gap-1.5 ${
-                      isActive
-                        ? 'bg-white dark:bg-[#2c2c2e] text-neutral-900 dark:text-white font-semibold shadow-xs'
-                        : 'text-[#86868b] hover:text-neutral-900 dark:hover:text-white font-medium hover:bg-black/[0.02] dark:hover:bg-white/[0.04]'
-                    }`}
-                  >
-                    <Icon size={13} className={isActive ? 'text-[#5e35b1] dark:text-amber-400' : 'text-[#86868b]'} />
-                    <span className="hidden sm:inline">{item.label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
+          <nav aria-label="Menu umat" className="hidden md:flex items-center gap-1">
+            {navLinks(false)}
+          </nav>
 
-            <div className="h-4 w-[1px] bg-black/[0.08] dark:bg-white/[0.12] mx-1" />
-
+          <div className="flex items-center gap-1 shrink-0">
             <ThemeToggle />
-
-            <Link
-              href="/login"
-              className="text-xs font-medium bg-[#1d1d1f] hover:bg-neutral-800 text-white dark:bg-white dark:text-black dark:hover:bg-neutral-200 px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 shadow-xs"
-            >
-              <Shield size={13} />
-              <span className="hidden sm:inline">Admin</span>
-            </Link>
+            <Link href="/login" className={buttonClass('secondary', 'sm')}>Pengurus</Link>
           </div>
         </div>
+
+        <nav aria-label="Menu umat" className="md:hidden flex gap-1 px-2 py-1 border-t border-line">
+          {navLinks(true)}
+        </nav>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 md:p-8">
+      <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 md:p-8">
         {children}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-black/[0.06] dark:border-white/[0.08] text-center py-6 text-xs text-[#86868b] bg-[#f5f5f7] dark:bg-black">
-        <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <footer className="border-t border-line bg-surface">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-ink-3">
           <p>© 2026 Majelis Nichiren Shoshu Buddha Dharma Indonesia (MNSBDI) Sentra Makassar</p>
-          <div className="flex items-center gap-4 text-xs">
-            <Link href="/" className="hover:text-black dark:hover:text-white transition-colors">Beranda</Link>
-            <Link href="/kegiatan" className="hover:text-black dark:hover:text-white transition-colors">Kegiatan</Link>
-            <Link href="/profil" className="hover:text-black dark:hover:text-white transition-colors">Profil</Link>
-          </div>
+          <nav aria-label="Tautan bawah" className="flex flex-wrap gap-x-4 gap-y-1">
+            <Link href="/" className="py-2 hover:text-ink">Beranda</Link>
+            <Link href="/kegiatan" className="py-2 hover:text-ink">Kegiatan</Link>
+            <Link href="/profil" className="py-2 hover:text-ink">Profil</Link>
+          </nav>
         </div>
       </footer>
     </div>

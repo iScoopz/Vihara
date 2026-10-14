@@ -1,7 +1,8 @@
 import React from 'react';
-import { Plus, Edit2, Trash2, ListTodo, FileSpreadsheet } from 'lucide-react';
+import { Plus, Edit2, Trash2, FileSpreadsheet } from 'lucide-react';
 import { ViharaEvent, EventSkenarioKerja } from '@/types/database';
 import { exportSkenarioKerjaToExcel } from '@/lib/export-utils';
+import { Button, Panel, StateMessage } from '@/components/ui/kit';
 
 interface EventSkenarioKerjaTabProps {
   event: ViharaEvent;
@@ -9,104 +10,115 @@ interface EventSkenarioKerjaTabProps {
   onDeleteSkenarioKerja: (itemId: string) => void;
 }
 
+const iconButton =
+  'inline-flex items-center justify-center w-11 h-11 sm:w-8 sm:h-8 rounded-lg text-ink-2 hover:bg-surface-2 hover:text-ink cursor-pointer';
+
 export const EventSkenarioKerjaTab: React.FC<EventSkenarioKerjaTabProps> = ({
   event,
   onOpenSkenarioKerjaModal,
   onDeleteSkenarioKerja
 }) => {
+  const rows = event.skenario_kerja || [];
+
+  const actions = (sk: EventSkenarioKerja) => (
+    <div className="flex justify-end gap-1">
+      <button
+        type="button"
+        onClick={() => onOpenSkenarioKerjaModal(sk)}
+        className={iconButton}
+        aria-label={`Ubah ${sk.activity}`}
+      >
+        <Edit2 size={15} aria-hidden />
+      </button>
+      <button
+        type="button"
+        onClick={() => onDeleteSkenarioKerja(sk.id)}
+        className={`${iconButton} hover:text-danger hover:bg-danger-soft`}
+        aria-label={`Hapus ${sk.activity}`}
+      >
+        <Trash2 size={15} aria-hidden />
+      </button>
+    </div>
+  );
+
   return (
-    <div className="p-6 rounded-2xl bg-white dark:bg-[#160e29] border border-purple-100 dark:border-purple-900/60 shadow-sm space-y-4 print:hidden">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-purple-100 dark:border-purple-900/60 pb-3">
+    <div className="space-y-4 print:hidden">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
         <div>
-          <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-            <ListTodo className="text-amber-500" size={18} />
-            <span>Jadwal Kerja Tim & Alur Lapangan</span>
-          </h3>
-          <p className="text-xs text-slate-500">Alur kerja persiapan tim lapangan beserta penanggung jawab dan koordinasi tugas.</p>
+          <h2 className="text-base font-semibold text-ink">Jadwal kerja tim</h2>
+          <p className="text-sm text-ink-2">Alur persiapan lapangan, penanggung jawab, dan koordinasi antarbidang.</p>
         </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => exportSkenarioKerjaToExcel(event.title, event.skenario_kerja || [])}
-            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1.5 shadow cursor-pointer transition"
-          >
-            <FileSpreadsheet size={14} />
-            <span>Export Excel (.xls)</span>
-          </button>
-
-          <button
-            onClick={() => onOpenSkenarioKerjaModal()}
-            className="px-3.5 py-2 rounded-xl gradient-mnsbdi text-white font-extrabold text-xs flex items-center gap-1.5 shadow-md cursor-pointer"
-          >
-            <Plus size={14} />
-            <span>Tambah Jadwal Kerja</span>
-          </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button onClick={() => exportSkenarioKerjaToExcel(event.title, event.skenario_kerja || [])}>
+            <FileSpreadsheet size={14} aria-hidden />
+            Unduh Excel
+          </Button>
+          <Button variant="primary" onClick={() => onOpenSkenarioKerjaModal()}>
+            <Plus size={14} aria-hidden />
+            Tambah jadwal kerja
+          </Button>
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs border-collapse">
-          <thead>
-            <tr className="border-b border-purple-100 dark:border-purple-900/60 text-slate-400 font-extrabold">
-              <th className="pb-3 w-10 text-center">No</th>
-              <th className="pb-3">Hari / Tanggal / Tahap</th>
-              <th className="pb-3 text-center">Waktu / Jam</th>
-              <th className="pb-3">Bidang & Penanggung Jawab</th>
-              <th className="pb-3">Detail Kegiatan</th>
-              <th className="pb-3">Koordinasi Tugas</th>
-              <th className="pb-3">Catatan</th>
-              <th className="pb-3 text-right">Aksi</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-purple-50 dark:divide-purple-900/40">
-            {event.skenario_kerja && event.skenario_kerja.length > 0 ? (
-              event.skenario_kerja.map((sk, index) => (
-                <tr key={sk.id} className="hover:bg-purple-50/50 dark:hover:bg-purple-950/40">
-                  <td className="py-3 text-center font-bold text-slate-500">{index + 1}</td>
-                  <td className="py-3">
-                    <span className="px-2.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 font-black text-[11px]">
-                      {sk.day_phase}
-                    </span>
-                  </td>
-                  <td className="py-3 text-center">
-                    <span className="px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-300 font-extrabold text-[11px]">
-                      {sk.time_slot}
-                    </span>
-                  </td>
-                  <td className="py-3 font-bold text-slate-900 dark:text-white">{sk.executor_bidang_pj}</td>
-                  <td className="py-3 font-extrabold text-purple-950 dark:text-purple-100">{sk.activity}</td>
-                  <td className="py-3 font-bold text-sky-700 dark:text-sky-400">{sk.interbid_bidang_pj}</td>
-                  <td className="py-3 text-slate-600 dark:text-slate-400">{sk.notes || '-'}</td>
-                  <td className="py-3 text-right">
-                    <div className="flex justify-end gap-1">
-                      <button
-                        onClick={() => onOpenSkenarioKerjaModal(sk)}
-                        className="p-1 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950 rounded cursor-pointer"
-                        title="Edit Jadwal Kerja"
-                      >
-                        <Edit2 size={14} />
-                      </button>
-                      <button
-                        onClick={() => onDeleteSkenarioKerja(sk.id)}
-                        className="p-1 text-slate-400 hover:text-rose-500 rounded cursor-pointer"
-                        title="Hapus Jadwal Kerja"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
+      {rows.length === 0 ? (
+        <Panel>
+          <StateMessage kind="empty" title="Belum ada jadwal kerja tim." />
+        </Panel>
+      ) : (
+        <Panel className="overflow-hidden">
+          <div className="hidden md:block relative overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-line text-xs text-ink-3">
+                  <th scope="col" className="py-2.5 px-4 font-medium w-12">No</th>
+                  <th scope="col" className="py-2.5 px-4 font-medium">Hari/tahap</th>
+                  <th scope="col" className="py-2.5 px-4 font-medium">Waktu</th>
+                  <th scope="col" className="py-2.5 px-4 font-medium">Bidang dan PJ</th>
+                  <th scope="col" className="py-2.5 px-4 font-medium">Kegiatan</th>
+                  <th scope="col" className="py-2.5 px-4 font-medium">Koordinasi</th>
+                  <th scope="col" className="py-2.5 px-4 font-medium">Catatan</th>
+                  <th scope="col" className="py-2.5 px-4"><span className="sr-only">Aksi</span></th>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={8} className="py-6 text-center text-slate-400 text-xs italic">
-                  Belum ada jadwal kerja tim. Klik tombol &quot;Tambah Jadwal Kerja&quot; di atas.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {rows.map((sk, index) => (
+                  <tr key={sk.id} className="hover:bg-surface-2 align-top">
+                    <td className="py-2 px-4 tabular-nums text-ink-3">{index + 1}</td>
+                    <td className="py-2 px-4 text-ink">{sk.day_phase}</td>
+                    <td className="py-2 px-4 tabular-nums text-ink-2 whitespace-nowrap">{sk.time_slot}</td>
+                    <td className="py-2 px-4 text-ink-2">{sk.executor_bidang_pj}</td>
+                    <td className="py-2 px-4 font-medium text-ink">{sk.activity}</td>
+                    <td className="py-2 px-4 text-ink-2">{sk.interbid_bidang_pj || '-'}</td>
+                    <td className="py-2 px-4 text-ink-2">{sk.notes || '-'}</td>
+                    <td className="py-1 px-4 text-right">{actions(sk)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <ul className="md:hidden divide-y divide-line">
+            {rows.map((sk, index) => (
+              <li key={sk.id} className="p-3.5 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-ink break-words">
+                    <span className="tabular-nums text-ink-3 font-normal mr-1.5">{index + 1}.</span>
+                    {sk.activity}
+                  </p>
+                  <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-xs text-ink-2">
+                    <dt className="text-ink-3">Tahap</dt><dd className="break-words">{sk.day_phase}</dd>
+                    <dt className="text-ink-3">Waktu</dt><dd className="tabular-nums">{sk.time_slot}</dd>
+                    <dt className="text-ink-3">PJ</dt><dd className="break-words">{sk.executor_bidang_pj || '-'}</dd>
+                    <dt className="text-ink-3">Koordinasi</dt><dd className="break-words">{sk.interbid_bidang_pj || '-'}</dd>
+                    {sk.notes && (<><dt className="text-ink-3">Catatan</dt><dd className="break-words">{sk.notes}</dd></>)}
+                  </dl>
+                </div>
+                {actions(sk)}
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
     </div>
   );
 };

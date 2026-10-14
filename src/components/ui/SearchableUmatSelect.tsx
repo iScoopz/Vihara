@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Search, X, Check, User, ChevronDown, CheckCircle2 } from 'lucide-react';
+import React, { useState, useRef, useEffect, useId } from 'react';
+import { Search, X, Check, User, ChevronDown } from 'lucide-react';
 import { Profile } from '@/types/database';
 
 export interface SearchableUmatSelectProps {
@@ -21,7 +21,7 @@ export const SearchableUmatSelect: React.FC<SearchableUmatSelectProps> = ({
   value,
   onChange,
   disabledIds = [],
-  placeholder = '-- Cari & Pilih Nama Umat --',
+  placeholder = 'Cari dan pilih nama umat',
   className = '',
   required = false,
   disabled = false,
@@ -29,12 +29,16 @@ export const SearchableUmatSelect: React.FC<SearchableUmatSelectProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const baseId = useId();
+  const labelId = `${baseId}-label`;
+  const listboxId = `${baseId}-listbox`;
+  const optionId = (index: number) => `${baseId}-option-${index}`;
 
   const selectedProfile = profiles.find(p => p.id === value || p.full_name === value);
 
-  // Close dropdown when clicking outside or pressing Escape
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -54,12 +58,16 @@ export const SearchableUmatSelect: React.FC<SearchableUmatSelectProps> = ({
     };
   }, [isOpen]);
 
-  // Focus search input when dropdown opens
   useEffect(() => {
     if (isOpen && searchInputRef.current) {
       searchInputRef.current.focus();
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (activeIndex < 0) return;
+    document.getElementById(`${baseId}-option-${activeIndex}`)?.scrollIntoView({ block: 'nearest' });
+  }, [activeIndex, baseId]);
 
   const filteredProfiles = profiles.filter(p => {
     const q = searchQuery.toLowerCase().trim();
@@ -86,47 +94,77 @@ export const SearchableUmatSelect: React.FC<SearchableUmatSelectProps> = ({
     setSearchQuery('');
   };
 
+  const toggleOpen = () => {
+    setActiveIndex(-1);
+    setIsOpen(!isOpen);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (filteredProfiles.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex(i => Math.min(filteredProfiles.length - 1, i + 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex(i => Math.max(0, i - 1));
+    } else if (e.key === 'Enter' && activeIndex >= 0 && activeIndex < filteredProfiles.length) {
+      e.preventDefault();
+      handleSelect(filteredProfiles[activeIndex]);
+    }
+  };
+
   return (
     <div className={`relative w-full ${className}`} ref={containerRef}>
       {label && (
-        <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1 text-xs">
-          {label} {required && <span className="text-rose-500">*</span>}
-        </label>
+        <span id={labelId} className="block text-xs font-medium text-ink-2 mb-1">
+          {label} {required && <span className="text-danger" aria-hidden>*</span>}
+        </span>
       )}
 
-      {/* Trigger Button */}
       <div
-        role="button"
+        role="combobox"
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+        aria-controls={isOpen ? listboxId : undefined}
+        aria-labelledby={label ? labelId : undefined}
+        aria-label={label ? undefined : placeholder}
+        aria-required={required || undefined}
+        aria-disabled={disabled || undefined}
         tabIndex={disabled ? -1 : 0}
-        onClick={() => !disabled && setIsOpen(!isOpen)}
+        onClick={() => !disabled && toggleOpen()}
         onKeyDown={(e) => {
-          if ((e.key === 'Enter' || e.key === ' ') && !disabled) {
+          if (disabled || e.target !== e.currentTarget) return;
+          if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            setIsOpen(!isOpen);
+            toggleOpen();
+          } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setActiveIndex(-1);
+            setIsOpen(true);
           }
         }}
-        className={`w-full bg-slate-50 dark:bg-purple-950/80 border ${
-          isOpen ? 'border-purple-600 ring-2 ring-purple-600/20' : 'border-purple-100 dark:border-purple-900/60'
-        } rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white flex items-center justify-between cursor-pointer transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-600 focus-visible:ring-offset-1 ${
-          disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-purple-400'
+        className={`w-full min-h-[44px] sm:min-h-[38px] bg-surface border ${
+          isOpen ? 'border-brand' : 'border-line-strong'
+        } rounded-lg px-3 py-1.5 text-sm text-ink flex items-center justify-between gap-2 ${
+          disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-surface-2'
         }`}
       >
-        <div className="flex items-center gap-2 truncate">
-          <div className="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/70 text-purple-700 dark:text-purple-300 flex items-center justify-center font-black text-[10px] shrink-0">
-            {selectedProfile ? (selectedProfile.full_name[0] || 'U') : <User size={12} />}
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-6 h-6 rounded-full bg-brand-soft text-brand-ink flex items-center justify-center font-semibold text-[11px] shrink-0" aria-hidden>
+            {selectedProfile ? (selectedProfile.full_name[0] || '?') : <User size={12} />}
           </div>
-          <span className={`truncate ${!selectedProfile ? 'text-slate-400 dark:text-slate-500 font-normal' : 'font-extrabold'}`}>
-            {selectedProfile ? (
-              <span>
-                {selectedProfile.full_name}{' '}
-                <span className="text-[10px] text-slate-400 dark:text-slate-400 font-normal">
-                  ({selectedProfile.bagian || selectedProfile.cetya || 'Sentra Makassar'})
+          {selectedProfile ? (
+            <span className="truncate font-medium">
+              {selectedProfile.full_name}
+              {(selectedProfile.bagian || selectedProfile.cetya) && (
+                <span className="ml-1 text-xs font-normal text-ink-3">
+                  ({selectedProfile.bagian || selectedProfile.cetya})
                 </span>
-              </span>
-            ) : (
-              placeholder
-            )}
-          </span>
+              )}
+            </span>
+          ) : (
+            <span className="truncate text-ink-3">{placeholder}</span>
+          )}
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
@@ -134,105 +172,111 @@ export const SearchableUmatSelect: React.FC<SearchableUmatSelectProps> = ({
             <button
               type="button"
               onClick={handleClear}
-              className="p-1 hover:bg-slate-200 dark:hover:bg-purple-900 rounded-full text-slate-400 hover:text-rose-500 transition-colors"
+              aria-label="Kosongkan pilihan"
+              className="w-8 h-8 inline-flex items-center justify-center rounded-md text-ink-2 hover:bg-surface-2 hover:text-danger cursor-pointer"
             >
-              <X size={12} />
+              <X size={14} aria-hidden />
             </button>
           )}
-          <ChevronDown size={14} className={`text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown size={14} aria-hidden className={`text-ink-3 ${isOpen ? 'rotate-180' : ''}`} />
         </div>
       </div>
 
-      {/* Hidden input for HTML form validation */}
+      {/* Invisible input so the parent form's native `required` validation also covers this field. */}
       {required && (
         <input
           type="text"
           value={value}
           onChange={() => {}}
           required
+          tabIndex={-1}
+          aria-hidden
           className="opacity-0 absolute inset-0 pointer-events-none -z-10"
         />
       )}
 
-      {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white dark:bg-[#160e29] border border-purple-200 dark:border-purple-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-          {/* Search Box Header */}
-          <div className="p-2 border-b border-purple-100 dark:border-purple-900/60 bg-purple-50/50 dark:bg-purple-950/50 flex items-center gap-2">
-            <Search size={14} className="text-purple-500 shrink-0 ml-1" />
+        <div className="absolute z-50 left-0 right-0 mt-1 bg-surface border border-line-strong rounded-lg overflow-hidden">
+          <div className="p-2 border-b border-line flex items-center gap-2">
+            <Search size={14} className="text-ink-3 shrink-0 ml-1" aria-hidden />
             <input
               ref={searchInputRef}
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Ketik nama / bagian / no HP..."
-              className="w-full bg-transparent border-none text-xs font-semibold text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 placeholder:font-normal"
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setActiveIndex(-1);
+              }}
+              onKeyDown={handleSearchKeyDown}
+              placeholder="Ketik nama, bagian, atau no HP"
+              aria-label="Cari umat"
+              aria-controls={listboxId}
+              aria-activedescendant={activeIndex >= 0 ? optionId(activeIndex) : undefined}
+              className="w-full min-h-[36px] bg-transparent border-none text-sm text-ink focus:outline-none placeholder:text-ink-3"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 mr-1"
+                aria-label="Hapus pencarian"
+                className="w-8 h-8 inline-flex items-center justify-center rounded-md text-ink-3 hover:bg-surface-2 hover:text-ink shrink-0 cursor-pointer"
               >
-                <X size={12} />
+                <X size={14} aria-hidden />
               </button>
             )}
           </div>
 
-          {/* List Items */}
-          <div className="max-h-60 overflow-y-auto divide-y divide-purple-50 dark:divide-purple-950/40 p-1">
+          <ul id={listboxId} role="listbox" aria-labelledby={label ? labelId : undefined} className="max-h-60 overflow-y-auto p-1">
             {filteredProfiles.length > 0 ? (
-              filteredProfiles.map((profile) => {
+              filteredProfiles.map((profile, index) => {
                 const isSelected = profile.id === value || profile.full_name === value;
                 const isDisabled = disabledIds.includes(profile.id);
+                const isActive = index === activeIndex;
+                const meta = [profile.bagian, profile.phone, profile.cetya].filter(Boolean).join(', ');
 
                 return (
-                  <div
+                  <li
                     key={profile.id}
+                    id={optionId(index)}
+                    role="option"
+                    aria-selected={isSelected}
+                    aria-disabled={isDisabled || undefined}
                     onClick={() => handleSelect(profile)}
-                    className={`px-3 py-2 rounded-xl flex items-center justify-between text-xs transition-colors ${
+                    onMouseEnter={() => setActiveIndex(index)}
+                    className={`px-2.5 py-2 rounded-md flex items-center justify-between gap-2 text-sm ${
                       isDisabled
-                        ? 'opacity-50 bg-slate-50 dark:bg-slate-900/40 cursor-not-allowed text-slate-400'
-                        : isSelected
-                        ? 'bg-purple-100 dark:bg-purple-900/70 text-purple-950 dark:text-purple-100 font-bold cursor-pointer'
-                        : 'hover:bg-purple-50 dark:hover:bg-purple-950/60 text-slate-800 dark:text-slate-200 cursor-pointer'
+                        ? 'cursor-not-allowed text-ink-3'
+                        : `cursor-pointer text-ink ${isActive || isSelected ? 'bg-surface-2' : ''}`
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 truncate">
-                      <div className={`w-7 h-7 rounded-full text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm ${
-                        isDisabled ? 'bg-slate-400' : 'bg-gradient-to-tr from-purple-600 to-indigo-600'
-                      }`}>
-                        {profile.full_name[0] || 'U'}
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div
+                        aria-hidden
+                        className={`w-7 h-7 rounded-full flex items-center justify-center font-semibold text-xs shrink-0 ${
+                          isDisabled ? 'bg-surface-2 text-ink-3' : 'bg-brand-soft text-brand-ink'
+                        }`}
+                      >
+                        {profile.full_name[0] || '?'}
                       </div>
-                      <div className="truncate">
-                        <p className="font-extrabold text-slate-900 dark:text-white truncate flex items-center gap-1.5">
-                          <span>{profile.full_name}</span>
-                          {isDisabled && (
-                            <span className="px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-bold text-[9px] flex items-center gap-1">
-                              <CheckCircle2 size={10} /> Sudah Terdaftar
-                            </span>
-                          )}
+                      <div className="min-w-0">
+                        <p className={`truncate ${isSelected ? 'font-semibold' : 'font-medium'}`}>
+                          {profile.full_name}
+                          {isDisabled && <span className="ml-2 text-xs font-normal text-gold">Sudah terdaftar</span>}
                         </p>
-                        <p className="text-[10px] text-slate-400 dark:text-slate-400 truncate flex items-center gap-1.5">
-                          <span className="px-1.5 py-0.2 rounded bg-purple-100/70 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 font-bold text-[9px]">
-                            {profile.bagian || 'Umat'}
-                          </span>
-                          {profile.phone && <span>• {profile.phone}</span>}
-                          {profile.cetya && <span>• {profile.cetya}</span>}
-                        </p>
+                        {meta && <p className="text-xs text-ink-3 truncate">{meta}</p>}
                       </div>
                     </div>
 
-                    {isSelected && !isDisabled && <Check size={14} className="text-purple-600 shrink-0 ml-2" />}
-                  </div>
+                    {isSelected && !isDisabled && <Check size={14} className="text-brand shrink-0" aria-hidden />}
+                  </li>
                 );
               })
             ) : (
-              <div className="p-4 text-center text-xs text-slate-400 dark:text-slate-500 italic">
+              <li role="presentation" className="p-4 text-center text-sm text-ink-3">
                 Umat &quot;{searchQuery}&quot; tidak ditemukan.
-              </div>
+              </li>
             )}
-          </div>
+          </ul>
         </div>
       )}
     </div>

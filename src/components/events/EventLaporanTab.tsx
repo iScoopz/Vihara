@@ -1,7 +1,8 @@
 import React from 'react';
-import { Printer, FileSpreadsheet, FileText, Users, ArrowUpRight } from 'lucide-react';
+import { Printer, FileSpreadsheet } from 'lucide-react';
 import { ViharaEvent, EventRegistration } from '@/types/database';
 import { exportSkenarioKerjaToExcel, exportLPJToExcel } from '@/lib/export-utils';
+import { Button, Panel } from '@/components/ui/kit';
 
 interface EventLaporanTabProps {
   event: ViharaEvent;
@@ -9,136 +10,69 @@ interface EventLaporanTabProps {
   onOpenPdfModal: (mode: 'proposal' | 'lpj' | 'peserta') => void;
 }
 
-export const EventLaporanTab: React.FC<EventLaporanTabProps> = ({ 
-  event, 
-  registrations = [], 
-  onOpenPdfModal 
+export const EventLaporanTab: React.FC<EventLaporanTabProps> = ({
+  event,
+  registrations = [],
+  onOpenPdfModal
 }) => {
+  const documents: { title: string; description: string; kind: 'pdf' | 'excel'; onClick: () => void }[] = [
+    {
+      title: 'Daftar hadir dan tanda tangan',
+      description: 'Nama peserta terdaftar, status pembayaran, dan kolom tanda tangan.',
+      kind: 'pdf',
+      onClick: () => onOpenPdfModal('peserta')
+    },
+    {
+      title: 'Proposal kegiatan',
+      description: 'Susunan panitia, susunan acara, dan rencana anggaran.',
+      kind: 'pdf',
+      onClick: () => onOpenPdfModal('proposal')
+    },
+    {
+      title: 'Jadwal kerja tim',
+      description: 'Alur kerja lapangan dan penanggung jawab tiap bidang.',
+      kind: 'excel',
+      onClick: () => exportSkenarioKerjaToExcel(event.title, event.skenario_kerja || [])
+    },
+    {
+      title: 'Laporan pertanggungjawaban (LPJ)',
+      description: 'Susunan panitia, daftar peserta, dan pengeluaran aktual.',
+      kind: 'pdf',
+      onClick: () => onOpenPdfModal('lpj')
+    },
+    {
+      title: 'Laporan pertanggungjawaban (LPJ)',
+      description: 'Rincian LPJ dengan tabel evaluasi anggaran.',
+      kind: 'excel',
+      onClick: () => exportLPJToExcel(event, registrations)
+    }
+  ];
+
   return (
-    <div className="p-7 sm:p-8 rounded-3xl bg-white dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] shadow-xs space-y-6 print:hidden">
-      <div className="border-b border-black/[0.04] dark:border-white/[0.06] pb-4 space-y-1">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-[#86868b] block">
-          Pusat Dokumen & Laporan
-        </span>
-        <h2 className="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">
-          Cetak & Unduh Laporan Kegiatan
-        </h2>
-        <p className="text-xs text-[#86868b] dark:text-[#a1a1a6]">
-          Pilih dokumen yang ingin dicetak dalam format PDF resmi atau diunduh sebagai lembar kerja Excel.
-        </p>
+    <div className="space-y-4 print:hidden">
+      <div>
+        <h2 className="text-base font-semibold text-ink">Dokumen dan laporan</h2>
+        <p className="text-sm text-ink-2">Cetak sebagai PDF atau unduh sebagai file Excel.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-        {/* Card 1: List Peserta */}
-        <button
-          onClick={() => onOpenPdfModal('peserta')}
-          className="p-6 rounded-3xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] text-left space-y-4 hover:border-black/20 dark:hover:border-white/20 transition-all cursor-pointer group flex flex-col justify-between"
-        >
-          <div className="space-y-3">
-            <div className="w-10 h-10 rounded-2xl bg-black/[0.04] dark:bg-white/[0.08] flex items-center justify-center text-neutral-800 dark:text-neutral-200">
-              <Users size={18} />
-            </div>
-            <div>
-              <h3 className="font-bold text-neutral-900 dark:text-white text-sm">Daftar Hadir & Tanda Tangan</h3>
-              <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] mt-1 leading-relaxed">
-                Daftar nama peserta terdaftar, status pembayaran, dan kolom tanda tangan kehadiran fisik.
-              </p>
-            </div>
-          </div>
-          <div className="pt-2 flex items-center justify-between text-xs font-semibold text-neutral-900 dark:text-white group-hover:gap-1.5 transition-all">
-            <span>Buka Dokumen</span>
-            <ArrowUpRight size={14} className="text-[#86868b]" />
-          </div>
-        </button>
-
-        {/* Card 2: Proposal Event */}
-        <button
-          onClick={() => onOpenPdfModal('proposal')}
-          className="p-6 rounded-3xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] text-left space-y-4 hover:border-black/20 dark:hover:border-white/20 transition-all cursor-pointer group flex flex-col justify-between"
-        >
-          <div className="space-y-3">
-            <div className="w-10 h-10 rounded-2xl bg-purple-500/10 text-[#5e35b1] dark:text-purple-300 flex items-center justify-center">
-              <Printer size={18} />
-            </div>
-            <div>
-              <h3 className="font-bold text-neutral-900 dark:text-white text-sm">Proposal Kegiatan (PDF)</h3>
-              <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] mt-1 leading-relaxed">
-                Dokumen proposal lengkap dengan susunan panitia, jadwal susunan acara, dan rencana anggaran (RAB).
-              </p>
-            </div>
-          </div>
-          <div className="pt-2 flex items-center justify-between text-xs font-semibold text-[#5e35b1] dark:text-purple-300 group-hover:gap-1.5 transition-all">
-            <span>Buka Dokumen</span>
-            <ArrowUpRight size={14} className="text-[#86868b]" />
-          </div>
-        </button>
-
-        {/* Card 3: Skenario Kerja Excel */}
-        <button
-          onClick={() => exportSkenarioKerjaToExcel(event.title, event.skenario_kerja || [])}
-          className="p-6 rounded-3xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] text-left space-y-4 hover:border-black/20 dark:hover:border-white/20 transition-all cursor-pointer group flex flex-col justify-between"
-        >
-          <div className="space-y-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-              <FileSpreadsheet size={18} />
-            </div>
-            <div>
-              <h3 className="font-bold text-neutral-900 dark:text-white text-sm">Jadwal & Alur Lapangan (Excel)</h3>
-              <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] mt-1 leading-relaxed">
-                Unduh lembar kerja Excel (.xls) alur teknis operasional panitia dan penanggung jawab lapangan.
-              </p>
-            </div>
-          </div>
-          <div className="pt-2 flex items-center justify-between text-xs font-semibold text-blue-600 dark:text-blue-400 group-hover:gap-1.5 transition-all">
-            <span>Unduh .XLS</span>
-            <ArrowUpRight size={14} className="text-[#86868b]" />
-          </div>
-        </button>
-
-        {/* Card 4: Cetak LPJ Event (PDF) */}
-        <button
-          onClick={() => onOpenPdfModal('lpj')}
-          className="p-6 rounded-3xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] text-left space-y-4 hover:border-black/20 dark:hover:border-white/20 transition-all cursor-pointer group flex flex-col justify-between"
-        >
-          <div className="space-y-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-700 dark:text-amber-400 flex items-center justify-center">
-              <FileText size={18} />
-            </div>
-            <div>
-              <h3 className="font-bold text-neutral-900 dark:text-white text-sm">Laporan Pertanggungjawaban (PDF)</h3>
-              <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] mt-1 leading-relaxed">
-                Format resmi LPJ dengan susunan panitia, daftar peserta kegiatan, dan pengeluaran aktual siap cetak.
-              </p>
-            </div>
-          </div>
-          <div className="pt-2 flex items-center justify-between text-xs font-semibold text-amber-700 dark:text-amber-400 group-hover:gap-1.5 transition-all">
-            <span>Buka Dokumen</span>
-            <ArrowUpRight size={14} className="text-[#86868b]" />
-          </div>
-        </button>
-
-        {/* Card 5: Download LPJ Event (Excel) */}
-        <button
-          onClick={() => exportLPJToExcel(event, registrations)}
-          className="p-6 rounded-3xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] text-left space-y-4 hover:border-black/20 dark:hover:border-white/20 transition-all cursor-pointer group flex flex-col justify-between"
-        >
-          <div className="space-y-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 flex items-center justify-center">
-              <FileSpreadsheet size={18} />
-            </div>
-            <div>
-              <h3 className="font-bold text-neutral-900 dark:text-white text-sm">Laporan Pertanggungjawaban (Excel)</h3>
-              <p className="text-xs text-[#86868b] dark:text-[#a1a1a6] mt-1 leading-relaxed">
-                Unduh rincian lengkap LPJ beserta tabel evaluasi anggaran berformat Excel (.xls).
-              </p>
-            </div>
-          </div>
-          <div className="pt-2 flex items-center justify-between text-xs font-semibold text-emerald-700 dark:text-emerald-400 group-hover:gap-1.5 transition-all">
-            <span>Unduh .XLS</span>
-            <ArrowUpRight size={14} className="text-[#86868b]" />
-          </div>
-        </button>
-      </div>
+      <Panel>
+        <ul className="divide-y divide-line">
+          {documents.map(doc => (
+            <li key={`${doc.title}-${doc.kind}`} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold text-ink">
+                  {doc.title} <span className="font-normal text-ink-3">{doc.kind === 'pdf' ? 'PDF' : 'Excel'}</span>
+                </h3>
+                <p className="text-sm text-ink-2">{doc.description}</p>
+              </div>
+              <Button onClick={doc.onClick} className="shrink-0 self-start sm:self-auto">
+                {doc.kind === 'pdf' ? <Printer size={14} aria-hidden /> : <FileSpreadsheet size={14} aria-hidden />}
+                {doc.kind === 'pdf' ? 'Buka dokumen' : 'Unduh Excel'}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      </Panel>
     </div>
   );
 };
