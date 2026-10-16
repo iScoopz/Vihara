@@ -175,11 +175,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
     e.preventDefault();
     if (!selectedUmatId) return;
 
-    let adminId: string | undefined;
-    try {
-      adminId = JSON.parse(localStorage.getItem('vihara_admin_profile') || '{}').id;
-    } catch {}
-    const res = await registerForEvent(event.id, selectedUmatId, adminId);
+    const res = await registerForEvent(event.id, selectedUmatId);
 
     if (res.error) {
       setRegMsg(res.error);
@@ -195,11 +191,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
 
   // Registers from the "Belum Daftar" tab; the row moves to the participant list on success.
   const handleQuickRegister = async (profile: Profile) => {
-    let adminId: string | undefined;
-    try {
-      adminId = JSON.parse(localStorage.getItem('vihara_admin_profile') || '{}').id;
-    } catch {}
-    const res = await registerForEvent(event.id, profile.id, adminId);
+    const res = await registerForEvent(event.id, profile.id);
     if (res.error || !res.registration) {
       showToast(res.error || 'Pendaftaran gagal.', 'error', 'Gagal mendaftarkan');
       return false;

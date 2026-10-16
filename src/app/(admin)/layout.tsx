@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import ThemeToggle from '@/components/ui/theme-toggle';
 import { buttonClass } from '@/components/ui/kit';
+import { createClient } from '@/lib/supabase/client';
+import { getCurrentSession } from '@/lib/actions/vihara-actions';
 
 // The four destinations pengurus open most often get a slot in the phone bottom bar.
 const BOTTOM_NAV = ['/dashboard', '/umat', '/events', '/calendar'];
@@ -37,44 +39,46 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  // null = still checking; the server decides from the Supabase session, never from browser storage.
+  const [access, setAccess] = useState<'checking' | 'admin' | 'signed-out' | 'not-admin'>('checking');
   const [adminUser, setAdminUser] = useState<{ full_name?: string; email?: string } | null>(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const isAuth = localStorage.getItem('vihara_admin_authenticated') === 'true';
-      if (!isAuth) {
-        setIsAuthenticated(false);
-      } else {
-        setIsAuthenticated(true);
-        const storedProfile = localStorage.getItem('vihara_admin_profile');
-        if (storedProfile) {
-          try {
-            setAdminUser(JSON.parse(storedProfile));
-          } catch (e) {}
+    let active = true;
+    getCurrentSession()
+      .then(session => {
+        if (!active) return;
+        if (session.isAdmin && session.profile) {
+          setAdminUser({ full_name: session.profile.full_name, email: session.email || undefined });
+          setAccess('admin');
+        } else {
+          setAccess(session.signedIn ? 'not-admin' : 'signed-out');
         }
-      }
-    }
+      })
+      .catch(() => active && setAccess('signed-out'));
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const handleAdminLogout = () => {
-    localStorage.removeItem('vihara_admin_authenticated');
-    localStorage.removeItem('vihara_admin_profile');
-    document.cookie = 'vihara_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    router.push('/login');
+  const handleAdminLogout = async () => {
+    await createClient().auth.signOut();
+    router.replace('/login');
   };
 
   const initials = adminUser?.full_name
     ? adminUser.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
     : 'AD';
 
-  if (isAuthenticated === false) {
+  if (access === 'signed-out' || access === 'not-admin') {
     return (
       <div className="min-h-screen bg-canvas text-ink flex flex-col items-center justify-center p-6 text-center gap-5">
         <div className="space-y-2 max-w-md">
           <h1 className="text-[28px] leading-tight font-semibold">Khusus pengurus</h1>
           <p className="text-sm text-ink-2">
-            Halaman ini hanya untuk pengurus Vihara MNSBDI. Masuk dulu dengan akun pengurus.
+            {access === 'not-admin'
+              ? 'Akun Anda adalah akun umat. Halaman ini hanya untuk pengurus Vihara MNSBDI.'
+              : 'Halaman ini hanya untuk pengurus Vihara MNSBDI. Masuk dulu dengan akun pengurus.'}
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
@@ -85,7 +89,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  if (isAuthenticated === null) {
+  if (access === 'checking') {
     return (
       <div role="status" className="min-h-screen bg-canvas text-ink-3 flex items-center justify-center text-sm">
         Memeriksa akses pengurus...

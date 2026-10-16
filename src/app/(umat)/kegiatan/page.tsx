@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CalendarDays } from 'lucide-react';
-import { getEvents, registerForEvent, cancelOwnRegistration, getUserRegisteredEventIds } from '@/lib/actions/vihara-actions';
+import { getEvents, registerForEvent, cancelOwnRegistration, getUserRegisteredEventIds, getCurrentSession } from '@/lib/actions/vihara-actions';
 import { ViharaEvent } from '@/types/database';
 import { useToast } from '@/components/ui/ToastNotification';
 import { Badge, Button, PageHeader, Panel, StateMessage, buttonClass } from '@/components/ui/kit';
@@ -23,12 +23,12 @@ export default function PublicEventCatalogPage() {
       const publishedEvents = data.filter(ev => ev.is_published === true || ev.is_published === undefined);
       setEvents(publishedEvents);
 
-      const savedId = typeof window !== 'undefined' ? localStorage.getItem('vihara_umat_id') : null;
-      if (savedId) {
-        setCurrentUmatId(savedId);
-        const registeredIds = await getUserRegisteredEventIds(savedId);
-        setRegisteredEventIds(registeredIds);
+      const session = await getCurrentSession();
+      if (session.profile) {
+        setCurrentUmatId(session.profile.id);
+        setRegisteredEventIds(await getUserRegisteredEventIds());
       } else {
+        setCurrentUmatId(null);
         setRegisteredEventIds([]);
       }
       setLoadState('ready');
@@ -44,10 +44,10 @@ export default function PublicEventCatalogPage() {
   const handleSelfRegister = async (eventId: string) => {
     if (!currentUmatId) {
       setMessage({
-        text: 'Buka menu Profil saya dan masuk dengan akun umat dulu, lalu daftar dari halaman ini.',
+        text: 'Masuk dengan akun umat dulu, lalu daftar dari halaman ini.',
         type: 'error'
       });
-      showToast('Buka Profil saya dulu untuk memilih akun umat Anda.', 'info', 'Perlu akun umat');
+      showToast('Masuk dengan akun umat untuk mendaftar.', 'info', 'Perlu akun umat');
       return;
     }
 
@@ -56,7 +56,7 @@ export default function PublicEventCatalogPage() {
     showToast('Anda sudah terdaftar di kegiatan ini.', 'success', 'Pendaftaran berhasil');
     setLoadingId(eventId);
 
-    const res = await registerForEvent(eventId, undefined, currentUmatId);
+    const res = await registerForEvent(eventId);
     setLoadingId(null);
     if (res.error) {
       setRegisteredEventIds(prev => prev.filter(id => id !== eventId));
@@ -74,7 +74,7 @@ export default function PublicEventCatalogPage() {
 
     let failed = false;
     try {
-      failed = Boolean((await cancelOwnRegistration(eventId, currentUmatId)).error);
+      failed = Boolean((await cancelOwnRegistration(eventId)).error);
     } catch {
       failed = true;
     }

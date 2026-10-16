@@ -8,11 +8,18 @@ import ThemeToggle from '@/components/ui/theme-toggle';
 import { Button, Field, Modal, ModalActions, Panel, inputClass } from '@/components/ui/kit';
 
 import { createClient } from '@/lib/supabase/client';
-import { findLoginProfile } from '@/lib/actions/vihara-actions';
+import { getCurrentSession } from '@/lib/actions/vihara-actions';
+
+// Supabase Auth messages translated for umat and pengurus.
+function loginErrorMessage(message: string) {
+  if (/invalid login credentials/i.test(message)) return 'Email atau kata sandi salah.';
+  if (/email not confirmed/i.test(message)) return 'Email belum dikonfirmasi. Buka tautan konfirmasi di kotak masuk email Anda.';
+  if (/rate limit|too many/i.test(message)) return 'Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.';
+  return 'Belum bisa masuk. Periksa koneksi lalu coba lagi.';
+}
 
 export default function LoginPage() {
   const router = useRouter();
-  const [role, setRole] = useState<'admin' | 'umat'>('admin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,103 +40,26 @@ export default function LoginPage() {
     setLoading(true);
     setErrorMessage('');
 
-    const query = email.trim().toLowerCase();
+    const supabase = createClient();
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+      if (error) {
+        setErrorMessage(loginErrorMessage(error.message));
+        return;
+      }
 
-    if (!query) {
+      // The server links the account to its umat/pengurus profile and decides where to go.
+      const session = await getCurrentSession();
+      if (!session.profile) {
+        await supabase.auth.signOut();
+        setErrorMessage('Akun ini belum terhubung dengan data umat. Minta pengurus mengisi email Anda di Data Umat.');
+        return;
+      }
+      router.replace(session.isAdmin ? '/dashboard' : '/profil');
+    } catch {
+      setErrorMessage('Belum bisa masuk. Periksa koneksi lalu coba lagi.');
+    } finally {
       setLoading(false);
-      setErrorMessage('Masukkan email yang terdaftar.');
-      return;
-    }
-
-    if (role === 'admin') {
-      const adminFound = await findLoginProfile(query, 'admin');
-
-      if (!adminFound) {
-        setLoading(false);
-        setErrorMessage(
-          'Email ini tidak terdaftar sebagai pengurus. Akun pengurus didaftarkan lewat menu Data Umat.'
-        );
-        return;
-      }
-
-      if (!password.trim()) {
-        setLoading(false);
-        setErrorMessage('Masukkan kata sandi.');
-        return;
-      }
-
-      try {
-        const supabase = createClient();
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-          email: query,
-          password: password
-        });
-
-        if (!authError && authData?.user) {
-          localStorage.setItem('vihara_admin_authenticated', 'true');
-          localStorage.setItem('vihara_admin_profile', JSON.stringify(adminFound));
-          document.cookie = 'vihara_role=admin; path=/';
-          setLoading(false);
-          router.push('/dashboard');
-          return;
-        }
-      } catch {}
-
-      // Fallback verification for demo/local initial accounts
-      const expectedPass = query === 'admin@vihara.or.id' ? 'admin' : (adminFound.phone || 'admin');
-      if (password !== expectedPass) {
-        setLoading(false);
-        setErrorMessage('Kata sandi salah. Periksa lagi lalu coba masuk.');
-        return;
-      }
-
-      localStorage.setItem('vihara_admin_authenticated', 'true');
-      localStorage.setItem('vihara_admin_profile', JSON.stringify(adminFound));
-      document.cookie = 'vihara_role=admin; path=/';
-      setLoading(false);
-      router.push('/dashboard');
-    } else {
-      const umatFound = await findLoginProfile(query, 'umat');
-
-      if (!umatFound) {
-        setLoading(false);
-        setErrorMessage('Email atau kode HAN tidak ditemukan.');
-        return;
-      }
-
-      if (!password.trim()) {
-        setLoading(false);
-        setErrorMessage('Masukkan kata sandi.');
-        return;
-      }
-
-      try {
-        const supabase = createClient();
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-          email: query,
-          password: password
-        });
-
-        if (!authError && authData?.user) {
-          localStorage.setItem('vihara_umat_id', umatFound.id);
-          document.cookie = 'vihara_role=umat; path=/';
-          setLoading(false);
-          router.push('/profil');
-          return;
-        }
-      } catch {}
-
-      const expectedUmatPass = umatFound.phone || '123';
-      if (password !== expectedUmatPass && password !== '123') {
-        setLoading(false);
-        setErrorMessage('Kata sandi salah. Periksa lagi lalu coba masuk.');
-        return;
-      }
-
-      localStorage.setItem('vihara_umat_id', umatFound.id);
-      document.cookie = 'vihara_role=umat; path=/';
-      setLoading(false);
-      router.push('/profil');
     }
   };
 
@@ -157,11 +87,6 @@ export default function LoginPage() {
       setResetStatusMsg('Tautan belum terkirim. Periksa koneksi lalu coba lagi.');
     }
   };
-
-  const roleOptions: { value: 'admin' | 'umat'; label: string }[] = [
-    { value: 'admin', label: 'Pengurus' },
-    { value: 'umat', label: 'Umat' }
-  ];
 
   return (
     <div className="min-h-screen bg-canvas text-ink flex flex-col lg:flex-row">
@@ -196,40 +121,15 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
-            <fieldset>
-              <legend className="block text-xs font-medium text-ink-2 mb-1">Masuk sebagai</legend>
-              <div className="grid grid-cols-2 gap-1 p-1 rounded-lg bg-surface-2 border border-line">
-                {roleOptions.map(opt => (
-                  <label
-                    key={opt.value}
-                    className={`flex items-center justify-center min-h-[44px] sm:min-h-[36px] rounded-md text-sm cursor-pointer has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-brand has-[:focus-visible]:outline-offset-1 ${
-                      role === opt.value
-                        ? 'bg-surface text-ink font-semibold border border-line-strong'
-                        : 'text-ink-2 hover:text-ink border border-transparent'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="login-role"
-                      value={opt.value}
-                      checked={role === opt.value}
-                      onChange={() => setRole(opt.value)}
-                      className="sr-only"
-                    />
-                    {opt.label}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-
-            <Field label={role === 'admin' ? 'Email' : 'Email atau kode HAN'}>
+            <Field label="Email">
               <input
-                type="text"
+                type="email"
                 required
                 autoComplete="username"
+                inputMode="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder={role === 'admin' ? 'admin@vihara.or.id' : 'umat@vihara.or.id'}
+                placeholder="nama@email.com"
                 className={inputClass}
               />
             </Field>
@@ -246,10 +146,9 @@ export default function LoginPage() {
             </Field>
 
             <div className="flex items-center justify-between gap-2 text-sm">
-              <label className="inline-flex items-center gap-2 min-h-[44px] sm:min-h-0 text-ink-2 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 accent-[var(--brand)]" defaultChecked />
-                <span>Ingat saya</span>
-              </label>
+              <Link href="/login/aktivasi" className="inline-flex items-center min-h-[44px] sm:min-h-0 font-medium text-brand hover:underline">
+                Aktifkan akun
+              </Link>
               <button
                 type="button"
                 onClick={() => setIsForgotModalOpen(true)}
@@ -269,6 +168,10 @@ export default function LoginPage() {
               {loading ? 'Memeriksa...' : 'Masuk'}
             </Button>
           </form>
+
+          <p className="text-xs text-ink-3 border-t border-line pt-4">
+            Pengurus dan umat masuk dengan email yang terdaftar di Data Umat. Belum pernah masuk? Pilih <span className="font-medium text-ink-2">Aktifkan akun</span> untuk membuat kata sandi.
+          </p>
         </Panel>
       </main>
 

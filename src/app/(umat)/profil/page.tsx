@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { getProfileById, findLoginProfile, updateProfile, getUserRegistrationHistory } from '@/lib/actions/vihara-actions';
+import Link from 'next/link';
+import { getCurrentSession, updateProfile, getUserRegistrationHistory } from '@/lib/actions/vihara-actions';
+import { createClient } from '@/lib/supabase/client';
 import { Profile, ViharaEvent } from '@/types/database';
-import { Badge, Button, Field, Panel, StateMessage, inputClass } from '@/components/ui/kit';
+import { Badge, Button, Field, Panel, StateMessage, buttonClass, inputClass } from '@/components/ui/kit';
 
 const METHOD_LABELS: Record<string, string> = {
   self: 'Daftar sendiri',
@@ -15,38 +17,32 @@ function ValueOrEmpty({ value }: { value?: string | null }) {
 }
 
 export default function MemberProfilePage() {
-  const [loggedUserId, setLoggedUserId] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userRegistrations, setUserRegistrations] = useState<{ event: ViharaEvent; method: string; isAttended: boolean }[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
-
-  const [loginInput, setLoginInput] = useState('');
-  const [loginError, setLoginError] = useState('');
 
   const [editFullName, setEditFullName] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editBirthDate, setEditBirthDate] = useState('');
   const [editAddress, setEditAddress] = useState('');
-  const [editSentra, setEditSentra] = useState('Sentra Makassar');
-  const [editCetya, setEditCetya] = useState('');
-  const [editHan, setEditHan] = useState('');
   const [editEmergencyContact, setEditEmergencyContact] = useState('');
   const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
 
-  const loadProfileData = async (userId: string) => {
+  // The profile always comes from the signed-in session.
+  const loadProfileData = async () => {
     setLoading(true);
     setLoadError(false);
     try {
-      const [me, history] = await Promise.all([
-        getProfileById(userId),
-        getUserRegistrationHistory(userId)
-      ]);
+      const session = await getCurrentSession();
+      const me = session.profile;
       if (!me) {
+        setProfile(null);
         setLoading(false);
         return;
       }
+      const history = await getUserRegistrationHistory();
 
       setProfile(me);
       setEditFullName(me.full_name || '');
@@ -54,11 +50,7 @@ export default function MemberProfilePage() {
       setEditPhone(me.phone || '');
       setEditBirthDate(me.birth_date || '');
       setEditAddress(me.address || '');
-      setEditSentra(me.sentra || 'Sentra Makassar');
-      setEditCetya(me.cetya || '');
-      setEditHan(me.han || '');
       setEditEmergencyContact(me.emergency_contact || '');
-
       setUserRegistrations(history);
     } catch {
       setLoadError(true);
@@ -67,36 +59,11 @@ export default function MemberProfilePage() {
   };
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedId = localStorage.getItem('vihara_umat_id');
-      if (savedId) {
-        setLoggedUserId(savedId);
-        loadProfileData(savedId);
-      } else {
-        setLoading(false);
-      }
-    }
+    loadProfileData();
   }, []);
 
-  const handleUmatLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoginError('');
-    if (!loginInput.trim()) return;
-
-    const found = await findLoginProfile(loginInput, 'umat-by-name');
-
-    if (found) {
-      localStorage.setItem('vihara_umat_id', found.id);
-      setLoggedUserId(found.id);
-      loadProfileData(found.id);
-    } else {
-      setLoginError('Profil tidak ditemukan. Periksa lagi email, kode HAN, atau nama yang Anda isi.');
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('vihara_umat_id');
-    setLoggedUserId(null);
+  const handleLogout = async () => {
+    await createClient().auth.signOut();
     setProfile(null);
     setUserRegistrations([]);
   };
@@ -107,19 +74,15 @@ export default function MemberProfilePage() {
 
     await updateProfile(profile.id, {
       full_name: editFullName,
-      email: editEmail.trim() || undefined,
       phone: editPhone,
       birth_date: editBirthDate,
       address: editAddress,
-      sentra: editSentra,
-      cetya: editCetya,
-      han: editHan,
       emergency_contact: editEmergencyContact
     });
 
     setSaveSuccessMsg('Perubahan profil sudah disimpan.');
     setTimeout(() => setSaveSuccessMsg(''), 3000);
-    loadProfileData(profile.id);
+    loadProfileData();
   };
 
   if (loading) {
@@ -130,14 +93,14 @@ export default function MemberProfilePage() {
     );
   }
 
-  if (loadError && loggedUserId) {
+  if (loadError) {
     return (
       <Panel className="max-w-md mx-auto">
         <StateMessage
           kind="error"
           title="Profil belum bisa dimuat"
           description="Periksa koneksi internet, lalu coba lagi."
-          action={<Button onClick={() => loadProfileData(loggedUserId)}>Coba lagi</Button>}
+          action={<Button onClick={() => loadProfileData()}>Coba lagi</Button>}
         />
       </Panel>
     );
@@ -145,49 +108,25 @@ export default function MemberProfilePage() {
 
   if (!profile) {
     return (
-      <Panel className="max-w-md mx-auto sm:my-8 p-6 space-y-5">
-        <div className="space-y-1">
+      <Panel raised className="max-w-md mx-auto sm:my-8 p-6 sm:p-7 space-y-5">
+        <div className="space-y-2">
+          <span className="block w-8 h-[3px] rounded-full bg-gold-line" aria-hidden />
           <h1 className="text-[28px] leading-tight font-semibold text-ink">Profil umat</h1>
           <p className="text-sm text-ink-2">
-            Masukkan email terdaftar atau kode HAN untuk melihat data diri dan riwayat kegiatan.
+            Masuk dengan akun umat untuk melihat data diri, mendaftar kegiatan, dan melihat riwayat kehadiran.
           </p>
         </div>
-
-        <form onSubmit={handleUmatLogin} className="space-y-4">
-          <Field label="Email, kode HAN, atau nama lengkap">
-            <input
-              type="text"
-              required
-              value={loginInput}
-              onChange={(e) => setLoginInput(e.target.value)}
-              placeholder="suryani@vihara.or.id"
-              className={inputClass}
-            />
-          </Field>
-
-          {loginError && (
-            <p role="alert" className="text-sm text-danger">{loginError}</p>
-          )}
-
-          <Button type="submit" variant="primary" className="w-full">Buka profil</Button>
-        </form>
-
-        <div className="pt-4 border-t border-line space-y-2">
-          <p className="text-xs font-medium text-ink-2">Akun contoh</p>
-          <div className="flex flex-col gap-2">
-            <Button onClick={() => { setLoginInput('suryani@vihara.or.id'); }} className="w-full justify-between">
-              <span className="truncate">Suryani Dewi</span>
-              <span className="text-xs font-normal text-ink-3 truncate">suryani@vihara.or.id</span>
-            </Button>
-            <Button onClick={() => { setLoginInput('budi@vihara.or.id'); }} className="w-full justify-between">
-              <span className="truncate">Budi Santoso</span>
-              <span className="text-xs font-normal text-ink-3 truncate">budi@vihara.or.id</span>
-            </Button>
-          </div>
+        <div className="flex flex-col gap-2">
+          <Link href="/login" className={`${buttonClass('primary')} w-full`}>Masuk</Link>
+          <Link href="/login/aktivasi" className={`${buttonClass('secondary')} w-full`}>Aktifkan akun</Link>
         </div>
+        <p className="text-xs text-ink-3 border-t border-line pt-4">
+          Akun bisa diaktifkan kalau email Anda sudah terdaftar di Data Umat. Belum terdaftar? Hubungi pengurus Cetya atau HAN Anda.
+        </p>
       </Panel>
     );
   }
+
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -260,14 +199,8 @@ export default function MemberProfilePage() {
                   />
                 </Field>
 
-                <Field label="Email">
-                  <input
-                    type="email"
-                    placeholder="nama@email.com"
-                    value={editEmail}
-                    onChange={(e) => setEditEmail(e.target.value)}
-                    className={inputClass}
-                  />
+                <Field label="Email" hint="Email dipakai untuk masuk. Minta pengurus jika ingin menggantinya.">
+                  <input type="email" value={editEmail} readOnly className={`${inputClass} bg-surface-2 text-ink-2`} />
                 </Field>
 
                 <Field label="Nomor HP / WhatsApp">

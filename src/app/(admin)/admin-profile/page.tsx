@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react';
-import { getProfiles, updateProfile } from '@/lib/actions/vihara-actions';
+import { getCurrentSession, updateProfile } from '@/lib/actions/vihara-actions';
 import { Profile } from '@/types/database';
 import { createClient } from '@/lib/supabase/client';
 import { Button, Field, PageHeader, Panel, StateMessage, inputClass } from '@/components/ui/kit';
@@ -25,22 +25,8 @@ export default function AdminProfilePage() {
   const loadData = useCallback(async () => {
     setLoadState('loading');
     try {
-      const profs = await getProfiles();
-      let currentAdmin: Profile | undefined;
-
-      if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem('vihara_admin_profile');
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            currentAdmin = profs.find(p => p.id === parsed.id || p.email === parsed.email);
-          } catch {}
-        }
-      }
-
-      if (!currentAdmin) {
-        currentAdmin = profs.find(p => p.role === 'admin');
-      }
+      // The signed-in pengurus, from the Supabase session.
+      const currentAdmin = (await getCurrentSession()).profile;
 
       if (currentAdmin) {
         setProfile(currentAdmin);
@@ -107,9 +93,6 @@ export default function AdminProfilePage() {
 
       const updatedProfileObj = { ...profile, ...updatedData };
       setProfile(updatedProfileObj);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('vihara_admin_profile', JSON.stringify(updatedProfileObj));
-      }
 
       setSaving(false);
       setMsg({ type: 'success', text: 'Perubahan profil tersimpan.' });

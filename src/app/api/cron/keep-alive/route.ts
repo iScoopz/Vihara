@@ -25,7 +25,7 @@ export async function GET(request: Request) {
 
   try {
     const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
-    const { count, error } = await supabase.from('profiles').select('id', { count: 'exact', head: true });
+    const { count, error } = await supabase.from('events').select('id', { count: 'exact', head: true });
     const latencyMs = Date.now() - startTime;
 
     if (error) {
@@ -37,7 +37,7 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json(
-      { status: 'ok', profiles: count ?? 0, latencyMs, timestamp: new Date().toISOString() },
+      { status: 'ok', events: count ?? 0, latencyMs, timestamp: new Date().toISOString() },
       { headers: { 'Cache-Control': 'no-store' } }
     );
   } catch (err) {

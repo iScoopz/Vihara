@@ -25,7 +25,7 @@ jobs:
           # Count-only request: registers activity without printing any umat data to the log.
           for attempt in 1 2 3; do
             STATUS_CODE=$(curl -s -o /dev/null -D headers.txt -w "%{http_code}" --max-time 30 \
-              -I "$SUPABASE_URL/rest/v1/profiles?select=id" \
+              -I "$SUPABASE_URL/rest/v1/events?select=id" \
               -H "apikey: $SUPABASE_ANON_KEY" \
               -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
               -H "Prefer: count=exact")

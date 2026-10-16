@@ -18,7 +18,7 @@ async function pingSupabase(env: Env) {
     return;
   }
   // Count-only request: registers activity without reading any umat data.
-  const res = await fetch(`${url}/rest/v1/profiles?select=id`, {
+  const res = await fetch(`${url}/rest/v1/events?select=id`, {
     method: 'HEAD',
     headers: { apikey: key, Authorization: `Bearer ${key}`, Prefer: 'count=exact' }
   });

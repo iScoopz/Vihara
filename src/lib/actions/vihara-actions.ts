@@ -18,6 +18,7 @@ import {
   INITIAL_HANS
 } from '@/lib/mock-data';
 import { PUBLIC_EVENTS_TAG } from '@/lib/public-events';
+import { getAuthContext, requireAdmin, requireProfile } from '@/lib/auth-server';
 import { 
   Profile, 
   ViharaEvent, 
@@ -76,6 +77,7 @@ function isSupabaseConfigured() {
 
 // UNIFIED SINGLE-PASS BUNDLE FETCHERS (Reduces 4-5 HTTP POST requests down to 1 single request)
 export async function getUmatPageBundle() {
+  await requireAdmin();
   const [profilesList, sentrasList, cetyasList, hansList] = await Promise.all([
     getProfiles(),
     getSentras(),
@@ -91,6 +93,7 @@ export async function getUmatPageBundle() {
 }
 
 export async function getEventDetailPageBundle(eventId: string) {
+  await requireAdmin();
   // Profiles are fetched once and reused for the registration join.
   const [eventObj, rawRegs, profilesList] = await Promise.all([
     getEventById(eventId),
@@ -129,6 +132,7 @@ async function fetchRawRegistrations(eventId: string): Promise<EventRegistration
 }
 
 export async function getDashboardPageBundle() {
+  await requireAdmin();
   const [eventsList, profilesList, donationsList, inventoryList] = await Promise.all([
     getEvents(),
     getProfiles(),
@@ -144,6 +148,7 @@ export async function getDashboardPageBundle() {
 }
 
 export async function getInventoryPageBundle() {
+  await requireAdmin();
   const [inventoryList, transactionsList, profilesList] = await Promise.all([
     getInventory(),
     getInventoryTransactions(),
@@ -179,6 +184,7 @@ export async function getCetyas(): Promise<CetyaProfile[]> {
 }
 
 export async function addCetya(cetya: Omit<CetyaProfile, 'id' | 'created_at'>) {
+  await requireAdmin();
   const newCetya: CetyaProfile = {
     ...cetya,
     id: `cetya_${Date.now()}`,
@@ -201,6 +207,7 @@ export async function addCetya(cetya: Omit<CetyaProfile, 'id' | 'created_at'>) {
 }
 
 export async function updateCetya(id: string, data: Partial<Omit<CetyaProfile, 'id' | 'created_at'>>) {
+  await requireAdmin();
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
@@ -220,6 +227,7 @@ export async function updateCetya(id: string, data: Partial<Omit<CetyaProfile, '
 }
 
 export async function deleteCetya(id: string) {
+  await requireAdmin();
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
@@ -253,6 +261,7 @@ export async function getHans(): Promise<HanProfile[]> {
 }
 
 export async function addHan(han: Omit<HanProfile, 'id' | 'created_at'>) {
+  await requireAdmin();
   const newHan: HanProfile = {
     ...han,
     id: `han_${Date.now()}`,
@@ -275,6 +284,7 @@ export async function addHan(han: Omit<HanProfile, 'id' | 'created_at'>) {
 }
 
 export async function updateHan(id: string, data: Partial<Omit<HanProfile, 'id' | 'created_at'>>) {
+  await requireAdmin();
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
@@ -294,6 +304,7 @@ export async function updateHan(id: string, data: Partial<Omit<HanProfile, 'id' 
 }
 
 export async function deleteHan(id: string) {
+  await requireAdmin();
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
@@ -310,6 +321,7 @@ export async function deleteHan(id: string) {
 }
 
 export async function getUpcomingBirthdays(targetMonth?: number): Promise<Profile[]> {
+  await requireAdmin();
   const currentMonth = targetMonth || (new Date().getMonth() + 1);
 
   if (isSupabaseConfigured()) {
@@ -335,19 +347,21 @@ export async function getUpcomingBirthdays(targetMonth?: number): Promise<Profil
   });
 }
 
-export async function registerForEvent(eventId: string, targetUmatId?: string, currentUserId?: string) {
-  let profileToRegister = currentUserId || '';
+// Without targetUmatId the signed-in umat registers themself; with it, a pengurus registers someone.
+export async function registerForEvent(eventId: string, targetUmatId?: string) {
+  const ctx = await getAuthContext();
+  let profileToRegister: string;
   let regMethod: 'self' | 'admin' = 'self';
   let registeredBy: string | undefined = undefined;
 
-  if (!targetUmatId && !currentUserId) {
-    return { error: 'Masuk sebagai umat terlebih dahulu untuk mendaftar.' };
-  }
-
   if (targetUmatId) {
+    if (!ctx.isAdmin) return { error: 'Hanya pengurus yang dapat mendaftarkan umat lain.' };
     profileToRegister = targetUmatId;
     regMethod = 'admin';
-    registeredBy = currentUserId;
+    registeredBy = ctx.profile?.id;
+  } else {
+    if (!ctx.profile) return { error: 'Masuk sebagai umat terlebih dahulu untuk mendaftar.' };
+    profileToRegister = ctx.profile.id;
   }
 
   if (isSupabaseConfigured()) {
@@ -436,6 +450,7 @@ export async function registerForEvent(eventId: string, targetUmatId?: string, c
 }
 
 export async function getInventory(): Promise<InventoryItem[]> {
+  await requireAdmin();
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
@@ -479,6 +494,7 @@ export async function recordInventoryPurchase(
   profileId?: string, 
   notes?: string
 ) {
+  await requireAdmin();
   const found = await findInventoryItem(inventoryId);
   if (!found) return { error: 'Barang tidak ditemukan.' };
   if (found.stock_quantity < quantity) {
@@ -529,6 +545,7 @@ export async function recordInventoryPurchase(
 }
 
 export async function getInventoryTransactions(): Promise<InventoryTransaction[]> {
+  await requireAdmin();
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
@@ -546,6 +563,7 @@ export async function getInventoryTransactions(): Promise<InventoryTransaction[]
 }
 
 export async function updateStockQuantity(itemId: string, delta: number) {
+  await requireAdmin();
   const found = await findInventoryItem(itemId);
   if (!found) return { error: 'Barang tidak ditemukan.' };
 
@@ -575,6 +593,7 @@ export async function updateStockQuantity(itemId: string, delta: number) {
 }
 
 export async function addInventoryItem(item: Omit<InventoryItem, 'id' | 'last_updated'>) {
+  await requireAdmin();
   const newItem: InventoryItem = {
     ...item,
     id: `inv_${Date.now()}`,
@@ -597,6 +616,7 @@ export async function addInventoryItem(item: Omit<InventoryItem, 'id' | 'last_up
 }
 
 export async function getDonations(): Promise<Donation[]> {
+  await requireAdmin();
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
@@ -614,6 +634,7 @@ export async function getDonations(): Promise<Donation[]> {
 }
 
 export async function addDonation(donation: Omit<Donation, 'id' | 'created_at'>) {
+  await requireAdmin();
   const newDonation: Donation = {
     ...donation,
     id: `d_${Date.now()}`,
@@ -636,6 +657,7 @@ export async function addDonation(donation: Omit<Donation, 'id' | 'created_at'>)
 }
 
 export async function getProfiles(): Promise<Profile[]> {
+  await requireAdmin();
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
@@ -652,42 +674,18 @@ export async function getProfiles(): Promise<Profile[]> {
   return [...profilesStore];
 }
 
-export async function getProfileById(id: string): Promise<Profile | null> {
-  if (!id) return null;
-  if (isSupabaseConfigured()) {
-    try {
-      const supabase = await createClient();
-      const { data, error } = await supabase.from('profiles').select('*').eq('id', id).maybeSingle();
-      if (error) {
-        console.error('Supabase getProfileById error:', error);
-      } else {
-        return data;
-      }
-    } catch (e) {
-      console.error('getProfileById exception:', e);
-    }
-  }
-  return profilesStore.find(p => p.id === id) || null;
+// The signed-in user's own session, safe to send to the browser.
+export async function getCurrentSession(): Promise<{ signedIn: boolean; isAdmin: boolean; email: string | null; profile: Profile | null }> {
+  const ctx = await getAuthContext();
+  return { signedIn: Boolean(ctx.userId), isAdmin: ctx.isAdmin, email: ctx.email, profile: ctx.profile };
 }
 
-// Looks up one profile on the server so the login pages never download the whole umat list.
-export async function findLoginProfile(query: string, mode: 'admin' | 'umat' | 'umat-by-name'): Promise<Profile | null> {
-  const q = query.trim().toLowerCase();
-  if (!q) return null;
-
-  const profs = await getProfiles();
-  if (mode === 'admin') {
-    return profs.find(p => p.role === 'admin' && p.email?.toLowerCase() === q)
-      || (q === 'admin@vihara.or.id' ? profs.find(p => p.role === 'admin') || null : null);
-  }
-  return profs.find(p =>
-    (p.email && p.email.toLowerCase() === q) ||
-    (p.han && p.han.toLowerCase() === q) ||
-    (mode === 'umat-by-name' && p.full_name && p.full_name.toLowerCase() === q)
-  ) || null;
+export async function getMyProfile(): Promise<Profile | null> {
+  return (await getAuthContext()).profile;
 }
 
 export async function addProfile(profile: Omit<Profile, 'id' | 'created_at'>) {
+  await requireAdmin();
   const newProfile: Profile = {
     ...profile,
     id: `p_${Date.now()}`,
@@ -710,23 +708,36 @@ export async function addProfile(profile: Omit<Profile, 'id' | 'created_at'>) {
   return { success: true, profile: newProfile };
 }
 
+// Fields only pengurus may change; the database trigger enforces the same rule.
+const PROTECTED_PROFILE_FIELDS = ['role', 'is_active', 'sentra', 'cetya', 'han', 'bagian'] as const;
+
 export async function updateProfile(id: string, updatedData: Partial<Omit<Profile, 'id' | 'created_at'>>) {
+  const ctx = await getAuthContext();
+  const isOwn = Boolean(ctx.profile && ctx.profile.id === id);
+  if (!ctx.isAdmin && !isOwn) return { error: 'Anda hanya dapat mengubah profil Anda sendiri.' };
+
+  const data: Partial<Omit<Profile, 'id' | 'created_at'>> = { ...updatedData };
+  if (!ctx.isAdmin) {
+    for (const field of PROTECTED_PROFILE_FIELDS) delete data[field];
+  }
+
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      const { error } = await supabase.from('profiles').update(updatedData).eq('id', id);
-      if (error) console.error('Supabase updateProfile error:', error);
+      const { error } = await supabase.from('profiles').update(data).eq('id', id);
+      if (error) {
+        console.error('Supabase updateProfile error:', error);
+        return { error: 'Profil belum tersimpan.' };
+      }
     } catch (e) {
       console.error('updateProfile exception:', e);
+      return { error: 'Profil belum tersimpan.' };
     }
   }
 
   const index = profilesStore.findIndex(p => p.id === id);
   if (index !== -1) {
-    profilesStore[index] = {
-      ...profilesStore[index],
-      ...updatedData
-    };
+    profilesStore[index] = { ...profilesStore[index], ...data };
   }
 
   revalidatePath('/umat');
@@ -738,6 +749,7 @@ export async function updateProfile(id: string, updatedData: Partial<Omit<Profil
 }
 
 export async function deleteProfile(id: string) {
+  await requireAdmin();
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
@@ -754,26 +766,34 @@ export async function deleteProfile(id: string) {
   return { success: true };
 }
 
+// Pengurus get every event with budgets; everyone else only published events, without money data.
 export async function getEvents(): Promise<ViharaEvent[]> {
+  const { isAdmin } = await getAuthContext();
+
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      const [eventsRes, regsRes, budgetRes] = await Promise.all([
-        supabase.from('events').select('*').order('event_date', { ascending: true }),
-        supabase.from('event_registrations').select('event_id'),
-        supabase.from('event_budgets').select('*')
+      let eventsQuery = supabase.from('events').select('*').order('event_date', { ascending: true });
+      if (!isAdmin) eventsQuery = eventsQuery.eq('is_published', true);
+
+      const [eventsRes, countsRes, budgetRes] = await Promise.all([
+        eventsQuery,
+        supabase.rpc('event_registration_counts'),
+        isAdmin ? supabase.from('event_budgets').select('*') : Promise.resolve({ data: [] as EventBudget[] })
       ]);
 
       if (eventsRes.data) {
-        const dbBudgets: EventBudget[] = budgetRes.data || [];
-
-        // Count and group once instead of filtering the full lists per event.
         const regCounts = new Map<string, number>();
-        for (const r of regsRes.data || []) {
-          regCounts.set(r.event_id, (regCounts.get(r.event_id) || 0) + 1);
+        if (!countsRes.error && countsRes.data) {
+          for (const row of countsRes.data as { event_id: string; total: number }[]) regCounts.set(row.event_id, Number(row.total));
+        } else if (isAdmin) {
+          // Before the RLS migration the counting function does not exist yet.
+          const { data: regs } = await supabase.from('event_registrations').select('event_id');
+          for (const r of regs || []) regCounts.set(r.event_id, (regCounts.get(r.event_id) || 0) + 1);
         }
+
         const budgetsByEvent = new Map<string, EventBudget[]>();
-        for (const b of dbBudgets) {
+        for (const b of (budgetRes.data || []) as EventBudget[]) {
           const list = budgetsByEvent.get(b.event_id);
           if (list) list.push(b);
           else budgetsByEvent.set(b.event_id, [b]);
@@ -783,7 +803,7 @@ export async function getEvents(): Promise<ViharaEvent[]> {
           ...ev,
           registrations_count: regCounts.get(ev.id) || 0,
           budgets: budgetsByEvent.get(ev.id) || [],
-          committees: committeesStore.filter(c => c.event_id === ev.id)
+          committees: isAdmin ? committeesStore.filter(c => c.event_id === ev.id) : []
         }));
       }
     } catch (e) {
@@ -791,16 +811,19 @@ export async function getEvents(): Promise<ViharaEvent[]> {
     }
   }
 
-  return eventsStore.map(ev => ({
-    ...ev,
-    registrations_count: registrationsStore.filter(r => r.event_id === ev.id).length,
-    budgets: budgetsStore.filter(b => b.event_id === ev.id),
-    committees: committeesStore.filter(c => c.event_id === ev.id),
-    org_structure: ev.org_structure || (ev.is_complex ? INITIAL_ORG_STRUCTURE : undefined)
-  }));
+  return eventsStore
+    .filter(ev => isAdmin || ev.is_published)
+    .map(ev => ({
+      ...ev,
+      registrations_count: registrationsStore.filter(r => r.event_id === ev.id).length,
+      budgets: isAdmin ? budgetsStore.filter(b => b.event_id === ev.id) : [],
+      committees: isAdmin ? committeesStore.filter(c => c.event_id === ev.id) : [],
+      org_structure: ev.org_structure || (ev.is_complex ? INITIAL_ORG_STRUCTURE : undefined)
+    }));
 }
 
 export async function getEventById(id: string): Promise<ViharaEvent | null> {
+  await requireAdmin();
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
@@ -844,6 +867,7 @@ export async function getEventById(id: string): Promise<ViharaEvent | null> {
 }
 
 export async function createEvent(eventData: Omit<ViharaEvent, 'id' | 'created_at'>) {
+  await requireAdmin();
   const newEvent: ViharaEvent = {
     ...eventData,
     id: `e_${Date.now()}`,
@@ -871,6 +895,7 @@ export async function createEvent(eventData: Omit<ViharaEvent, 'id' | 'created_a
 }
 
 export async function togglePublishEvent(eventId: string) {
+  await requireAdmin();
   const ev = eventsStore.find(e => e.id === eventId);
   let currentPublishStatus = ev?.is_published ?? false;
 
@@ -910,6 +935,7 @@ export async function togglePublishEvent(eventId: string) {
 }
 
 export async function toggleCompleteEvent(eventId: string) {
+  await requireAdmin();
   const ev = eventsStore.find(e => e.id === eventId);
   let currentCompleteStatus = ev?.is_completed ?? false;
 
@@ -953,6 +979,7 @@ export async function updateEventPricing(
   pricingPerBagian: Record<string, number>,
   extraFees: EventExtraFee[]
 ) {
+  await requireAdmin();
   const ev = eventsStore.find(e => e.id === eventId);
   if (ev) {
     ev.pricing_per_bagian = pricingPerBagian;
@@ -1029,6 +1056,7 @@ async function saveOrgStructure(eventId: string, org: EventOrgStructure): Promis
 
 // Updates the core committee and guests while keeping the sub-sections as they are.
 export async function updateCoreCommittee(eventId: string, core: CoreCommittee): Promise<{ error?: string; org_structure?: EventOrgStructure }> {
+  await requireAdmin();
   const org = await loadOrgStructure(eventId);
   if (!org) return { error: 'Event tidak ditemukan' };
 
@@ -1048,6 +1076,7 @@ export async function updateCoreCommittee(eventId: string, core: CoreCommittee):
 }
 
 export async function addSubSectionToOrg(eventId: string, sectionType: 'sub_acara' | 'sub_umum', roleName: string, picName: string) {
+  await requireAdmin();
   const org = await loadOrgStructure(eventId);
   if (!org) return { error: 'Event tidak ditemukan' };
 
@@ -1069,6 +1098,7 @@ export async function updateSubSectionInOrg(
   roleName: string,
   picName: string
 ) {
+  await requireAdmin();
   const org = await loadOrgStructure(eventId);
   if (!org) return { error: 'Event tidak ditemukan' };
 
@@ -1079,6 +1109,7 @@ export async function updateSubSectionInOrg(
 }
 
 export async function deleteSubSectionFromOrg(eventId: string, sectionType: 'sub_acara' | 'sub_umum', subId: string) {
+  await requireAdmin();
   const org = await loadOrgStructure(eventId);
   if (!org) return { error: 'Event tidak ditemukan' };
 
@@ -1087,6 +1118,7 @@ export async function deleteSubSectionFromOrg(eventId: string, sectionType: 'sub
 }
 
 export async function addBudgetItem(budget: Omit<EventBudget, 'id'>) {
+  await requireAdmin();
   const newBudget: EventBudget = {
     ...budget,
     id: `b_${Date.now()}`
@@ -1108,6 +1140,7 @@ export async function addBudgetItem(budget: Omit<EventBudget, 'id'>) {
 }
 
 export async function deleteBudgetItem(id: string, eventId?: string) {
+  await requireAdmin();
   if (isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
@@ -1127,6 +1160,7 @@ export async function deleteBudgetItem(id: string, eventId?: string) {
 }
 
 export async function deleteBudgetItems(ids: string[], eventId?: string) {
+  await requireAdmin();
   if (!ids || ids.length === 0) return { success: true };
   if (isSupabaseConfigured()) {
     try {
@@ -1158,6 +1192,7 @@ export async function updateGroupedBudget(
     pemasukanAmount: number;
   }
 ) {
+  await requireAdmin();
   const cleanName = data.itemName.trim();
 
   const syncType = async (id?: string, type?: 'rab' | 'realisasi' | 'pemasukan', amount: number = 0) => {
@@ -1214,6 +1249,7 @@ export async function updateGroupedBudget(
 }
 
 export async function getRegistrationsForEvent(eventId: string) {
+  await requireAdmin();
   const regs = await fetchRawRegistrations(eventId);
   if (regs.length === 0) return [];
 
@@ -1236,7 +1272,9 @@ export async function getRegistrationsForEvent(eventId: string) {
   return regs.map(r => ({ ...r, profile: byId.get(r.profile_id) }));
 }
 
-export async function getUserRegisteredEventIds(profileId: string): Promise<string[]> {
+// Event ids the signed-in umat registered for.
+export async function getUserRegisteredEventIds(): Promise<string[]> {
+  const profileId = (await getAuthContext()).profile?.id;
   if (!profileId) return [];
   if (isSupabaseConfigured()) {
     try {
@@ -1257,7 +1295,8 @@ export async function getUserRegisteredEventIds(profileId: string): Promise<stri
     .map(r => r.event_id);
 }
 
-export async function getUserRegistrationHistory(profileId: string): Promise<{ event: ViharaEvent; method: string; isAttended: boolean }[]> {
+export async function getUserRegistrationHistory(): Promise<{ event: ViharaEvent; method: string; isAttended: boolean }[]> {
+  const profileId = (await getAuthContext()).profile?.id;
   if (!profileId) return [];
   const [eventsList, userRegs] = await Promise.all([
     getEvents(),
@@ -1293,8 +1332,10 @@ export async function getUserRegistrationHistory(profileId: string): Promise<{ e
 }
 
 // The umat portal only knows the event and the umat, not the registration id.
-export async function cancelOwnRegistration(eventId: string, profileId: string) {
-  if (!eventId || !profileId) return { error: 'Data pendaftaran tidak lengkap.' };
+export async function cancelOwnRegistration(eventId: string) {
+  const profileId = (await getAuthContext()).profile?.id;
+  if (!profileId) return { error: 'Masuk terlebih dahulu untuk membatalkan pendaftaran.' };
+  if (!eventId) return { error: 'Data pendaftaran tidak lengkap.' };
 
   if (isSupabaseConfigured()) {
     try {
@@ -1324,6 +1365,7 @@ export async function cancelOwnRegistration(eventId: string, profileId: string) 
 }
 
 export async function cancelRegistration(registrationId: string) {
+  await requireAdmin();
   let eventId = '';
   const reg = registrationsStore.find(r => r.id === registrationId);
   if (reg) eventId = reg.event_id;
@@ -1352,6 +1394,7 @@ export async function cancelRegistration(registrationId: string) {
 }
 
 export async function toggleAttendance(registrationId: string) {
+  await requireAdmin();
   const reg = registrationsStore.find(r => r.id === registrationId);
   let currentAttended = reg?.is_attended ?? false;
 
@@ -1386,6 +1429,7 @@ export async function toggleAttendance(registrationId: string) {
 }
 
 export async function toggleRegistrationPayment(registrationId: string, amount?: number) {
+  await requireAdmin();
   const reg = registrationsStore.find(r => r.id === registrationId);
   let currentPaid = reg?.is_paid ?? false;
 
@@ -1431,6 +1475,7 @@ export async function toggleRegistrationPayment(registrationId: string, amount?:
 }
 
 export async function updateRegistrationExtraFees(registrationId: string, feeIds: string[], calculatedTotalAmount?: number) {
+  await requireAdmin();
   const reg = registrationsStore.find(r => r.id === registrationId);
 
   if (isSupabaseConfigured()) {
@@ -1472,6 +1517,7 @@ export async function updateRegistrationExtraFees(registrationId: string, feeIds
 
 // PROPOSAL RUNDOWN ACTIONS
 export async function addProposalRundown(eventId: string, item: Omit<EventProposalRundown, 'id' | 'event_id'>) {
+  await requireAdmin();
   const newItem: EventProposalRundown = {
     ...item,
     id: `pr_${Date.now()}`,
@@ -1499,6 +1545,7 @@ export async function addProposalRundown(eventId: string, item: Omit<EventPropos
 }
 
 export async function updateProposalRundown(eventId: string, itemId: string, itemData: Partial<Omit<EventProposalRundown, 'id' | 'event_id'>>) {
+  await requireAdmin();
   const ev = eventsStore.find(e => e.id === eventId);
   if (ev && ev.proposal_rundowns) {
     const idx = ev.proposal_rundowns.findIndex(i => i.id === itemId);
@@ -1522,6 +1569,7 @@ export async function updateProposalRundown(eventId: string, itemId: string, ite
 }
 
 export async function deleteProposalRundown(eventId: string, itemId: string) {
+  await requireAdmin();
   const ev = eventsStore.find(e => e.id === eventId);
   if (ev && ev.proposal_rundowns) {
     ev.proposal_rundowns = ev.proposal_rundowns.filter(i => i.id !== itemId);
@@ -1543,6 +1591,7 @@ export async function deleteProposalRundown(eventId: string, itemId: string) {
 
 // SKENARIO KERJA ACTIONS
 export async function addSkenarioKerja(eventId: string, item: Omit<EventSkenarioKerja, 'id' | 'event_id'>) {
+  await requireAdmin();
   const newItem: EventSkenarioKerja = {
     ...item,
     id: `sk_${Date.now()}`,
@@ -1570,6 +1619,7 @@ export async function addSkenarioKerja(eventId: string, item: Omit<EventSkenario
 }
 
 export async function updateSkenarioKerja(eventId: string, itemId: string, itemData: Partial<Omit<EventSkenarioKerja, 'id' | 'event_id'>>) {
+  await requireAdmin();
   const ev = eventsStore.find(e => e.id === eventId);
   if (ev && ev.skenario_kerja) {
     const idx = ev.skenario_kerja.findIndex(i => i.id === itemId);
@@ -1593,6 +1643,7 @@ export async function updateSkenarioKerja(eventId: string, itemId: string, itemD
 }
 
 export async function deleteSkenarioKerja(eventId: string, itemId: string) {
+  await requireAdmin();
   const ev = eventsStore.find(e => e.id === eventId);
   if (ev && ev.skenario_kerja) {
     ev.skenario_kerja = ev.skenario_kerja.filter(i => i.id !== itemId);
