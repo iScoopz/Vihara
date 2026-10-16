@@ -26,7 +26,7 @@ $$;
 -- Called right after sign-in: attaches the signed-in user to the profile with
 -- the same, confirmed email. Never re-links a profile that already has an owner.
 create or replace function public.link_my_profile()
-returns text language plpgsql security definer set search_path = public as $$
+returns text language plpgsql security definer set search_path = public as $
 declare
   pid text;
   confirmed timestamptz;
@@ -46,14 +46,18 @@ begin
     return null;
   end if;
 
+  -- Transaction-local flag read by protect_profile_fields().
+  perform set_config('vihara.linking_profile', 'on', true);
+
   update public.profiles
      set auth_user_id = auth.uid()
-   where auth_user_id is null and lower(email) = lower(user_email)
+   where auth_user_id is null and lower(trim(email)) = lower(trim(user_email))
   returning id into pid;
 
+  perform set_config('vihara.linking_profile', 'off', true);
   return pid;
 end
-$$;
+$;
 
 -- Registration counts for the public catalogue without exposing who registered.
 create or replace function public.event_registration_counts()
@@ -67,11 +71,20 @@ $$;
 
 -- Umat may edit their own contact details, but never their role, status or account link.
 create or replace function public.protect_profile_fields()
-returns trigger language plpgsql security definer set search_path = public as $$
+returns trigger language plpgsql security definer set search_path = public as $
 begin
   if public.is_admin() then
     return new;
   end if;
+
+  -- The one-time account link done by link_my_profile(): only auth_user_id may change,
+  -- and only from empty to the caller's own id.
+  if coalesce(current_setting('vihara.linking_profile', true), 'off') = 'on'
+     and old.auth_user_id is null
+     and new.auth_user_id = auth.uid() then
+    return new;
+  end if;
+
   if new.role is distinct from old.role
      or new.is_active is distinct from old.is_active
      or new.auth_user_id is distinct from old.auth_user_id
@@ -83,7 +96,7 @@ begin
   end if;
   return new;
 end
-$$;
+$;
 
 drop trigger if exists profiles_protect_fields on public.profiles;
 create trigger profiles_protect_fields
