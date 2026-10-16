@@ -100,7 +100,7 @@ export function EventBelumDaftarTab({ event, profiles, registrations, onRegister
     <div className="space-y-4">
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
         <p className="text-sm text-ink-2">
-          <span className="text-3xl font-bold tabular-nums text-brand">{unregistered.length}</span>{' '}
+          <span className="font-display text-4xl font-semibold leading-none tabular-nums text-brand">{unregistered.length}</span>{' '}
           dari {eligible.length} umat{includeInactive ? '' : ' aktif'} belum mendaftar
         </p>
         <p className="text-xs text-ink-3">{eligible.length - unregistered.length} sudah terdaftar</p>
@@ -193,7 +193,7 @@ export function EventBelumDaftarTab({ event, profiles, registrations, onRegister
         <Panel className="overflow-hidden">
           <table className="hidden md:table w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-line text-xs text-ink-3">
+              <tr className="border-b border-line bg-surface-2 text-xs text-ink-3">
                 <th scope="col" className="py-2.5 px-4 font-medium w-12">No</th>
                 <th scope="col" className="py-2.5 px-4 font-medium">Nama</th>
                 <th scope="col" className="py-2.5 px-4 font-medium">HAN</th>

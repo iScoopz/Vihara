@@ -64,7 +64,7 @@ export default function ResetPasswordPage() {
       <main className="flex-1 flex items-start sm:items-center justify-center px-4 pb-10 pt-4">
         <Panel className="w-full max-w-sm p-6 space-y-5">
           <div className="space-y-1">
-            <h1 className="text-xl font-bold tracking-tight text-ink">Buat kata sandi baru</h1>
+            <h1 className="text-[28px] leading-tight font-semibold text-ink">Buat kata sandi baru</h1>
             <p className="text-sm text-ink-2">Kata sandi ini dipakai untuk masuk berikutnya.</p>
           </div>
 

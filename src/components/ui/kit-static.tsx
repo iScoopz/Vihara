@@ -2,18 +2,20 @@
 // Rules behind them live in DESIGN.md. Client-only pieces (Modal) are in kit.tsx.
 
 export const inputClass =
-  'w-full min-h-[44px] sm:min-h-[38px] bg-surface border border-line-strong rounded-lg px-3 py-2 text-sm text-ink placeholder:text-ink-3 focus:outline-none focus:border-brand';
+  'w-full min-h-[44px] sm:min-h-[38px] bg-surface border border-line-strong rounded-lg px-3 py-2 text-sm text-ink placeholder:text-ink-3 shadow-[inset_0_1px_2px_rgba(52,36,18,0.05)] focus:outline-none focus:border-brand focus:ring-3 focus:ring-brand/15';
 
 export const selectClass = inputClass;
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type ButtonSize = 'sm' | 'md';
 
+const raisedEdge = 'shadow-[0_1px_2px_rgba(52,36,18,0.07)]';
+
 const buttonVariants: Record<ButtonVariant, string> = {
-  primary: 'bg-brand text-on-brand hover:bg-brand-hover',
-  secondary: 'bg-surface text-ink border border-line-strong hover:bg-surface-2',
+  primary: 'bg-brand text-on-brand shadow-button hover:bg-brand-hover',
+  secondary: `bg-surface text-ink border border-line-strong ${raisedEdge} hover:bg-surface-2`,
   ghost: 'text-ink-2 hover:bg-surface-2 hover:text-ink',
-  danger: 'bg-surface text-danger border border-line-strong hover:bg-danger-soft'
+  danger: `bg-surface text-danger border border-line-strong ${raisedEdge} hover:bg-danger-soft`
 };
 
 const buttonSizes: Record<ButtonSize, string> = {
@@ -38,7 +40,7 @@ export function Button({
 type BadgeTone = 'neutral' | 'brand' | 'gold' | 'ok' | 'danger';
 
 const badgeTones: Record<BadgeTone, string> = {
-  neutral: 'bg-surface-2 text-ink-2',
+  neutral: 'bg-surface-2 text-ink-2 ring-1 ring-inset ring-line',
   brand: 'bg-brand-soft text-brand-ink',
   gold: 'bg-gold-soft text-gold',
   ok: 'bg-ok-soft text-ok',
@@ -55,18 +57,26 @@ export function Badge({ tone = 'neutral', children, className = '' }: { tone?: B
 
 export function PageHeader({ title, description, actions }: { title: string; description?: React.ReactNode; actions?: React.ReactNode }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-      <div className="space-y-1 min-w-0">
-        <h1 className="text-xl font-bold tracking-tight text-ink">{title}</h1>
-        {description && <p className="text-sm text-ink-2">{description}</p>}
+    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-1">
+      <div className="space-y-2 min-w-0">
+        {/* Gold rule opens every page: the identity motif in DESIGN.md. */}
+        <span className="block w-8 h-[3px] rounded-full bg-gold-line" aria-hidden />
+        <h1 className="font-display text-[28px] sm:text-[34px] leading-[1.1] font-semibold text-ink">{title}</h1>
+        {description && <p className="text-sm text-ink-2 max-w-2xl">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
   );
 }
 
-export function Panel({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <div className={`rounded-xl bg-surface border border-line ${className}`}>{children}</div>;
+// raised: the one card that floats above everything else on its screen (e.g. the login form).
+export function Panel({ children, className = '', raised = false }: { children: React.ReactNode; className?: string; raised?: boolean }) {
+  return <div className={`rounded-xl bg-surface border border-line ${raised ? 'shadow-raised' : 'shadow-panel'} ${className}`}>{children}</div>;
+}
+
+// Large serif number: the one figure on a screen the reader should see first.
+export function FocalNumber({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <span className={`font-display text-4xl font-semibold leading-none tabular-nums text-brand ${className}`}>{children}</span>;
 }
 
 export function Field({ label, hint, children, className = '' }: { label: string; hint?: string; children: React.ReactNode; className?: string }) {
@@ -93,7 +103,7 @@ export function StateMessage({
 }) {
   return (
     <div role={kind === 'error' ? 'alert' : 'status'} className="py-12 px-4 text-center space-y-2">
-      <p className={`text-sm ${kind === 'loading' ? 'text-ink-3' : 'font-semibold text-ink'}`}>{title}</p>
+      <p className={kind === 'loading' ? 'text-sm text-ink-3' : 'font-display text-lg font-semibold text-ink'}>{title}</p>
       {description && <p className="text-sm text-ink-2 max-w-md mx-auto">{description}</p>}
       {action && <div className="pt-2">{action}</div>}
     </div>

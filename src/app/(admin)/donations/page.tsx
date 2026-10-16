@@ -98,7 +98,7 @@ export default function DonationsListPage() {
         <>
           <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
             <p className="text-sm text-ink-2">
-              <span className="text-3xl font-bold tabular-nums text-brand">{formatRupiah(monthTotal)}</span>{' '}
+              <span className="font-display text-4xl font-semibold leading-none tabular-nums text-brand">{formatRupiah(monthTotal)}</span>{' '}
               masuk bulan {monthName}
             </p>
             <p className="text-xs text-ink-3">
@@ -150,7 +150,7 @@ export default function DonationsListPage() {
               <p className="px-4 pt-3 text-xs text-ink-3">{filteredDonations.length} catatan</p>
               <table className="hidden md:table w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-line text-xs text-ink-3">
+                  <tr className="border-b border-line bg-surface-2 text-xs text-ink-3">
                     <th scope="col" className="py-2.5 px-4 font-medium">Donatur</th>
                     <th scope="col" className="py-2.5 px-4 font-medium text-right">Nominal</th>
                     <th scope="col" className="py-2.5 px-4 font-medium">Peruntukan</th>

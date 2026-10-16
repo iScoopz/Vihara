@@ -74,7 +74,7 @@ export default function AdminEventsListPage() {
         }
       />
 
-      <div role="tablist" aria-label="Status event" className="flex relative overflow-x-auto border-b border-line">
+      <div role="tablist" aria-label="Status event" className="flex relative overflow-x-auto overflow-y-hidden border-b border-line">
         {tabs.map(tab => {
           const selected = activeTab === tab.id;
           return (

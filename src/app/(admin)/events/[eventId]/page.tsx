@@ -595,9 +595,10 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
         </Link>
 
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
-          <div className="space-y-1 min-w-0">
+          <div className="space-y-2 min-w-0">
+            <span className="block w-8 h-[3px] rounded-full bg-gold-line" aria-hidden />
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <h1 className="text-xl font-bold tracking-tight text-ink break-words">{event.title}</h1>
+              <h1 className="font-display text-[28px] sm:text-[34px] leading-[1.1] font-semibold text-ink break-words">{event.title}</h1>
               {isCompleted ? (
                 <Badge tone="neutral">Selesai</Badge>
               ) : isPublished ? (
@@ -639,7 +640,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
         role="tablist"
         aria-label="Bagian event"
         onKeyDown={handleTabKeyDown}
-        className="flex relative overflow-x-auto border-b border-line"
+        className="flex relative overflow-x-auto overflow-y-hidden border-b border-line"
       >
         {tabs.map(tab => {
           const selected = activeTab === tab.id;

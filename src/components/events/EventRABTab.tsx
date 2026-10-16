@@ -138,7 +138,7 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
       <Panel className="p-5 space-y-4">
         <div>
           <p className="text-sm text-ink-2">Sisa kas kegiatan</p>
-          <p className={`text-3xl font-bold tabular-nums ${saldoKasGlobal >= 0 ? 'text-brand' : 'text-danger'}`}>
+          <p className={`font-display text-4xl font-semibold leading-none tabular-nums ${saldoKasGlobal >= 0 ? 'text-brand' : 'text-danger'}`}>
             {rupiah(saldoKasGlobal)}
           </p>
           <p className="text-xs text-ink-3">{saldoKasGlobal >= 0 ? 'Surplus' : 'Defisit'}</p>
@@ -166,7 +166,7 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
         <div className="relative overflow-x-auto">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead>
-              <tr className="border-b border-line text-xs text-ink-3">
+              <tr className="border-b border-line bg-surface-2 text-xs text-ink-3">
                 <th scope="col" className="py-2.5 px-4 font-medium w-12">No</th>
                 <th scope="col" className="py-2.5 px-4 font-medium">Uraian</th>
                 <th scope="col" className="py-2.5 px-4 font-medium text-right">Pemasukan</th>

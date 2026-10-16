@@ -266,7 +266,7 @@ export default function InventoryPage() {
                 <Panel className="overflow-hidden">
                   <table className="hidden md:table w-full text-left text-sm">
                     <thead>
-                      <tr className="border-b border-line text-xs text-ink-3">
+                      <tr className="border-b border-line bg-surface-2 text-xs text-ink-3">
                         <th scope="col" className="py-2.5 px-4 font-medium">Barang</th>
                         <th scope="col" className="py-2.5 px-4 font-medium">Kategori</th>
                         <th scope="col" className="py-2.5 px-4 font-medium text-right">Harga per unit</th>
@@ -328,7 +328,7 @@ export default function InventoryPage() {
               <Panel className="overflow-hidden">
                 <table className="hidden md:table w-full text-left text-sm">
                   <thead>
-                    <tr className="border-b border-line text-xs text-ink-3">
+                    <tr className="border-b border-line bg-surface-2 text-xs text-ink-3">
                       <th scope="col" className="py-2.5 px-4 font-medium">Waktu</th>
                       <th scope="col" className="py-2.5 px-4 font-medium">Pembeli</th>
                       <th scope="col" className="py-2.5 px-4 font-medium">Barang</th>

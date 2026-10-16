@@ -147,7 +147,7 @@ export default function MemberProfilePage() {
     return (
       <Panel className="max-w-md mx-auto sm:my-8 p-6 space-y-5">
         <div className="space-y-1">
-          <h1 className="text-xl font-bold tracking-tight text-ink">Profil umat</h1>
+          <h1 className="text-[28px] leading-tight font-semibold text-ink">Profil umat</h1>
           <p className="text-sm text-ink-2">
             Masukkan email terdaftar atau kode HAN untuk melihat data diri dan riwayat kegiatan.
           </p>
@@ -201,7 +201,7 @@ export default function MemberProfilePage() {
           </span>
           <div className="space-y-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-xl font-bold tracking-tight text-ink">{profile.full_name}</h1>
+              <h1 className="text-[28px] leading-tight font-semibold text-ink">{profile.full_name}</h1>
               <Badge>Umat</Badge>
             </div>
             <p className="text-sm text-ink-2 break-words">
@@ -214,7 +214,7 @@ export default function MemberProfilePage() {
       </div>
 
       <p className="text-sm text-ink-2">
-        <span className="text-3xl font-bold tabular-nums text-brand">{userRegistrations.length}</span>{' '}
+        <span className="font-display text-4xl font-semibold leading-none tabular-nums text-brand">{userRegistrations.length}</span>{' '}
         kegiatan pernah Anda ikuti atau daftar
       </p>
 

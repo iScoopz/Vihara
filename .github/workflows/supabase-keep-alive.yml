@@ -1,34 +1,41 @@
 name: Supabase Keep-Alive Heartbeat
 
+# Supabase Free pauses a project after 7 days without activity. This workflow pings the
+# REST API daily. Vercel Cron (vercel.json -> /api/cron/keep-alive) is a second, independent
+# layer, because GitHub disables scheduled workflows in repos with no commits for 60 days.
+# If that happens, re-enable it from the Actions tab.
+
 on:
   schedule:
-    # Runs every 3 days at 04:00 UTC to prevent Supabase Free Tier from auto-pausing (7-day rule)
-    - cron: '0 4 */3 * *'
-  workflow_dispatch: # Allows manual trigger from the GitHub Actions tab anytime
+    - cron: '30 2 * * *'
+  workflow_dispatch:
 
 jobs:
   ping-supabase:
     name: Ping Supabase Database
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - name: Send Heartbeat to Supabase REST API
+      - name: Send heartbeat to Supabase REST API
         env:
+          # The anon key is public by design (it ships in the browser bundle); secrets take priority when set.
           SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://gmppuqnxovufskcrlnwz.supabase.co' }}
           SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtcHB1cW54b3Z1ZnNrY3Jsbnd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODQzNDQsImV4cCI6MjEwMDE2MDM0NH0.SsJM5l76cTKPQ-Pa5rLZyVGxKl6DGHvwVCZylgGg6QA' }}
         run: |
-          echo "Sending keep-alive ping to Supabase: $SUPABASE_URL"
-          STATUS_CODE=$(curl -s -o response.json -w "%{http_code}" \
-            -X GET "$SUPABASE_URL/rest/v1/profiles?select=id&limit=1" \
-            -H "apikey: $SUPABASE_ANON_KEY" \
-            -H "Authorization: Bearer $SUPABASE_ANON_KEY")
-
-          echo "Supabase HTTP Response Code: $STATUS_CODE"
-          cat response.json
-          echo ""
-
-          if [ "$STATUS_CODE" -ge 200 ] && [ "$STATUS_CODE" -lt 300 ]; then
-            echo "SUCCESS: Supabase activity registered! The 7-day inactivity pause counter has been reset."
-          else
-            echo "ERROR: Request failed with status code $STATUS_CODE"
-            exit 1
-          fi
+          # Count-only request: registers activity without printing any umat data to the log.
+          for attempt in 1 2 3; do
+            STATUS_CODE=$(curl -s -o /dev/null -D headers.txt -w "%{http_code}" --max-time 30 \
+              -I "$SUPABASE_URL/rest/v1/profiles?select=id" \
+              -H "apikey: $SUPABASE_ANON_KEY" \
+              -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+              -H "Prefer: count=exact")
+            echo "Attempt $attempt: HTTP $STATUS_CODE"
+            if [ "$STATUS_CODE" -ge 200 ] && [ "$STATUS_CODE" -lt 300 ]; then
+              grep -i '^content-range' headers.txt || true
+              echo "Supabase activity registered."
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "Supabase did not respond with 2xx after 3 attempts. If the project is paused, restore it from the Supabase dashboard."
+          exit 1

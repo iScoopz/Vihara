@@ -164,28 +164,35 @@ export default function LoginPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-canvas text-ink flex flex-col">
-      <header className="h-14 px-2 sm:px-4 flex items-center justify-between">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 px-3 min-h-[44px] rounded-lg text-sm text-ink-2 hover:text-ink hover:bg-surface-2"
-        >
-          <ArrowLeft size={16} aria-hidden />
-          <span>Beranda</span>
-        </Link>
-        <ThemeToggle />
-      </header>
+    <div className="min-h-screen bg-canvas text-ink flex flex-col lg:flex-row">
+      {/* Aubergine identity panel: a band on phones, a full column on wide screens. */}
+      <aside className="bg-nav text-nav-ink lg:w-[44%] lg:min-h-screen flex flex-col">
+        <div className="h-16 px-2 sm:px-4 flex items-center justify-between">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 px-3 min-h-[44px] rounded-lg text-sm text-nav-ink-2 hover:text-nav-ink hover:bg-nav-active"
+          >
+            <ArrowLeft size={16} aria-hidden />
+            <span>Beranda</span>
+          </Link>
+          <ThemeToggle tone="nav" />
+        </div>
+        <div className="px-6 sm:px-10 pt-4 pb-14 lg:pb-0 lg:flex-1 lg:flex lg:flex-col lg:justify-center space-y-4 max-w-lg">
+          <span className="w-11 h-11 rounded-lg bg-gold-line text-nav flex items-center justify-center font-display font-bold" aria-hidden>
+            MN
+          </span>
+          <p className="font-display text-3xl lg:text-4xl leading-tight font-semibold">Vihara MNSBDI Sentra Makassar</p>
+          <p className="text-sm lg:text-base text-nav-ink-2">
+            Sistem informasi untuk pengurus dan umat: data umat, kegiatan, pendaftaran, dana paramita, dan inventaris.
+          </p>
+        </div>
+      </aside>
 
-      <main className="flex-1 flex items-start sm:items-center justify-center px-4 pb-10 pt-4">
-        <Panel className="w-full max-w-sm p-6 space-y-5">
-          <div className="space-y-3">
-            <span className="w-9 h-9 rounded-lg bg-brand text-on-brand flex items-center justify-center font-bold text-xs" aria-hidden>
-              MN
-            </span>
-            <div className="space-y-1">
-              <h1 className="text-xl font-bold tracking-tight text-ink">Masuk</h1>
-              <p className="text-sm text-ink-2">Sistem Informasi Vihara MNSBDI Sentra Makassar</p>
-            </div>
+      <main className="flex-1 flex items-start lg:items-center justify-center px-4 pb-10 -mt-8 lg:mt-0 lg:py-10">
+        <Panel raised className="w-full max-w-sm p-6 sm:p-7 space-y-5">
+          <div className="space-y-2">
+            <span className="block w-8 h-[3px] rounded-full bg-gold-line" aria-hidden />
+            <h1 className="text-3xl font-semibold text-ink">Masuk</h1>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">

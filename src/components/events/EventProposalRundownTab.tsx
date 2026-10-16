@@ -62,7 +62,7 @@ export const EventProposalRundownTab: React.FC<EventProposalRundownTabProps> = (
           <div className="hidden md:block relative overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-line text-xs text-ink-3">
+                <tr className="border-b border-line bg-surface-2 text-xs text-ink-3">
                   <th scope="col" className="py-2.5 px-4 font-medium w-12">No</th>
                   <th scope="col" className="py-2.5 px-4 font-medium">Hari/tanggal</th>
                   <th scope="col" className="py-2.5 px-4 font-medium">Waktu</th>

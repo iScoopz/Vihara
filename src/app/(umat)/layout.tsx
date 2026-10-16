@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { CalendarDays, UserCheck, Calendar as CalendarIcon } from 'lucide-react';
 import ThemeToggle from '@/components/ui/theme-toggle';
-import { buttonClass } from '@/components/ui/kit';
 
 const UMAT_NAV = [
   { href: '/kegiatan', label: 'Kegiatan', icon: CalendarDays },
@@ -26,9 +25,9 @@ export default function UmatLayout({ children }: { children: React.ReactNode }) 
           aria-current={isActive ? 'page' : undefined}
           className={`flex items-center justify-center gap-2 px-3 rounded-lg text-sm ${
             mobile ? 'flex-1 min-h-[44px]' : 'min-h-[36px]'
-          } ${isActive ? 'bg-brand-soft text-brand-ink font-semibold' : 'text-ink-2 hover:text-ink hover:bg-surface-2'}`}
+          } ${isActive ? 'bg-nav-active text-nav-ink font-semibold' : 'text-nav-ink-2 hover:text-nav-ink hover:bg-nav-active'}`}
         >
-          <Icon size={16} aria-hidden className={isActive ? 'text-brand-ink' : 'text-ink-3'} />
+          <Icon size={16} aria-hidden className={isActive ? 'text-gold-line' : 'opacity-80'} />
           <span>{item.label}</span>
         </Link>
       );
@@ -36,15 +35,15 @@ export default function UmatLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="min-h-screen bg-canvas text-ink flex flex-col">
-      <header className="bg-surface border-b border-line sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto h-14 px-4 sm:px-6 flex items-center justify-between gap-3">
+      <header className="bg-nav text-nav-ink sticky top-0 z-40 shadow-[0_1px_0_rgba(0,0,0,0.2)]">
+        <div className="max-w-5xl mx-auto h-16 px-4 sm:px-6 flex items-center justify-between gap-3">
           <Link href="/" className="flex items-center gap-2.5 min-w-0">
-            <span className="w-8 h-8 shrink-0 rounded-lg bg-brand text-on-brand flex items-center justify-center font-bold text-xs" aria-hidden>
+            <span className="w-9 h-9 shrink-0 rounded-lg bg-gold-line text-nav flex items-center justify-center font-display font-bold text-sm" aria-hidden>
               MN
             </span>
             <span className="leading-tight min-w-0">
-              <span className="block font-semibold text-sm text-ink truncate">Portal Umat MNSBDI</span>
-              <span className="block text-xs text-ink-3">Sentra Makassar</span>
+              <span className="block font-display font-semibold text-[15px] text-nav-ink truncate">Portal Umat MNSBDI</span>
+              <span className="block text-xs text-nav-ink-2">Sentra Makassar</span>
             </span>
           </Link>
 
@@ -53,21 +52,26 @@ export default function UmatLayout({ children }: { children: React.ReactNode }) 
           </nav>
 
           <div className="flex items-center gap-1 shrink-0">
-            <ThemeToggle />
-            <Link href="/login" className={buttonClass('secondary', 'sm')}>Pengurus</Link>
+            <ThemeToggle tone="nav" />
+            <Link
+              href="/login"
+              className="inline-flex items-center min-h-[44px] sm:min-h-[36px] px-3 rounded-lg text-sm font-semibold text-nav-ink ring-1 ring-inset ring-nav-line hover:bg-nav-active"
+            >
+              Pengurus
+            </Link>
           </div>
         </div>
 
-        <nav aria-label="Menu umat" className="md:hidden flex gap-1 px-2 py-1 border-t border-line">
+        <nav aria-label="Menu umat" className="md:hidden flex gap-1 px-2 py-1 border-t border-nav-line">
           {navLinks(true)}
         </nav>
       </header>
 
-      <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 md:p-8">
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-6 sm:px-6 md:py-10">
         {children}
       </main>
 
-      <footer className="border-t border-line bg-surface">
+      <footer className="border-t border-line">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-ink-3">
           <p>© 2026 Majelis Nichiren Shoshu Buddha Dharma Indonesia (MNSBDI) Sentra Makassar</p>
           <nav aria-label="Tautan bawah" className="flex flex-wrap gap-x-4 gap-y-1">

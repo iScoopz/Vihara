@@ -12,6 +12,7 @@ export {
   PageHeader,
   Panel,
   Field,
+  FocalNumber,
   StateMessage
 } from './kit-static';
 
@@ -82,7 +83,7 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 sm:p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[#140b20]/55 sm:p-4"
       onMouseDown={e => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -92,10 +93,10 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={`w-full ${widths[size]} max-h-[92vh] overflow-y-auto bg-surface text-ink border border-line rounded-t-2xl sm:rounded-2xl shadow-xl`}
+        className={`w-full ${widths[size]} max-h-[92vh] overflow-y-auto bg-surface text-ink border border-line rounded-t-2xl sm:rounded-2xl shadow-raised`}
       >
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 bg-surface border-b border-line pl-5 pr-2 py-1.5">
-          <h2 id={titleId} className="text-base font-semibold text-ink py-2">{title}</h2>
+          <h2 id={titleId} className="text-xl font-semibold text-ink py-2">{title}</h2>
           <button
             type="button"
             onClick={onClose}

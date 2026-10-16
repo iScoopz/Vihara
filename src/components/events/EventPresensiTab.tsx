@@ -126,7 +126,7 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
       {isComplex ? (
         <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
           <p className="text-sm text-ink-2">
-            <span className="text-3xl font-bold tabular-nums text-brand">{rupiah(totalPaidAmount)}</span>{' '}
+            <span className="font-display text-4xl font-semibold leading-none tabular-nums text-brand">{rupiah(totalPaidAmount)}</span>{' '}
             terkumpul dari <span className="tabular-nums text-ink">{rupiah(totalTargetAmount)}</span>
           </p>
           <p className="text-sm text-ink-2">
@@ -137,7 +137,7 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
         </div>
       ) : (
         <p className="text-sm text-ink-2">
-          <span className="text-3xl font-bold tabular-nums text-brand">{countHadir}</span> dari{' '}
+          <span className="font-display text-4xl font-semibold leading-none tabular-nums text-brand">{countHadir}</span> dari{' '}
           <span className="tabular-nums text-ink">{registrations.length}</span> peserta sudah hadir
           {registrations.length > 0 && (
             <span className="text-ink-3"> ({Math.round((countHadir / registrations.length) * 100)}%)</span>
@@ -248,7 +248,7 @@ export const EventPresensiTab: React.FC<EventPresensiTabProps> = ({
           <div className="relative overflow-x-auto border-t border-line">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-line text-xs text-ink-3">
+                <tr className="border-b border-line bg-surface-2 text-xs text-ink-3">
                   <th scope="col" className="py-2.5 px-4 font-medium w-12">No</th>
                   <th scope="col" className="py-2.5 px-4 font-medium">Nama</th>
                   <th scope="col" className="py-2.5 px-4 font-medium">Bagian dan HAN</th>

@@ -1,6 +1,15 @@
 import type { Metadata } from "next";
+import { Newsreader } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/ToastNotification";
+
+// Display serif for titles and key numbers: evokes printed paritta books, calm and formal.
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  variable: "--font-newsreader",
+  display: "swap",
+  axes: ["opsz"]
+});
 
 export const metadata: Metadata = {
   title: "Vihara MNSBDI Sentra Makassar",
@@ -16,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" className="h-full antialiased" suppressHydrationWarning>
+    <html lang="id" className={`${newsreader.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>

@@ -612,7 +612,7 @@ export default function UmatDirectoryPage() {
 
       {loadState === 'ready' && (
         <>
-          <div role="tablist" aria-label="Jenis data" className="flex gap-1 border-b border-line relative overflow-x-auto">
+          <div role="tablist" aria-label="Jenis data" className="flex gap-1 border-b border-line relative overflow-x-auto overflow-y-hidden">
             {tabs.map(t => {
               const selected = activeMainTab === t.id;
               return (
@@ -712,7 +712,7 @@ export default function UmatDirectoryPage() {
                   <div className="relative overflow-x-auto">
                     <table className="w-full text-left text-sm">
                       <thead>
-                        <tr className="border-b border-line">
+                        <tr className="border-b border-line bg-surface-2">
                           <th scope="col" className={th}>Nama</th>
                           <th scope="col" className={th}>Sentra</th>
                           <th scope="col" className={th}>Cetya</th>
@@ -799,7 +799,7 @@ export default function UmatDirectoryPage() {
                   <div className="relative overflow-x-auto">
                     <table className="w-full text-left text-sm">
                       <thead>
-                        <tr className="border-b border-line">
+                        <tr className="border-b border-line bg-surface-2">
                           <th scope="col" className={th}>Nama</th>
                           <th scope="col" className={th}>Sentra</th>
                           <th scope="col" className={th}>Ketua / PJ</th>
@@ -855,7 +855,7 @@ export default function UmatDirectoryPage() {
                   <div className="relative overflow-x-auto">
                     <table className="w-full text-left text-sm">
                       <thead>
-                        <tr className="border-b border-line">
+                        <tr className="border-b border-line bg-surface-2">
                           <th scope="col" className={th}>Nama</th>
                           <th scope="col" className={th}>Cetya induk</th>
                           <th scope="col" className={th}>Sentra</th>

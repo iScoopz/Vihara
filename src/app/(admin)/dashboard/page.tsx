@@ -150,7 +150,7 @@ export default function AdminDashboardPage() {
                     {nextEvent.location && <p className="text-xs text-ink-3">{nextEvent.location}</p>}
                   </div>
                   <p className="text-sm text-ink-2">
-                    <span className="text-3xl font-bold tabular-nums text-brand">{nextEvent.registrations_count || 0}</span>{' '}
+                    <span className="font-display text-4xl font-semibold leading-none tabular-nums text-brand">{nextEvent.registrations_count || 0}</span>{' '}
                     umat terdaftar{nextEvent.quota ? ` dari kuota ${nextEvent.quota}` : ''}
                   </p>
                   <Link href={`/events/${nextEvent.id}`} className={buttonClass('secondary', 'sm')}>

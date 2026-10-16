@@ -35,7 +35,7 @@ export const EventOverviewTab: React.FC<EventOverviewTabProps> = ({ event, regis
       <Panel className="p-5 space-y-4">
         <h2 className="text-base font-semibold text-ink">Kuota peserta</h2>
         <p className="text-sm text-ink-2">
-          <span className="text-3xl font-bold tabular-nums text-brand">{registrations.length}</span> terdaftar
+          <span className="font-display text-4xl font-semibold leading-none tabular-nums text-brand">{registrations.length}</span> terdaftar
         </p>
         <dl className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-2 text-sm">
           <dt className="text-ink-2">Kapasitas</dt>

@@ -20,57 +20,94 @@
   --color-brand-ink: var(--brand-ink);
   --color-gold: var(--gold);
   --color-gold-soft: var(--gold-soft);
+  --color-gold-line: var(--gold-line);
   --color-ok: var(--ok);
   --color-ok-soft: var(--ok-soft);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
+  --color-nav: var(--nav);
+  --color-nav-ink: var(--nav-ink);
+  --color-nav-ink-2: var(--nav-ink-2);
+  --color-nav-active: var(--nav-active);
+  --color-nav-line: var(--nav-line);
+
+  --font-display: var(--font-newsreader), "Iowan Old Style", Georgia, serif;
+
+  --shadow-panel: var(--shadow-panel);
+  --shadow-raised: var(--shadow-raised);
+  --shadow-button: var(--shadow-button);
 }
 
 @layer base {
   :root {
     color-scheme: light;
-    --canvas: #f5f5f7;
+    /* Warm paper canvas instead of grey: the app reads like a well-kept ledger. */
+    --canvas: #f3efe8;
     --surface: #ffffff;
-    --surface-2: #f0f0f3;
-    --line: rgba(0, 0, 0, 0.1);
-    --line-strong: rgba(0, 0, 0, 0.18);
-    --ink: #1d1d1f;
-    --ink-2: #48484f;  /* 8.9:1 on surface */
-    --ink-3: #6b6b73;  /* 4.8:1 on canvas, 5.3:1 on surface */
+    --surface-2: #f8f5ef;
+    --line: rgba(52, 36, 18, 0.11);
+    --line-strong: rgba(52, 36, 18, 0.2);
+    --ink: #1e1a24;
+    --ink-2: #4a4452;  /* 9:1 on surface */
+    --ink-3: #645e6b;  /* 5.0:1 on canvas, 6.1:1 on surface */
     --brand: #5b2fa6;  /* MNSBDI purple, 8.8:1 with white */
     --brand-hover: #4a2489;
     --on-brand: #ffffff;
     --brand-soft: #f1ebfb;
     --brand-ink: #4a2489;
-    --gold: #92400e;   /* text on gold-soft, 6.6:1 */
-    --gold-soft: #fef3c7;
+    --gold: #8a4a0b;   /* text on gold-soft */
+    --gold-soft: #fbf0d9;
+    --gold-line: #c59a3c; /* decorative rule and seal only, never text */
     --ok: #166534;
     --ok-soft: #dcfce7;
     --danger: #b91c1c;
     --danger-soft: #fee2e2;
+
+    /* Navigation zone: deep aubergine so the frame and the work area are distinct. */
+    --nav: #26163a;
+    --nav-ink: #ffffff;
+    --nav-ink-2: #cfc4e2;  /* 9:1 on nav */
+    --nav-active: rgba(255, 255, 255, 0.12);
+    --nav-line: rgba(255, 255, 255, 0.1);
+
+    /* Panels sit one step above the canvas; modals and menus two steps. */
+    --shadow-panel: 0 1px 2px rgba(52, 36, 18, 0.05), 0 6px 16px -6px rgba(52, 36, 18, 0.1);
+    --shadow-raised: 0 24px 48px -16px rgba(30, 18, 50, 0.35), 0 2px 6px rgba(30, 18, 50, 0.08);
+    --shadow-button: 0 1px 2px rgba(30, 18, 50, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.14);
   }
 
   .dark {
     color-scheme: dark;
-    --canvas: #0c0c0e;
-    --surface: #161618;
-    --surface-2: #1f1f22;
-    --line: rgba(255, 255, 255, 0.12);
-    --line-strong: rgba(255, 255, 255, 0.2);
-    --ink: #f5f5f7;
-    --ink-2: #c7c7cc;
-    --ink-3: #9a9aa2;  /* 6.5:1 on surface */
+    --canvas: #0f0c13;
+    --surface: #18141e;
+    --surface-2: #211c29;
+    --line: rgba(255, 255, 255, 0.1);
+    --line-strong: rgba(255, 255, 255, 0.18);
+    --ink: #f4f1f7;
+    --ink-2: #ccc5d6;
+    --ink-3: #9d95a8;  /* 6.3:1 on surface */
     --brand: #c4b0f5;  /* light purple, dark text on it 9.3:1 */
     --brand-hover: #d4c4f8;
     --on-brand: #1b0f33;
     --brand-soft: rgba(196, 176, 245, 0.14);
     --brand-ink: #d4c4f8;
-    --gold: #fcd34d;
-    --gold-soft: rgba(252, 211, 77, 0.12);
+    --gold: #f5cf7a;
+    --gold-soft: rgba(245, 207, 122, 0.12);
+    --gold-line: #b88a2e;
     --ok: #86efac;
     --ok-soft: rgba(134, 239, 172, 0.12);
     --danger: #fca5a5;
     --danger-soft: rgba(252, 165, 165, 0.12);
+
+    --nav: #140b20;
+    --nav-ink: #ffffff;
+    --nav-ink-2: #bfb3d4;
+    --nav-active: rgba(255, 255, 255, 0.1);
+    --nav-line: rgba(255, 255, 255, 0.08);
+
+    --shadow-panel: 0 0 0 1px rgba(255, 255, 255, 0.02), 0 8px 20px -10px rgba(0, 0, 0, 0.7);
+    --shadow-raised: 0 24px 48px -12px rgba(0, 0, 0, 0.8);
+    --shadow-button: 0 1px 2px rgba(0, 0, 0, 0.4);
   }
 
   body {
@@ -81,8 +118,21 @@
     text-rendering: optimizeLegibility;
   }
 
-  button, [role="button"] {
-    transition: background-color 0.12s ease-out, border-color 0.12s ease-out, color 0.12s ease-out;
+  /* Page and dialog titles use the display serif; everything that is read in bulk stays sans. */
+  h1, h2 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+
+  /* Printed proposals and LPJ keep their own document typography. */
+  #printable-pdf-document h1,
+  #printable-pdf-document h2 {
+    font-family: inherit;
+    letter-spacing: inherit;
+  }
+
+  button, [role="button"], a {
+    transition: background-color 0.12s ease-out, border-color 0.12s ease-out, color 0.12s ease-out, box-shadow 0.12s ease-out;
   }
 
   button:disabled, [role="button"][aria-disabled="true"] {

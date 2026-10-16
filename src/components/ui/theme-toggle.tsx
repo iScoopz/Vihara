@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Sun, Moon } from 'lucide-react';
 
-export default function ThemeToggle() {
+// tone="nav" is for the dark navigation zone; block makes it a full-width sidebar row.
+export default function ThemeToggle({ tone = 'surface', block = false }: { tone?: 'surface' | 'nav'; block?: boolean }) {
   const [darkMode, setDarkMode] = useState<boolean | null>(null);
 
   // The root layout script already applied the saved theme; read it back from the DOM.
@@ -20,17 +21,22 @@ export default function ThemeToggle() {
     } catch {}
   };
 
-  if (darkMode === null) return <span className="w-11 h-11" aria-hidden />;
+  if (darkMode === null) return <span className="block w-11 h-11" aria-hidden />;
+
+  const toneClass =
+    tone === 'nav'
+      ? 'gap-3 text-nav-ink-2 hover:text-nav-ink hover:bg-nav-active'
+      : 'gap-1.5 text-ink-2 hover:text-ink hover:bg-surface-2';
 
   return (
     <button
       onClick={toggleTheme}
       type="button"
-      className="min-h-[44px] sm:min-h-[36px] px-3 rounded-lg flex items-center gap-1.5 text-sm text-ink-2 hover:text-ink hover:bg-surface-2 cursor-pointer"
+      className={`min-h-[44px] md:min-h-[38px] px-3 rounded-lg flex items-center text-sm cursor-pointer ${block ? 'w-full' : ''} ${toneClass}`}
       aria-label={darkMode ? 'Ganti ke mode terang' : 'Ganti ke mode gelap'}
     >
-      {darkMode ? <Sun size={16} aria-hidden /> : <Moon size={16} aria-hidden />}
-      <span className="hidden sm:inline">{darkMode ? 'Terang' : 'Gelap'}</span>
+      {darkMode ? <Sun size={17} aria-hidden className="opacity-80" /> : <Moon size={17} aria-hidden className="opacity-80" />}
+      <span className={block ? '' : 'hidden sm:inline'}>{darkMode ? 'Mode terang' : 'Mode gelap'}</span>
     </button>
   );
 }
