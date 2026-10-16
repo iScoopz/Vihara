@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "vihara-mnsbdi",
+  "name": "vihara",
   "main": "worker.ts",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
@@ -11,7 +11,7 @@
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "vihara-mnsbdi"
+      "service": "vihara"
     }
   ],
   // Public values by design (they ship in the browser bundle); the anon key is protected by
