@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "Vihara MNSBDI",
+    "slug": "vihara-mnsbdi",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "vihara",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "id.mnsbdi.vihara",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "id.mnsbdi.vihara",
+      "adaptiveIcon": {
+        "backgroundColor": "#26163a",
+        "foregroundImage": "./assets/images/adaptive-icon.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#26163a",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "dark": {
+            "backgroundColor": "#140b20",
+            "image": "./assets/images/splash-icon.png"
+          }
+        }
+      ],
+      "expo-font",
+      "expo-web-browser"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "supabaseUrl": "https://gmppuqnxovufskcrlnwz.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtcHB1cW54b3Z1ZnNrY3Jsbnd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODQzNDQsImV4cCI6MjEwMDE2MDM0NH0.SsJM5l76cTKPQ-Pa5rLZyVGxKl6DGHvwVCZylgGg6QA"
+    }
+  }
+}
