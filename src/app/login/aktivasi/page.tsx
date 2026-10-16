@@ -18,6 +18,17 @@ export default function AktivasiPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [sentTo, setSentTo] = useState('');
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+
+  const handleResend = async () => {
+    setResendState('sending');
+    const { error: resendError } = await createClient().auth.resend({
+      type: 'signup',
+      email: sentTo,
+      options: { emailRedirectTo: `${window.location.origin}/login` }
+    });
+    setResendState(resendError ? 'error' : 'sent');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,9 +95,20 @@ export default function AktivasiPage() {
               <p className="text-xs text-ink-3">
                 Tidak menerima email dalam beberapa menit? Periksa folder spam. Kalau email Anda belum terdaftar di Data Umat, minta pengurus menambahkannya dulu.
               </p>
-              <Link href="/login" className={`${buttonClass('primary')} w-full`}>
-                Ke halaman masuk
-              </Link>
+              <div className="flex flex-col gap-2">
+                <Link href="/login" className={`${buttonClass('primary')} w-full`}>
+                  Ke halaman masuk
+                </Link>
+                <Button onClick={handleResend} disabled={resendState === 'sending'} className="w-full">
+                  {resendState === 'sending' ? 'Mengirim ulang...' : 'Kirim ulang email konfirmasi'}
+                </Button>
+              </div>
+              {resendState === 'sent' && <p role="status" className="text-sm text-ok">Email konfirmasi dikirim ulang.</p>}
+              {resendState === 'error' && (
+                <p role="alert" className="text-sm text-danger">
+                  Belum bisa mengirim ulang. Tunggu beberapa menit (ada batas jumlah email per jam) lalu coba lagi.
+                </p>
+              )}
             </div>
           ) : (
             <>
