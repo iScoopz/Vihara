@@ -6,7 +6,9 @@ import { SunriseHero } from '@/components/landing/SunriseHero';
 import { Reveal } from '@/components/landing/Reveal';
 import { getUpcomingPublicEvents } from '@/lib/public-events';
 
-export const revalidate = 300;
+// Rendered per request: on Cloudflare there is no persistent ISR cache, and the upcoming
+// events must reflect publish changes right away. The query itself is light.
+export const dynamic = 'force-dynamic';
 
 const ADDRESS = 'Jl. Sungai Cenrana No. 39, Makassar';
 const MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`Vihara Vimalakirti, ${ADDRESS}`)}`;

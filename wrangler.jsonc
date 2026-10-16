@@ -1,0 +1,30 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "vihara-mnsbdi",
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "vihara-mnsbdi"
+    }
+  ],
+  // Public values by design (they ship in the browser bundle); the anon key is protected by
+  // Supabase Row Level Security, not by secrecy. Read at runtime by the app and the cron.
+  "vars": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://gmppuqnxovufskcrlnwz.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtcHB1cW54b3Z1ZnNrY3Jsbnd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1ODQzNDQsImV4cCI6MjEwMDE2MDM0NH0.SsJM5l76cTKPQ-Pa5rLZyVGxKl6DGHvwVCZylgGg6QA"
+  },
+  // Daily Supabase keep-alive at 03:30 UTC (11:30 WITA), handled by `scheduled` in worker.ts.
+  "triggers": {
+    "crons": ["30 3 * * *"]
+  },
+  "observability": {
+    "enabled": true
+  }
+}
