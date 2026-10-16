@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Plus, Search } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Plus, Search, SlidersHorizontal } from 'lucide-react';
 import { getDonations } from '@/lib/actions/vihara-actions';
 import { Donation } from '@/types/database';
-import { Button, PageHeader, Panel, StateMessage, buttonClass, inputClass, selectClass } from '@/components/ui/kit';
+import { Button, Fab, PageHeader, Panel, StateMessage, buttonClass, inputClass, selectClass } from '@/components/ui/kit';
 
 const TYPE_LABELS: Record<string, string> = {
   paramita: 'Paramita',
@@ -15,6 +16,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const formatRupiah = (n: number) => `Rp ${n.toLocaleString('id-ID')}`;
+const thClass = 'sticky top-0 z-10 bg-surface-2 border-y border-line py-2.5 px-4 font-medium';
 const formatDate = (iso: string) => new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
 export default function DonationsListPage() {
@@ -22,6 +24,8 @@ export default function DonationsListPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPurpose, setSelectedPurpose] = useState('all');
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const router = useRouter();
 
   const loadData = useCallback(async () => {
     setLoadState('loading');
@@ -64,6 +68,10 @@ export default function DonationsListPage() {
     return TYPE_LABELS[raw] || raw;
   };
 
+  // Filter choices come from the records themselves, so every saved purpose can be selected.
+  const purposeOptions = [...new Set(donations.map(d => d.purpose || d.donation_type).filter((v): v is string => Boolean(v)))]
+    .sort((a, b) => (TYPE_LABELS[a] || a).localeCompare(TYPE_LABELS[b] || b, 'id'));
+
   const hasFilter = searchTerm.trim() !== '' || selectedPurpose !== 'all';
 
   return (
@@ -72,12 +80,14 @@ export default function DonationsListPage() {
         title="Dana Paramita"
         description="Catatan dana paramita, operasional, dan pembangunan vihara."
         actions={
-          <Link href="/donations/new" className={buttonClass('primary')}>
+          <Link href="/donations/new" className={`${buttonClass('primary')} max-md:hidden`}>
             <Plus size={14} aria-hidden />
             Catat dana
           </Link>
         }
       />
+
+      <Fab label="Catat dana" icon={<Plus size={18} />} onClick={() => router.push('/donations/new')} />
 
       {loadState === 'loading' && (
         <Panel><StateMessage kind="loading" title="Memuat catatan dana..." /></Panel>
@@ -106,7 +116,7 @@ export default function DonationsListPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="grid grid-cols-[1fr_auto] md:grid-cols-2 gap-2">
             <label className="relative">
               <span className="sr-only">Cari donatur atau peruntukan</span>
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" aria-hidden />
@@ -119,17 +129,27 @@ export default function DonationsListPage() {
               />
             </label>
 
+            <Button
+              className="md:hidden"
+              aria-expanded={filtersOpen}
+              aria-controls="donation-filters"
+              onClick={() => setFiltersOpen(o => !o)}
+            >
+              <SlidersHorizontal size={14} aria-hidden />
+              {selectedPurpose !== 'all' ? 'Filter (1)' : 'Filter'}
+            </Button>
+
             <select
+              id="donation-filters"
               aria-label="Filter peruntukan"
               value={selectedPurpose}
               onChange={(e) => setSelectedPurpose(e.target.value)}
-              className={selectClass}
+              className={`${selectClass} col-span-2 md:col-span-1 ${filtersOpen ? '' : 'hidden md:block'}`}
             >
               <option value="all">Semua peruntukan</option>
-              <option value="paramita">Paramita</option>
-              <option value="operasional">Operasional Cetya dan vihara</option>
-              <option value="pembangunan">Pembangunan atau renovasi</option>
-              <option value="lainnya">Lainnya</option>
+              {purposeOptions.map(value => (
+                <option key={value} value={value}>{TYPE_LABELS[value] || value}</option>
+              ))}
             </select>
           </div>
 
@@ -146,16 +166,16 @@ export default function DonationsListPage() {
               />
             </Panel>
           ) : (
-            <Panel className="overflow-hidden">
-              <p className="px-4 pt-3 text-xs text-ink-3">{filteredDonations.length} catatan</p>
+            <Panel className="overflow-hidden md:overflow-visible">
+              <p className="px-4 pt-3 pb-2 md:pb-3 text-xs text-ink-3">{filteredDonations.length} catatan</p>
               <table className="hidden md:table w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-line bg-surface-2 text-xs text-ink-3">
-                    <th scope="col" className="py-2.5 px-4 font-medium">Donatur</th>
-                    <th scope="col" className="py-2.5 px-4 font-medium text-right">Nominal</th>
-                    <th scope="col" className="py-2.5 px-4 font-medium">Peruntukan</th>
-                    <th scope="col" className="py-2.5 px-4 font-medium">Tanggal</th>
-                    <th scope="col" className="py-2.5 px-4 font-medium">Catatan</th>
+                  <tr className="text-xs text-ink-3">
+                    <th scope="col" className={thClass}>Donatur</th>
+                    <th scope="col" className={`${thClass} text-right`}>Nominal</th>
+                    <th scope="col" className={thClass}>Peruntukan</th>
+                    <th scope="col" className={thClass}>Tanggal</th>
+                    <th scope="col" className={thClass}>Catatan</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">

@@ -149,7 +149,7 @@ export default function AdminProfilePage() {
       )}
 
       {loadState === 'ready' && profile && (
-        <form onSubmit={handleSaveProfile} className="space-y-4">
+        <form onSubmit={handleSaveProfile} className="space-y-4 pb-28 md:pb-0">
           <Panel className="p-5 space-y-4">
             <h2 className="text-sm font-semibold text-ink">Data diri</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -189,12 +189,13 @@ export default function AdminProfilePage() {
             </div>
           </Panel>
 
-          <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3">
-            <div className="min-h-[1.25rem] text-sm">
+          {/* Phones: pinned above the bottom nav so Simpan and its result message stay in view. */}
+          <div className="fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom))] z-30 flex flex-col gap-2 px-4 py-3 bg-surface border-t border-line md:static md:z-auto md:flex-row md:items-center md:justify-end md:gap-3 md:p-0 md:bg-transparent md:border-0">
+            <div className="text-sm empty:hidden md:empty:block md:min-h-[1.25rem]">
               {msg?.type === 'success' && <p role="status" className="text-ok">{msg.text}</p>}
               {msg?.type === 'error' && <p role="alert" className="text-danger">{msg.text}</p>}
             </div>
-            <Button type="submit" variant="primary" disabled={saving}>
+            <Button type="submit" variant="primary" disabled={saving} className="w-full md:w-auto">
               {saving ? 'Menyimpan...' : 'Simpan perubahan'}
             </Button>
           </div>

@@ -163,7 +163,7 @@ export const EventPricingModal: React.FC<EventPricingModalProps> = ({
         </fieldset>
 
         <ModalActions>
-          <Button onClick={onClose}>Batal</Button>
+          <Button variant="neutral" onClick={onClose}>Batal</Button>
           <Button type="submit" variant="primary">Simpan tarif</Button>
         </ModalActions>
       </form>

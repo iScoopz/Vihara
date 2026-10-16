@@ -47,6 +47,22 @@ Larangan: gradien, glow, latar keunguan gelap (`#160e29`, `#13092b`), dan warna 
 - Ikon (lucide, dependensi yang sudah ada) dipakai hanya bila membantu memindai, seperti navigasi dan tombol aksi. Tidak ada ikon hiasan di samping judul.
 - Teks UI tanpa emoji dan simbol hiasan (➔, ⭐, ✓, ✕).
 
+## Warna tombol
+
+Tombol tidak putih polos; warnanya membawa arti (lihat `Button` di kit):
+
+| Varian | Tampilan | Untuk |
+|---|---|---|
+| `primary` | ungu solid | satu aksi utama per layar (Simpan, Terbitkan, Daftarkan) |
+| `secondary` | ungu muda | aksi biasa (Edit, Filter, Tandai hadir) |
+| `success` | hijau muda | uang dan konfirmasi (Tandai lunas, Salin daftar WA) |
+| `gold` | emas muda | perlu perhatian (Tandai selesai) |
+| `danger` | merah muda | hapus, batal daftar |
+| `neutral` | putih | Batal / Tidak: keluar tanpa mengubah apa pun |
+| `ghost` | tanpa latar | aksi tersier (Reset filter) |
+
+Toggle status: saat belum dilakukan memakai warna muda ("Tandai hadir" ungu, "Tandai lunas" hijau); setelah dilakukan berubah solid dengan ikon centang ("Hadir", "Lunas"), sehingga yang belum selesai mudah terlihat di daftar panjang.
+
 ## Motif identitas
 
 - **Garis emas pendek** di atas setiap judul halaman.

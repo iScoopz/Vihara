@@ -6,16 +6,21 @@ export const inputClass =
 
 export const selectClass = inputClass;
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+// Colour carries meaning (DESIGN.md): purple = the app's actions, green = money/confirmation,
+// gold = needs attention, red = destructive, white = leave without changing anything.
+export type ButtonVariant = 'primary' | 'secondary' | 'success' | 'gold' | 'neutral' | 'ghost' | 'danger';
 type ButtonSize = 'sm' | 'md';
 
 const raisedEdge = 'shadow-[0_1px_2px_rgba(52,36,18,0.07)]';
 
 const buttonVariants: Record<ButtonVariant, string> = {
   primary: 'bg-brand text-on-brand shadow-button hover:bg-brand-hover',
-  secondary: `bg-surface text-ink border border-line-strong ${raisedEdge} hover:bg-surface-2`,
+  secondary: `bg-brand-soft text-brand-ink ring-1 ring-inset ring-brand/20 ${raisedEdge} hover:ring-brand/40 hover:brightness-[0.97]`,
+  success: `bg-ok-soft text-ok ring-1 ring-inset ring-ok/25 ${raisedEdge} hover:ring-ok/45 hover:brightness-[0.97]`,
+  gold: `bg-gold-soft text-gold ring-1 ring-inset ring-gold-line/40 ${raisedEdge} hover:ring-gold-line/70 hover:brightness-[0.97]`,
+  neutral: `bg-surface text-ink border border-line-strong ${raisedEdge} hover:bg-surface-2`,
   ghost: 'text-ink-2 hover:bg-surface-2 hover:text-ink',
-  danger: `bg-surface text-danger border border-line-strong ${raisedEdge} hover:bg-danger-soft`
+  danger: `bg-danger-soft text-danger ring-1 ring-inset ring-danger/25 ${raisedEdge} hover:ring-danger/45 hover:brightness-[0.97]`
 };
 
 const buttonSizes: Record<ButtonSize, string> = {

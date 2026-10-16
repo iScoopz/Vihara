@@ -1,13 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, FileSpreadsheet, Trash2, Edit2 } from 'lucide-react';
 import { ViharaEvent, EventRegistration } from '@/types/database';
 import { exportRABToExcel } from '@/lib/export-utils';
-import { Badge, Button, Panel } from '@/components/ui/kit';
+import { Badge, Button, Fab, IconButton, Panel, RowActions } from '@/components/ui/kit';
+import ConfirmModal from '@/components/ui/confirm-modal';
 
 const rupiah = (n: number) => `Rp ${n.toLocaleString('id-ID')}`;
 
-const iconButton =
-  'inline-flex items-center justify-center w-11 h-11 sm:w-8 sm:h-8 rounded-lg text-ink-2 hover:bg-surface-2 hover:text-ink cursor-pointer';
+const th = 'sticky top-0 z-10 bg-surface-2 border-b border-line py-2.5 px-4 font-medium first:rounded-tl-xl last:rounded-tr-xl';
 
 export interface GroupedBudgetItem {
   key: string;
@@ -36,6 +36,7 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
   onOpenEditBudgetModal,
   onDeleteBudgetItems 
 }) => {
+  const [pendingDelete, setPendingDelete] = useState<{ name: string; ids: string[] } | null>(null);
   const pemasukanItems = event.budgets?.filter(b => b.budget_type === 'pemasukan') || [];
   const rabItems = event.budgets?.filter(b => b.budget_type === 'rab') || [];
   const realisasiItems = event.budgets?.filter(b => b.budget_type === 'realisasi') || [];
@@ -117,7 +118,7 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
   };
 
   return (
-    <div className="space-y-4 print:hidden">
+    <div className="space-y-4 pb-16 md:pb-0 print:hidden">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold text-ink">Anggaran dan pengeluaran</h2>
@@ -128,7 +129,7 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
             <FileSpreadsheet size={14} aria-hidden />
             Unduh Excel
           </Button>
-          <Button variant="primary" onClick={() => onOpenBudgetModal()}>
+          <Button variant="primary" onClick={() => onOpenBudgetModal()} className="max-md:hidden">
             <Plus size={14} aria-hidden />
             Tambah item anggaran
           </Button>
@@ -162,25 +163,109 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
         </dl>
       </Panel>
 
-      <Panel className="overflow-hidden">
-        <div className="relative overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left text-sm">
+      <Panel>
+        <ul className="xl:hidden divide-y divide-line">
+          <li className="p-3.5 rounded-t-xl bg-surface-2">
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-sm font-medium text-ink">Pendaftaran peserta ({registrations.length} orang)</p>
+              <Badge tone="ok">Pemasukan</Badge>
+            </div>
+            <p className="mt-1 text-xs text-ink-2">
+              <span className="font-medium tabular-nums text-ink">{rupiah(totalUmatRegistrationFees)}</span>
+              <span className="text-ink-3"> · dihitung otomatis</span>
+            </p>
+          </li>
+
+          {groupedItems.map((item) => {
+            const hasRab = item.rab > 0;
+            const hasRealisasi = item.realisasi > 0;
+            const hasPemasukan = item.pemasukan > 0;
+            const allItemIds = [item.rabId, item.realisasiId, item.pemasukanId].filter(Boolean) as string[];
+            const diff = item.realisasi - item.rab;
+            const canRecord = hasRab && !hasRealisasi;
+
+            return (
+              <li key={item.key} className="p-3.5 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 space-y-1">
+                    <p className="text-sm font-medium text-ink break-words">{item.itemName}</p>
+                    {statusBadge(item)}
+                  </div>
+                  {onDeleteBudgetItems && (
+                    <div className="-mt-1.5 -mr-1.5">
+                      <RowActions
+                        title={item.itemName}
+                        actions={[
+                          {
+                            label: 'Hapus item',
+                            tone: 'danger',
+                            icon: <Trash2 size={16} />,
+                            onSelect: () => setPendingDelete({ name: item.itemName, ids: allItemIds })
+                          }
+                        ]}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                  <div>
+                    <dt className="text-ink-3">Anggaran (RAB)</dt>
+                    <dd className="tabular-nums text-ink">{hasRab ? rupiah(item.rab) : '-'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-ink-3">Pengeluaran</dt>
+                    <dd className="tabular-nums text-ink">{hasRealisasi ? rupiah(item.realisasi) : '-'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-ink-3">Pemasukan</dt>
+                    <dd className="tabular-nums text-ink">{hasPemasukan ? rupiah(item.pemasukan) : '-'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-ink-3">Selisih</dt>
+                    <dd className={`tabular-nums ${hasRab && hasRealisasi && diff > 0 ? 'text-danger' : 'text-ink'}`}>
+                      {hasRab && hasRealisasi ? (diff > 0 ? `+${rupiah(diff)}` : diff < 0 ? `-${rupiah(Math.abs(diff))}` : rupiah(0)) : '-'}
+                    </dd>
+                  </div>
+                </dl>
+
+                {(onOpenEditBudgetModal || canRecord) && (
+                  <div className={`grid gap-2 ${onOpenEditBudgetModal && canRecord ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    {canRecord && (
+                      <Button onClick={() => onOpenBudgetModal(item.itemName, 'realisasi')}>Catat pengeluaran</Button>
+                    )}
+                    {onOpenEditBudgetModal && (
+                      <Button onClick={() => onOpenEditBudgetModal(item)}>
+                        <Edit2 size={14} aria-hidden />
+                        Ubah
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+
+        {/* The table needs about 900px, which md and lg do not leave beside the sidebar. */}
+        <div className="hidden xl:block">
+          <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-line bg-surface-2 text-xs text-ink-3">
-                <th scope="col" className="py-2.5 px-4 font-medium w-12">No</th>
-                <th scope="col" className="py-2.5 px-4 font-medium">Uraian</th>
-                <th scope="col" className="py-2.5 px-4 font-medium text-right">Pemasukan</th>
-                <th scope="col" className="py-2.5 px-4 font-medium text-right">Anggaran (RAB)</th>
-                <th scope="col" className="py-2.5 px-4 font-medium text-right">Pengeluaran</th>
-                <th scope="col" className="py-2.5 px-4 font-medium">Status</th>
-                <th scope="col" className="py-2.5 px-4"><span className="sr-only">Aksi</span></th>
+              <tr className="text-xs text-ink-3">
+                <th scope="col" className={`${th} w-12`}>No</th>
+                <th scope="col" className={th}>Uraian</th>
+                <th scope="col" className={`${th} text-right`}>Pemasukan</th>
+                <th scope="col" className={`${th} text-right`}>Anggaran (RAB)</th>
+                <th scope="col" className={`${th} text-right`}>Pengeluaran</th>
+                <th scope="col" className={th}>Status</th>
+                <th scope="col" className={th}><span className="sr-only">Aksi</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
               <tr className="bg-surface-2">
                 <td className="py-2.5 px-4 tabular-nums text-ink-3">1</td>
                 <td className="py-2.5 px-4 font-medium text-ink">Pendaftaran peserta ({registrations.length} orang)</td>
-                <td className="py-2.5 px-4 text-right tabular-nums text-ink">{rupiah(totalUmatRegistrationFees)}</td>
+                <td className="py-2.5 px-4 text-right tabular-nums text-ink whitespace-nowrap">{rupiah(totalUmatRegistrationFees)}</td>
                 <td className="py-2.5 px-4 text-right text-ink-3">-</td>
                 <td className="py-2.5 px-4 text-right text-ink-3">-</td>
                 <td className="py-2.5 px-4"><Badge tone="ok">Pemasukan</Badge></td>
@@ -197,9 +282,9 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
                   <tr key={item.key} className="hover:bg-surface-2">
                     <td className="py-2 px-4 tabular-nums text-ink-3">{i + 2}</td>
                     <td className="py-2 px-4 font-medium text-ink">{item.itemName}</td>
-                    <td className="py-2 px-4 text-right tabular-nums text-ink">{hasPemasukan ? rupiah(item.pemasukan) : '-'}</td>
-                    <td className="py-2 px-4 text-right tabular-nums text-ink">{hasRab ? rupiah(item.rab) : '-'}</td>
-                    <td className="py-2 px-4 text-right tabular-nums text-ink">{hasRealisasi ? rupiah(item.realisasi) : '-'}</td>
+                    <td className="py-2 px-4 text-right tabular-nums text-ink whitespace-nowrap">{hasPemasukan ? rupiah(item.pemasukan) : '-'}</td>
+                    <td className="py-2 px-4 text-right tabular-nums text-ink whitespace-nowrap">{hasRab ? rupiah(item.rab) : '-'}</td>
+                    <td className="py-2 px-4 text-right tabular-nums text-ink whitespace-nowrap">{hasRealisasi ? rupiah(item.realisasi) : '-'}</td>
                     <td className="py-2 px-4">{statusBadge(item)}</td>
                     <td className="py-1 px-4">
                       <div className="flex items-center justify-end gap-1">
@@ -209,24 +294,18 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
                           </Button>
                         )}
                         {onOpenEditBudgetModal && (
-                          <button
-                            type="button"
-                            onClick={() => onOpenEditBudgetModal(item)}
-                            className={iconButton}
-                            aria-label={`Ubah ${item.itemName}`}
-                          >
+                          <IconButton label={`Ubah ${item.itemName}`} onClick={() => onOpenEditBudgetModal(item)}>
                             <Edit2 size={15} aria-hidden />
-                          </button>
+                          </IconButton>
                         )}
                         {onDeleteBudgetItems && (
-                          <button
-                            type="button"
-                            onClick={() => onDeleteBudgetItems(allItemIds)}
-                            className={`${iconButton} hover:text-danger hover:bg-danger-soft`}
-                            aria-label={`Hapus ${item.itemName}`}
+                          <IconButton
+                            label={`Hapus ${item.itemName}`}
+                            tone="danger"
+                            onClick={() => setPendingDelete({ name: item.itemName, ids: allItemIds })}
                           >
                             <Trash2 size={15} aria-hidden />
-                          </button>
+                          </IconButton>
                         )}
                       </div>
                     </td>
@@ -240,6 +319,20 @@ export const EventRABTab: React.FC<EventRABTabProps> = ({
           <p className="px-4 py-3 border-t border-line text-sm text-ink-3">Belum ada item anggaran selain pendaftaran.</p>
         )}
       </Panel>
+
+      {onDeleteBudgetItems && (
+        <ConfirmModal
+          isOpen={pendingDelete !== null}
+          title="Hapus item anggaran?"
+          message={pendingDelete ? `${pendingDelete.name} beserta angka RAB, pengeluaran, dan pemasukannya akan dihapus.` : ''}
+          onConfirm={() => {
+            if (pendingDelete) onDeleteBudgetItems(pendingDelete.ids);
+          }}
+          onClose={() => setPendingDelete(null)}
+        />
+      )}
+
+      <Fab label="Tambah item" icon={<Plus size={18} />} onClick={() => onOpenBudgetModal()} />
     </div>
   );
 };

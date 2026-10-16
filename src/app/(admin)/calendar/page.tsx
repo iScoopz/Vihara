@@ -94,27 +94,29 @@ export default function AdminCalendarPage() {
         title="Kalender"
         description="Jadwal Kensyu, Pertemuan, dan Gongyo."
         actions={
-          <div className="flex items-center gap-1">
-            <Button size="sm" onClick={goToday}>Hari ini</Button>
-            <button
-              type="button"
-              onClick={prevMonth}
-              aria-label="Bulan sebelumnya"
-              className="w-11 h-11 sm:w-9 sm:h-9 inline-flex items-center justify-center rounded-lg text-ink-2 hover:bg-surface-2 hover:text-ink cursor-pointer"
-            >
-              <ChevronLeft size={18} aria-hidden />
-            </button>
-            <span className="text-sm font-semibold text-ink min-w-[8.5rem] text-center tabular-nums" aria-live="polite">
-              {monthNames[month]} {year}
-            </span>
-            <button
-              type="button"
-              onClick={nextMonth}
-              aria-label="Bulan berikutnya"
-              className="w-11 h-11 sm:w-9 sm:h-9 inline-flex items-center justify-center rounded-lg text-ink-2 hover:bg-surface-2 hover:text-ink cursor-pointer"
-            >
-              <ChevronRight size={18} aria-hidden />
-            </button>
+          <div className="flex items-center justify-between sm:justify-start gap-1 w-full sm:w-auto">
+            <Button onClick={goToday}>Hari ini</Button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={prevMonth}
+                aria-label="Bulan sebelumnya"
+                className="w-11 h-11 md:w-9 md:h-9 inline-flex items-center justify-center rounded-lg text-ink-2 hover:bg-surface-2 hover:text-ink cursor-pointer"
+              >
+                <ChevronLeft size={18} aria-hidden />
+              </button>
+              <span className="text-sm font-semibold text-ink min-w-[8.5rem] text-center tabular-nums" aria-live="polite">
+                {monthNames[month]} {year}
+              </span>
+              <button
+                type="button"
+                onClick={nextMonth}
+                aria-label="Bulan berikutnya"
+                className="w-11 h-11 md:w-9 md:h-9 inline-flex items-center justify-center rounded-lg text-ink-2 hover:bg-surface-2 hover:text-ink cursor-pointer"
+              >
+                <ChevronRight size={18} aria-hidden />
+              </button>
+            </div>
           </div>
         }
       />

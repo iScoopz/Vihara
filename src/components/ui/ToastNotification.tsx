@@ -40,7 +40,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     <ToastContext.Provider value={{ showToast }}>
       {children}
 
-      <div aria-live="polite" className="fixed bottom-4 left-4 right-4 sm:left-auto sm:bottom-auto sm:top-4 z-[99999] flex flex-col gap-2 sm:max-w-sm sm:w-full pointer-events-none print:hidden">
+      <div aria-live="polite" className="fixed bottom-[calc(88px+env(safe-area-inset-bottom))] left-4 right-4 sm:left-auto sm:bottom-auto sm:top-4 z-[99999] flex flex-col gap-2 sm:max-w-sm sm:w-full pointer-events-none print:hidden">
         {toasts.map((toast) => {
           const isSuccess = toast.type === 'success';
           const isError = toast.type === 'error';

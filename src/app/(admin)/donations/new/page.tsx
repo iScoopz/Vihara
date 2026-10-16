@@ -8,7 +8,7 @@ import { getProfiles, addDonation } from '@/lib/actions/vihara-actions';
 import { SearchableUmatSelect } from '@/components/ui/SearchableUmatSelect';
 import { Profile } from '@/types/database';
 import { useToast } from '@/components/ui/ToastNotification';
-import { Button, Field, PageHeader, Panel, inputClass, selectClass } from '@/components/ui/kit';
+import { Button, Field, PageHeader, Panel, buttonClass, inputClass, selectClass } from '@/components/ui/kit';
 
 export default function NewDonationPage() {
   const router = useRouter();
@@ -68,7 +68,7 @@ export default function NewDonationPage() {
   const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 pb-20 md:pb-0">
       <Link href="/donations" className="inline-flex items-center gap-1.5 min-h-[44px] sm:min-h-0 text-sm font-medium text-brand hover:underline">
         <ArrowLeft size={14} aria-hidden />
         Kembali ke daftar dana
@@ -126,7 +126,7 @@ export default function NewDonationPage() {
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs text-ink-3">Isi cepat:</span>
                 {[50000, 100000, 500000, 1000000, 5000000].map(preset => (
-                  <Button key={preset} size="sm" onClick={() => handleSelectPresetAmount(preset)} className="tabular-nums">
+                  <Button key={preset} size="sm" onClick={() => handleSelectPresetAmount(preset)} className="tabular-nums max-sm:min-h-[44px]">
                     Rp {preset.toLocaleString('id-ID')}
                   </Button>
                 ))}
@@ -166,8 +166,10 @@ export default function NewDonationPage() {
               />
             </Field>
 
-            <div className="pt-2 flex justify-end">
-              <Button type="submit" variant="primary" disabled={loading} className="w-full sm:w-auto">
+            {/* Phones: pinned above the bottom nav so Simpan stays in thumb reach on this long form. */}
+            <div className="fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom))] z-30 grid grid-cols-2 gap-2 px-4 py-3 bg-surface border-t border-line md:static md:z-auto md:flex md:justify-end md:px-0 md:pt-2 md:pb-0 md:bg-transparent md:border-0">
+              <Link href="/donations" className={buttonClass('secondary')}>Batal</Link>
+              <Button type="submit" variant="primary" disabled={loading}>
                 {loading ? 'Menyimpan...' : 'Simpan dana'}
               </Button>
             </div>

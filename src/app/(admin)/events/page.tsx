@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, Search } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ChevronRight, Plus, Search } from 'lucide-react';
 import { getEvents, toggleCompleteEvent } from '@/lib/actions/vihara-actions';
 import { ViharaEvent, EventCategory } from '@/types/database';
-import { Badge, Button, PageHeader, Panel, StateMessage, buttonClass, inputClass, selectClass } from '@/components/ui/kit';
+import { Badge, Button, Fab, PageHeader, Panel, RowActions, StateMessage, buttonClass, inputClass, selectClass } from '@/components/ui/kit';
 
 export default function AdminEventsListPage() {
+  const router = useRouter();
   const [events, setEvents] = useState<ViharaEvent[]>([]);
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
@@ -29,9 +31,9 @@ export default function AdminEventsListPage() {
     loadData();
   }, []);
 
-  const handleToggleCompleteCard = async (eventId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
+  const handleToggleCompleteCard = async (eventId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    e?.preventDefault();
     setEvents(prev => prev.map(ev => ev.id === eventId ? { ...ev, is_completed: !ev.is_completed } : ev));
     try {
       await toggleCompleteEvent(eventId);
@@ -62,12 +64,12 @@ export default function AdminEventsListPage() {
   ];
 
   return (
-    <div className="space-y-5 max-w-7xl mx-auto">
+    <div className="space-y-5 pb-16 md:pb-0 max-w-7xl mx-auto">
       <PageHeader
         title="Event"
         description="Gongyo, Kensyu, dan pertemuan beserta arsip kegiatan yang sudah selesai."
         actions={
-          <Link href="/events/new" className={buttonClass('primary')}>
+          <Link href="/events/new" className={`${buttonClass('primary')} max-md:hidden`}>
             <Plus size={15} aria-hidden />
             Buat event
           </Link>
@@ -169,39 +171,73 @@ export default function AdminEventsListPage() {
               const regCount = ev.registrations_count || 0;
               const isComplex = ev.is_complex ?? true;
 
+              const statusBadge = ev.is_completed ? (
+                <Badge tone="neutral">Selesai</Badge>
+              ) : ev.is_published ? (
+                <Badge tone="ok">Diterbitkan</Badge>
+              ) : (
+                <Badge tone="gold">Draf</Badge>
+              );
+              const meta = (
+                <>
+                  <p className="text-xs text-ink-2">
+                    {new Date(ev.event_date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}
+                    {ev.location && <> · {ev.location}</>}
+                  </p>
+                  <p className="text-xs text-ink-3">
+                    {ev.category || 'Tanpa kategori'} · {isComplex ? 'Kompleks' : 'Rutin'} ·{' '}
+                    <span className="tabular-nums text-ink-2">{regCount}</span>
+                    {ev.quota ? <span className="tabular-nums"> / {ev.quota}</span> : null} pendaftar
+                  </p>
+                </>
+              );
+
               return (
-                <li key={ev.id} className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 hover:bg-surface-2">
+                <li key={ev.id}>
+                  {/* Phones: the whole row opens the event; the archive toggle sits in the sheet. */}
+                  <div className="md:hidden flex items-start">
+                    <Link href={`/events/${ev.id}`} className="flex-1 min-w-0 flex items-center gap-2 py-3.5 pl-4 pr-1 active:bg-surface-2">
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <span className="text-sm font-semibold text-ink break-words">{ev.title}</span>
+                          {statusBadge}
+                        </div>
+                        {meta}
+                      </div>
+                      <ChevronRight size={18} className="shrink-0 text-ink-3" aria-hidden />
+                    </Link>
+                    <div className="pt-2 pr-2">
+                      <RowActions
+                        title={ev.title}
+                        actions={[
+                          {
+                            label: ev.is_completed ? 'Aktifkan lagi' : 'Tandai selesai',
+                            onSelect: () => handleToggleCompleteCard(ev.id)
+                          }
+                        ]}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="hidden md:flex items-center gap-3 p-4 hover:bg-surface-2">
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <Link href={`/events/${ev.id}`} className="text-sm font-semibold text-ink hover:underline break-words">
                         {ev.title}
                       </Link>
-                      {ev.is_completed ? (
-                        <Badge tone="neutral">Selesai</Badge>
-                      ) : ev.is_published ? (
-                        <Badge tone="ok">Diterbitkan</Badge>
-                      ) : (
-                        <Badge tone="gold">Draf</Badge>
-                      )}
+                      {statusBadge}
                     </div>
-                    <p className="text-xs text-ink-2">
-                      {new Date(ev.event_date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}
-                      {ev.location && <> · {ev.location}</>}
-                    </p>
-                    <p className="text-xs text-ink-3">
-                      {ev.category || 'Tanpa kategori'} · {isComplex ? 'Kompleks' : 'Rutin'} ·{' '}
-                      <span className="tabular-nums text-ink-2">{regCount}</span>
-                      {ev.quota ? <span className="tabular-nums"> / {ev.quota}</span> : null} pendaftar
-                    </p>
+                    {meta}
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
                     <Link href={`/events/${ev.id}`} className={buttonClass('secondary', 'sm')}>
                       Buka
                     </Link>
-                    <Button size="sm" variant="ghost" onClick={(e) => handleToggleCompleteCard(ev.id, e)}>
+                    <Button size="sm" variant={ev.is_completed ? 'secondary' : 'gold'} onClick={(e) => handleToggleCompleteCard(ev.id, e)}>
                       {ev.is_completed ? 'Aktifkan lagi' : 'Tandai selesai'}
                     </Button>
+                  </div>
                   </div>
                 </li>
               );
@@ -209,6 +245,8 @@ export default function AdminEventsListPage() {
           </ul>
         )}
       </Panel>
+
+      <Fab label="Buat event" icon={<Plus size={18} />} onClick={() => router.push('/events/new')} />
     </div>
   );
 }

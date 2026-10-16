@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react';
-import { UserPlus, Search, Trash2, Edit2, Eye, Plus } from 'lucide-react';
+import { UserPlus, Search, Trash2, Edit2, Eye, Plus, SlidersHorizontal } from 'lucide-react';
 import { 
   getUmatPageBundle,
   addProfile, 
@@ -17,16 +17,13 @@ import {
 import { Profile, CetyaProfile, HanProfile, UmatBagian } from '@/types/database';
 import ConfirmModal from '@/components/ui/confirm-modal';
 import { BAGIAN_OPTIONS, NO_CETYA, UNAFFILIATED_CETYA_OPTIONS } from '@/lib/umat-options';
-import { Badge, Button, Field, Modal, ModalActions, PageHeader, Panel, StateMessage, inputClass, selectClass } from '@/components/ui/kit';
+import { Badge, Button, Fab, Field, IconButton, Modal, ModalActions, PageHeader, Panel, RowActions, StateMessage, inputClass, selectClass } from '@/components/ui/kit';
 
 const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
-const iconButton =
-  'inline-flex items-center justify-center w-11 h-11 sm:w-9 sm:h-9 rounded-lg text-ink-2 hover:bg-surface-2 hover:text-ink cursor-pointer';
-const iconButtonDanger =
-  'inline-flex items-center justify-center w-11 h-11 sm:w-9 sm:h-9 rounded-lg text-ink-2 hover:bg-danger-soft hover:text-danger cursor-pointer';
-
-const th = 'py-2.5 px-4 text-xs font-medium text-ink-3 whitespace-nowrap';
+// Header cells stick while a long list scrolls (desktop only; phones get cards).
+const th = 'sticky top-0 z-10 bg-surface-2 py-2.5 px-4 text-xs font-medium text-ink-3 whitespace-nowrap';
+const pageLayoutPad = 'pb-20 md:pb-0';
 const td = 'py-2.5 px-4 text-ink-2';
 
 function Empty() {
@@ -50,6 +47,7 @@ export default function UmatDirectoryPage() {
   const [selectedMonth, setSelectedMonth] = useState('all');
   const [selectedBagianFilter, setSelectedBagianFilter] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Modals for Umat
   const [isAddUmatModalOpen, setIsAddUmatModalOpen] = useState(false);
@@ -475,6 +473,9 @@ export default function UmatDirectoryPage() {
     selectedStatus !== 'all' ||
     selectedMonth !== 'all';
 
+  const activeFilterCount = [selectedSentraFilter, selectedCetyaFilter, selectedHanFilter, selectedBagianFilter, selectedStatus, selectedMonth]
+    .filter(v => v !== 'all').length;
+
   const resetFilters = () => {
     setSearchTerm('');
     setSelectedSentraFilter('all');
@@ -505,22 +506,32 @@ export default function UmatDirectoryPage() {
     { id: 'han', label: 'HAN', count: hans.length }
   ] as const;
 
+  // md+ shows the add action in the header; phones get the Fab instead.
   const headerAction =
     activeMainTab === 'umat' ? (
-      <Button variant="primary" onClick={openAddUmatModal}>
+      <Button variant="primary" className="max-md:hidden" onClick={openAddUmatModal}>
         <UserPlus size={16} aria-hidden />
         Tambah umat
       </Button>
     ) : activeMainTab === 'cetya' ? (
-      <Button variant="primary" onClick={openAddCetyaModal}>
+      <Button variant="primary" className="max-md:hidden" onClick={openAddCetyaModal}>
         <Plus size={16} aria-hidden />
         Tambah Cetya
       </Button>
     ) : (
-      <Button variant="primary" onClick={openAddHanModal}>
+      <Button variant="primary" className="max-md:hidden" onClick={openAddHanModal}>
         <Plus size={16} aria-hidden />
         Tambah HAN
       </Button>
+    );
+
+  const fab =
+    activeMainTab === 'umat' ? (
+      <Fab label="Tambah umat" icon={<UserPlus size={18} />} onClick={openAddUmatModal} />
+    ) : activeMainTab === 'cetya' ? (
+      <Fab label="Tambah Cetya" icon={<Plus size={18} />} onClick={openAddCetyaModal} />
+    ) : (
+      <Fab label="Tambah HAN" icon={<Plus size={18} />} onClick={openAddHanModal} />
     );
 
   const cetyaFormFields = (
@@ -634,46 +645,70 @@ export default function UmatDirectoryPage() {
             })}
           </div>
 
+          {fab}
+
           {activeMainTab === 'umat' && (
-            <div role="tabpanel" id="panel-umat" aria-labelledby="tab-umat" className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-2">
-                <label className="relative sm:col-span-2">
-                  <span className="sr-only">Cari umat</span>
-                  <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" aria-hidden />
-                  <input
-                    type="search"
-                    placeholder="Cari nama, HAN, Cetya, atau telepon"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className={`${inputClass} pl-9`}
-                  />
-                </label>
+            <div role="tabpanel" id="panel-umat" aria-labelledby="tab-umat" className={`space-y-4 ${pageLayoutPad}`}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                <div className="flex gap-2 sm:col-span-2">
+                  <label className="relative flex-1 min-w-0">
+                    <span className="sr-only">Cari umat</span>
+                    <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" aria-hidden />
+                    <input
+                      type="search"
+                      placeholder="Cari nama, HAN, Cetya, atau telepon"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className={`${inputClass} pl-9`}
+                    />
+                  </label>
+                  <Button
+                    className="md:hidden shrink-0"
+                    aria-expanded={filtersOpen}
+                    aria-controls="umat-filter-panel"
+                    onClick={() => setFiltersOpen(open => !open)}
+                  >
+                    <SlidersHorizontal size={16} aria-hidden />
+                    {activeFilterCount > 0 ? `Filter (${activeFilterCount})` : 'Filter'}
+                  </Button>
+                </div>
 
-                <select aria-label="Filter Sentra" value={selectedSentraFilter} onChange={(e) => setSelectedSentraFilter(e.target.value)} className={selectClass}>
-                  <option value="all">Semua Sentra</option>
-                  {sentras.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
+                <div
+                  id="umat-filter-panel"
+                  className={`${filtersOpen ? 'grid' : 'hidden'} grid-cols-1 sm:grid-cols-2 gap-2 sm:col-span-2 md:contents`}
+                >
+                  <select aria-label="Filter Sentra" value={selectedSentraFilter} onChange={(e) => setSelectedSentraFilter(e.target.value)} className={selectClass}>
+                    <option value="all">Semua Sentra</option>
+                    {sentras.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
 
-                <select aria-label="Filter Cetya" value={selectedCetyaFilter} onChange={(e) => setSelectedCetyaFilter(e.target.value)} className={selectClass}>
-                  <option value="all">Semua Cetya</option>
-                  {cetyas.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                  {UNAFFILIATED_CETYA_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                </select>
+                  <select aria-label="Filter Cetya" value={selectedCetyaFilter} onChange={(e) => setSelectedCetyaFilter(e.target.value)} className={selectClass}>
+                    <option value="all">Semua Cetya</option>
+                    {cetyas.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                    {UNAFFILIATED_CETYA_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
 
-                <select aria-label="Filter HAN" value={selectedHanFilter} onChange={(e) => setSelectedHanFilter(e.target.value)} className={selectClass}>
-                  <option value="all">Semua HAN</option>
-                  {hans.map(h => <option key={h.id} value={h.name}>{h.name}</option>)}
-                </select>
+                  <select aria-label="Filter HAN" value={selectedHanFilter} onChange={(e) => setSelectedHanFilter(e.target.value)} className={selectClass}>
+                    <option value="all">Semua HAN</option>
+                    {hans.map(h => <option key={h.id} value={h.name}>{h.name}</option>)}
+                  </select>
 
-                <select aria-label="Filter Bagian" value={selectedBagianFilter} onChange={(e) => setSelectedBagianFilter(e.target.value)} className={selectClass}>
-                  <option value="all">Semua Bagian</option>
-                  {bagianOptions}
-                </select>
+                  <select aria-label="Filter Bagian" value={selectedBagianFilter} onChange={(e) => setSelectedBagianFilter(e.target.value)} className={selectClass}>
+                    <option value="all">Semua Bagian</option>
+                    {bagianOptions}
+                  </select>
 
-                <select aria-label="Filter bulan lahir" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className={selectClass}>
-                  <option value="all">Semua bulan lahir</option>
-                  {MONTHS.map((m, i) => <option key={m} value={String(i + 1)}>{m}</option>)}
-                </select>
+                  <select aria-label="Filter bulan lahir" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className={selectClass}>
+                    <option value="all">Semua bulan lahir</option>
+                    {MONTHS.map((m, i) => <option key={m} value={String(i + 1)}>{m}</option>)}
+                  </select>
+
+                  <select aria-label="Filter status" value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className={selectClass}>
+                    <option value="all">Aktif dan non-aktif</option>
+                    <option value="active">Hanya aktif</option>
+                    <option value="inactive">Hanya non-aktif</option>
+                  </select>
+                </div>
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -708,72 +743,118 @@ export default function UmatDirectoryPage() {
                   )}
                 </Panel>
               ) : (
-                <Panel className="overflow-hidden">
-                  <div className="relative overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="border-b border-line bg-surface-2">
-                          <th scope="col" className={th}>Nama</th>
-                          <th scope="col" className={th}>Sentra</th>
-                          <th scope="col" className={th}>Cetya</th>
-                          <th scope="col" className={th}>HAN</th>
-                          <th scope="col" className={th}>Bagian</th>
-                          <th scope="col" className={th}>Tgl lahir</th>
-                          <th scope="col" className={th}>Status</th>
-                          <th scope="col" className={th}><span className="sr-only">Aksi</span></th>
+                <Panel className="overflow-hidden xl:overflow-visible">
+                  <table className="hidden xl:table w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-line bg-surface-2">
+                        <th scope="col" className={`${th} rounded-tl-xl`}>Nama</th>
+                        <th scope="col" className={`${th} hidden 2xl:table-cell`}>Sentra</th>
+                        <th scope="col" className={th}>Cetya</th>
+                        <th scope="col" className={th}>HAN</th>
+                        <th scope="col" className={th}>Bagian</th>
+                        <th scope="col" className={`${th} hidden 2xl:table-cell`}>Tgl lahir</th>
+                        <th scope="col" className={th}>Status</th>
+                        <th scope="col" className={`${th} rounded-tr-xl`}><span className="sr-only">Aksi</span></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {paginatedProfiles.map((umat) => (
+                        <tr key={umat.id} onClick={() => setSelectedUmatDetail(umat)} className="hover:bg-surface-2 cursor-pointer">
+                          <td className="py-2.5 px-4 font-medium text-ink min-w-[12rem]">
+                            {umat.full_name}
+                            {umat.role === 'admin' && <Badge tone="brand" className="ml-2 align-middle">Pengurus</Badge>}
+                          </td>
+                          <td className={`${td} whitespace-nowrap hidden 2xl:table-cell`}>{umat.sentra || <Empty />}</td>
+                          <td className={`${td} whitespace-nowrap`}>{umat.cetya || <Empty />}</td>
+                          <td className={`${td} whitespace-nowrap`}>{umat.han || <Empty />}</td>
+                          <td className={`${td} whitespace-nowrap`}>{umat.bagian || <Empty />}</td>
+                          <td className={`${td} whitespace-nowrap tabular-nums hidden 2xl:table-cell`}>
+                            {umat.birth_date
+                              ? new Date(umat.birth_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+                              : <Empty />}
+                          </td>
+                          <td className="py-2.5 px-4">
+                            {umat.is_active ? <Badge tone="ok">Aktif</Badge> : <Badge>Non-aktif</Badge>}
+                          </td>
+                          <td className="py-1 px-2">
+                            <div className="flex items-center justify-end gap-0.5">
+                              <IconButton label={`Lihat detail ${umat.full_name}`} onClick={(e) => { e.stopPropagation(); setSelectedUmatDetail(umat); }}>
+                                <Eye size={16} aria-hidden />
+                              </IconButton>
+                              <IconButton label={`Ubah data ${umat.full_name}`} onClick={(e) => { e.stopPropagation(); openEditUmatModal(umat); }}>
+                                <Edit2 size={16} aria-hidden />
+                              </IconButton>
+                              <IconButton tone="danger" label={`Hapus ${umat.full_name}`} onClick={(e) => { e.stopPropagation(); handleDeleteUmat(umat); }}>
+                                <Trash2 size={16} aria-hidden />
+                              </IconButton>
+                            </div>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-line">
-                        {paginatedProfiles.map((umat) => (
-                          <tr key={umat.id} className="hover:bg-surface-2">
-                            <td className="py-2.5 px-4 font-medium text-ink min-w-[12rem]">
-                              {umat.full_name}
-                              {umat.role === 'admin' && <Badge tone="brand" className="ml-2 align-middle">Pengurus</Badge>}
-                            </td>
-                            <td className={`${td} whitespace-nowrap`}>{umat.sentra || <Empty />}</td>
-                            <td className={`${td} whitespace-nowrap`}>{umat.cetya || <Empty />}</td>
-                            <td className={`${td} whitespace-nowrap`}>{umat.han || <Empty />}</td>
-                            <td className={`${td} whitespace-nowrap`}>{umat.bagian || <Empty />}</td>
-                            <td className={`${td} whitespace-nowrap tabular-nums`}>
-                              {umat.birth_date
-                                ? new Date(umat.birth_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
-                                : <Empty />}
-                            </td>
-                            <td className="py-2.5 px-4">
-                              {umat.is_active ? <Badge tone="ok">Aktif</Badge> : <Badge>Non-aktif</Badge>}
-                            </td>
-                            <td className="py-1 px-2">
-                              <div className="flex items-center justify-end gap-0.5">
-                                <button type="button" onClick={() => setSelectedUmatDetail(umat)} className={iconButton} aria-label={`Lihat detail ${umat.full_name}`}>
-                                  <Eye size={16} aria-hidden />
-                                </button>
-                                <button type="button" onClick={() => openEditUmatModal(umat)} className={iconButton} aria-label={`Ubah data ${umat.full_name}`}>
-                                  <Edit2 size={16} aria-hidden />
-                                </button>
-                                <button type="button" onClick={() => handleDeleteUmat(umat)} className={iconButtonDanger} aria-label={`Hapus ${umat.full_name}`}>
-                                  <Trash2 size={16} aria-hidden />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  <ul className="xl:hidden divide-y divide-line">
+                    {paginatedProfiles.map((umat) => (
+                      <li key={umat.id} className="p-3.5">
+                        <div className="flex items-start gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedUmatDetail(umat)}
+                            aria-label={`Lihat detail ${umat.full_name}`}
+                            className="min-w-0 flex-1 -m-1 p-1 rounded-lg text-left cursor-pointer hover:bg-surface-2"
+                          >
+                            <span className="flex flex-wrap items-center gap-1.5">
+                              <span className="text-sm font-medium text-ink break-words">{umat.full_name}</span>
+                              {umat.role === 'admin' && <Badge tone="brand">Pengurus</Badge>}
+                              {!umat.is_active && <Badge>Non-aktif</Badge>}
+                            </span>
+                            <span className="mt-1 block text-xs text-ink-2 break-words">
+                              {umat.han || '-'} · {umat.cetya || '-'}
+                            </span>
+                            <span className="mt-0.5 block text-xs text-ink-3 break-words">
+                              {umat.sentra || '-'} · {umat.bagian || '-'}
+                            </span>
+                          </button>
+                          <RowActions
+                            title={umat.full_name}
+                            actions={[
+                              { label: 'Lihat detail', icon: <Eye size={16} />, onSelect: () => setSelectedUmatDetail(umat) },
+                              { label: 'Edit data', icon: <Edit2 size={16} />, onSelect: () => openEditUmatModal(umat) },
+                              { label: 'Hapus umat', icon: <Trash2 size={16} />, tone: 'danger', onSelect: () => handleDeleteUmat(umat) }
+                            ]}
+                          />
+                        </div>
+                        <Button size="sm" className="mt-3 w-full h-11" onClick={() => openEditUmatModal(umat)}>
+                          <Edit2 size={14} aria-hidden />
+                          Edit
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
 
                   {totalPages > 1 && (
-                    <div className="p-3 border-t border-line flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-ink-2">
+                    <div className="p-3 border-t border-line flex flex-col md:flex-row justify-between items-center gap-3 text-xs text-ink-2">
                       <span className="tabular-nums">
                         {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, filteredProfiles.length)} dari {filteredProfiles.length} umat
+                        <span className="xl:hidden">, halaman {currentPage} dari {totalPages}</span>
                       </span>
-                      <div className="flex items-center gap-2">
-                        <Button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}>
+                      <div className="grid grid-cols-2 gap-2 w-full md:flex md:w-auto md:items-center">
+                        <Button
+                          className="h-11 md:h-auto"
+                          disabled={currentPage === 1}
+                          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        >
                           Sebelumnya
                         </Button>
-                        <span className="px-1 tabular-nums whitespace-nowrap">
+                        <span className="hidden xl:inline px-1 tabular-nums whitespace-nowrap">
                           Halaman {currentPage} dari {totalPages}
                         </span>
-                        <Button disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}>
+                        <Button
+                          className="h-11 md:h-auto"
+                          disabled={currentPage === totalPages}
+                          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        >
                           Berikutnya
                         </Button>
                       </div>
@@ -785,7 +866,7 @@ export default function UmatDirectoryPage() {
           )}
 
           {activeMainTab === 'cetya' && (
-            <div role="tabpanel" id="panel-cetya" aria-labelledby="tab-cetya">
+            <div role="tabpanel" id="panel-cetya" aria-labelledby="tab-cetya" className={pageLayoutPad}>
               {cetyas.length === 0 ? (
                 <Panel>
                   <StateMessage
@@ -795,53 +876,80 @@ export default function UmatDirectoryPage() {
                   />
                 </Panel>
               ) : (
-                <Panel className="overflow-hidden">
-                  <div className="relative overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="border-b border-line bg-surface-2">
-                          <th scope="col" className={th}>Nama</th>
-                          <th scope="col" className={th}>Sentra</th>
-                          <th scope="col" className={th}>Ketua / PJ</th>
-                          <th scope="col" className={th}>Telepon</th>
-                          <th scope="col" className={th}>Alamat</th>
-                          <th scope="col" className={`${th} text-right`}>Jumlah HAN</th>
-                          <th scope="col" className={`${th} text-right`}>Jumlah umat</th>
-                          <th scope="col" className={th}><span className="sr-only">Aksi</span></th>
+                <Panel className="overflow-hidden xl:overflow-visible">
+                  <table className="hidden xl:table w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-line bg-surface-2">
+                        <th scope="col" className={`${th} rounded-tl-xl`}>Nama</th>
+                        <th scope="col" className={th}>Sentra</th>
+                        <th scope="col" className={th}>Ketua / PJ</th>
+                        <th scope="col" className={`${th} hidden 2xl:table-cell`}>Telepon</th>
+                        <th scope="col" className={`${th} hidden 2xl:table-cell`}>Alamat</th>
+                        <th scope="col" className={`${th} text-right`}>Jumlah HAN</th>
+                        <th scope="col" className={`${th} text-right`}>Jumlah umat</th>
+                        <th scope="col" className={`${th} rounded-tr-xl`}><span className="sr-only">Aksi</span></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {cetyas.map(c => (
+                        <tr key={c.id} className="hover:bg-surface-2">
+                          <td className="py-2.5 px-4 font-medium text-ink min-w-[12rem]">{c.name}</td>
+                          <td className={`${td} whitespace-nowrap`}>{c.sentra || <Empty />}</td>
+                          <td className={`${td} whitespace-nowrap`}>{c.leader_name || <Empty />}</td>
+                          <td className={`${td} whitespace-nowrap tabular-nums hidden 2xl:table-cell`}>{c.phone || <Empty />}</td>
+                          <td className={`${td} min-w-[14rem] hidden 2xl:table-cell`}>{c.address || <Empty />}</td>
+                          <td className={`${td} text-right tabular-nums`}>{counts.hanByCetya.get(c.name) || 0}</td>
+                          <td className={`${td} text-right tabular-nums`}>{counts.umatByCetya.get(c.name) || 0}</td>
+                          <td className="py-1 px-2">
+                            <div className="flex items-center justify-end gap-0.5">
+                              <IconButton label={`Ubah ${c.name}`} onClick={() => openEditCetyaModal(c)}>
+                                <Edit2 size={16} aria-hidden />
+                              </IconButton>
+                              <IconButton tone="danger" label={`Hapus ${c.name}`} onClick={() => handleDeleteCetya(c)}>
+                                <Trash2 size={16} aria-hidden />
+                              </IconButton>
+                            </div>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-line">
-                        {cetyas.map(c => (
-                          <tr key={c.id} className="hover:bg-surface-2">
-                            <td className="py-2.5 px-4 font-medium text-ink min-w-[12rem]">{c.name}</td>
-                            <td className={`${td} whitespace-nowrap`}>{c.sentra || <Empty />}</td>
-                            <td className={`${td} whitespace-nowrap`}>{c.leader_name || <Empty />}</td>
-                            <td className={`${td} whitespace-nowrap tabular-nums`}>{c.phone || <Empty />}</td>
-                            <td className={`${td} min-w-[14rem]`}>{c.address || <Empty />}</td>
-                            <td className={`${td} text-right tabular-nums`}>{counts.hanByCetya.get(c.name) || 0}</td>
-                            <td className={`${td} text-right tabular-nums`}>{counts.umatByCetya.get(c.name) || 0}</td>
-                            <td className="py-1 px-2">
-                              <div className="flex items-center justify-end gap-0.5">
-                                <button type="button" onClick={() => openEditCetyaModal(c)} className={iconButton} aria-label={`Ubah ${c.name}`}>
-                                  <Edit2 size={16} aria-hidden />
-                                </button>
-                                <button type="button" onClick={() => handleDeleteCetya(c)} className={iconButtonDanger} aria-label={`Hapus ${c.name}`}>
-                                  <Trash2 size={16} aria-hidden />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  <ul className="xl:hidden divide-y divide-line">
+                    {cetyas.map(c => (
+                      <li key={c.id} className="p-3.5">
+                        <div className="flex items-start gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-ink break-words">{c.name}</p>
+                            <p className="mt-1 text-xs text-ink-2 break-words">
+                              {c.sentra || '-'} · Ketua {c.leader_name || '-'}
+                            </p>
+                            {c.phone && <p className="mt-0.5 text-xs text-ink-3 tabular-nums">{c.phone}</p>}
+                            <p className="mt-0.5 text-xs text-ink-3 tabular-nums">
+                              {counts.hanByCetya.get(c.name) || 0} HAN · {counts.umatByCetya.get(c.name) || 0} umat
+                            </p>
+                          </div>
+                          <RowActions
+                            title={c.name}
+                            actions={[
+                              { label: 'Hapus Cetya', icon: <Trash2 size={16} />, tone: 'danger', onSelect: () => handleDeleteCetya(c) }
+                            ]}
+                          />
+                        </div>
+                        <Button size="sm" className="mt-3 w-full h-11" onClick={() => openEditCetyaModal(c)}>
+                          <Edit2 size={14} aria-hidden />
+                          Edit
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
                 </Panel>
               )}
             </div>
           )}
 
           {activeMainTab === 'han' && (
-            <div role="tabpanel" id="panel-han" aria-labelledby="tab-han">
+            <div role="tabpanel" id="panel-han" aria-labelledby="tab-han" className={pageLayoutPad}>
               {hans.length === 0 ? (
                 <Panel>
                   <StateMessage
@@ -851,42 +959,68 @@ export default function UmatDirectoryPage() {
                   />
                 </Panel>
               ) : (
-                <Panel className="overflow-hidden">
-                  <div className="relative overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="border-b border-line bg-surface-2">
-                          <th scope="col" className={th}>Nama</th>
-                          <th scope="col" className={th}>Cetya induk</th>
-                          <th scope="col" className={th}>Sentra</th>
-                          <th scope="col" className={th}>Pembina</th>
-                          <th scope="col" className={`${th} text-right`}>Jumlah umat</th>
-                          <th scope="col" className={th}><span className="sr-only">Aksi</span></th>
+                <Panel className="overflow-hidden xl:overflow-visible">
+                  <table className="hidden xl:table w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-line bg-surface-2">
+                        <th scope="col" className={`${th} rounded-tl-xl`}>Nama</th>
+                        <th scope="col" className={th}>Cetya induk</th>
+                        <th scope="col" className={th}>Sentra</th>
+                        <th scope="col" className={th}>Pembina</th>
+                        <th scope="col" className={`${th} text-right`}>Jumlah umat</th>
+                        <th scope="col" className={`${th} rounded-tr-xl`}><span className="sr-only">Aksi</span></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {hans.map(h => (
+                        <tr key={h.id} className="hover:bg-surface-2">
+                          <td className="py-2.5 px-4 font-medium text-ink whitespace-nowrap">{h.name}</td>
+                          <td className={`${td} whitespace-nowrap`}>{h.cetya_name || <Empty />}</td>
+                          <td className={`${td} whitespace-nowrap`}>{h.sentra || <Empty />}</td>
+                          <td className={`${td} whitespace-nowrap`}>{h.leader_name || <Empty />}</td>
+                          <td className={`${td} text-right tabular-nums`}>{counts.umatByHan.get(h.name) || 0}</td>
+                          <td className="py-1 px-2">
+                            <div className="flex items-center justify-end gap-0.5">
+                              <IconButton label={`Ubah ${h.name}`} onClick={() => openEditHanModal(h)}>
+                                <Edit2 size={16} aria-hidden />
+                              </IconButton>
+                              <IconButton tone="danger" label={`Hapus ${h.name}`} onClick={() => handleDeleteHan(h)}>
+                                <Trash2 size={16} aria-hidden />
+                              </IconButton>
+                            </div>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-line">
-                        {hans.map(h => (
-                          <tr key={h.id} className="hover:bg-surface-2">
-                            <td className="py-2.5 px-4 font-medium text-ink whitespace-nowrap">{h.name}</td>
-                            <td className={`${td} whitespace-nowrap`}>{h.cetya_name || <Empty />}</td>
-                            <td className={`${td} whitespace-nowrap`}>{h.sentra || <Empty />}</td>
-                            <td className={`${td} whitespace-nowrap`}>{h.leader_name || <Empty />}</td>
-                            <td className={`${td} text-right tabular-nums`}>{counts.umatByHan.get(h.name) || 0}</td>
-                            <td className="py-1 px-2">
-                              <div className="flex items-center justify-end gap-0.5">
-                                <button type="button" onClick={() => openEditHanModal(h)} className={iconButton} aria-label={`Ubah ${h.name}`}>
-                                  <Edit2 size={16} aria-hidden />
-                                </button>
-                                <button type="button" onClick={() => handleDeleteHan(h)} className={iconButtonDanger} aria-label={`Hapus ${h.name}`}>
-                                  <Trash2 size={16} aria-hidden />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  <ul className="xl:hidden divide-y divide-line">
+                    {hans.map(h => (
+                      <li key={h.id} className="p-3.5">
+                        <div className="flex items-start gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-ink break-words">{h.name}</p>
+                            <p className="mt-1 text-xs text-ink-2 break-words">
+                              {h.cetya_name || '-'} · {h.sentra || '-'}
+                            </p>
+                            <p className="mt-0.5 text-xs text-ink-3 break-words">
+                              Pembina {h.leader_name || '-'} · <span className="tabular-nums">{counts.umatByHan.get(h.name) || 0}</span> umat
+                            </p>
+                          </div>
+                          <RowActions
+                            title={h.name}
+                            actions={[
+                              { label: 'Hapus HAN', icon: <Trash2 size={16} />, tone: 'danger', onSelect: () => handleDeleteHan(h) }
+                            ]}
+                          />
+                        </div>
+                        <Button size="sm" className="mt-3 w-full h-11" onClick={() => openEditHanModal(h)}>
+                          <Edit2 size={14} aria-hidden />
+                          Edit
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
                 </Panel>
               )}
             </div>
@@ -972,6 +1106,10 @@ export default function UmatDirectoryPage() {
 
           <Field label="Alamat">
             <input type="text" value={editAddress} onChange={(e) => setEditAddress(e.target.value)} className={inputClass} />
+          </Field>
+
+          <Field label="Kontak darurat" hint="Nama dan nomor yang bisa dihubungi">
+            <input type="text" value={editEmergencyContact} onChange={(e) => setEditEmergencyContact(e.target.value)} className={inputClass} />
           </Field>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1077,6 +1215,10 @@ export default function UmatDirectoryPage() {
 
           <Field label="Alamat">
             <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} className={inputClass} />
+          </Field>
+
+          <Field label="Kontak darurat" hint="Nama dan nomor yang bisa dihubungi">
+            <input type="text" value={emergencyContact} onChange={(e) => setEmergencyContact(e.target.value)} className={inputClass} />
           </Field>
 
           <ModalActions>

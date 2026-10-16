@@ -23,6 +23,7 @@
   --color-gold-line: var(--gold-line);
   --color-ok: var(--ok);
   --color-ok-soft: var(--ok-soft);
+  --color-on-ok: var(--on-ok);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
   --color-nav: var(--nav);
@@ -60,6 +61,7 @@
     --gold-line: #c59a3c; /* decorative rule and seal only, never text */
     --ok: #166534;
     --ok-soft: #dcfce7;
+    --on-ok: #ffffff;   /* white on ok: 7.1:1 */
     --danger: #b91c1c;
     --danger-soft: #fee2e2;
 
@@ -96,6 +98,7 @@
     --gold-line: #b88a2e;
     --ok: #86efac;
     --ok-soft: rgba(134, 239, 172, 0.12);
+    --on-ok: #0b2a16;
     --danger: #fca5a5;
     --danger-soft: rgba(252, 165, 165, 0.12);
 

@@ -131,7 +131,7 @@ export default function CreateNewEventPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-5">
+    <div className="max-w-3xl mx-auto space-y-5 pb-20 md:pb-0">
       <Link href="/events" className="inline-flex items-center gap-1 min-h-[44px] sm:min-h-0 text-sm text-ink-2 hover:text-ink">
         <ArrowLeft size={14} aria-hidden />
         Daftar event
@@ -314,7 +314,7 @@ export default function CreateNewEventPage() {
                         type="button"
                         onClick={() => handleRemoveVip(idx)}
                         aria-label={`Hapus ${vip}`}
-                        className="w-9 h-9 inline-flex items-center justify-center rounded-lg text-ink-2 hover:text-danger cursor-pointer"
+                        className="w-11 h-11 md:w-9 md:h-9 inline-flex items-center justify-center rounded-lg text-ink-2 hover:text-danger cursor-pointer"
                       >
                         <X size={14} aria-hidden />
                       </button>
@@ -330,7 +330,8 @@ export default function CreateNewEventPage() {
           <p role="alert" className="text-sm text-danger">{submitError}</p>
         )}
 
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+        {/* Phones: pinned above the bottom nav so Simpan stays in thumb reach on this long form. */}
+        <div className="fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom))] z-30 grid grid-cols-2 gap-2 px-4 py-3 bg-surface border-t border-line md:static md:z-auto md:flex md:justify-end md:p-0 md:bg-transparent md:border-0">
           <Link href="/events" className={buttonClass('secondary')}>
             Batal
           </Link>

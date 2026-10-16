@@ -15,7 +15,9 @@ export const EventLaporanTab: React.FC<EventLaporanTabProps> = ({
   registrations = [],
   onOpenPdfModal
 }) => {
-  const documents: { title: string; description: string; kind: 'pdf' | 'excel'; onClick: () => void }[] = [
+  // Proposal, team schedule and LPJ only exist for complex events (same rule as the header).
+  const isComplex = event.is_complex ?? true;
+  const allDocuments: { title: string; description: string; kind: 'pdf' | 'excel'; onClick: () => void; complexOnly?: boolean }[] = [
     {
       title: 'Daftar hadir dan tanda tangan',
       description: 'Nama peserta terdaftar, status pembayaran, dan kolom tanda tangan.',
@@ -26,27 +28,32 @@ export const EventLaporanTab: React.FC<EventLaporanTabProps> = ({
       title: 'Proposal kegiatan',
       description: 'Susunan panitia, susunan acara, dan rencana anggaran.',
       kind: 'pdf',
-      onClick: () => onOpenPdfModal('proposal')
+      onClick: () => onOpenPdfModal('proposal'),
+      complexOnly: true
     },
     {
       title: 'Jadwal kerja tim',
       description: 'Alur kerja lapangan dan penanggung jawab tiap bidang.',
       kind: 'excel',
-      onClick: () => exportSkenarioKerjaToExcel(event.title, event.skenario_kerja || [])
+      onClick: () => exportSkenarioKerjaToExcel(event.title, event.skenario_kerja || []),
+      complexOnly: true
     },
     {
       title: 'Laporan pertanggungjawaban (LPJ)',
       description: 'Susunan panitia, daftar peserta, dan pengeluaran aktual.',
       kind: 'pdf',
-      onClick: () => onOpenPdfModal('lpj')
+      onClick: () => onOpenPdfModal('lpj'),
+      complexOnly: true
     },
     {
       title: 'Laporan pertanggungjawaban (LPJ)',
       description: 'Rincian LPJ dengan tabel evaluasi anggaran.',
       kind: 'excel',
-      onClick: () => exportLPJToExcel(event, registrations)
+      onClick: () => exportLPJToExcel(event, registrations),
+      complexOnly: true
     }
   ];
+  const documents = allDocuments.filter(doc => isComplex || !doc.complexOnly);
 
   return (
     <div className="space-y-4 print:hidden">
@@ -65,7 +72,7 @@ export const EventLaporanTab: React.FC<EventLaporanTabProps> = ({
                 </h3>
                 <p className="text-sm text-ink-2">{doc.description}</p>
               </div>
-              <Button onClick={doc.onClick} className="shrink-0 self-start sm:self-auto">
+              <Button onClick={doc.onClick} className="shrink-0 w-full sm:w-auto">
                 {doc.kind === 'pdf' ? <Printer size={14} aria-hidden /> : <FileSpreadsheet size={14} aria-hidden />}
                 {doc.kind === 'pdf' ? 'Buka dokumen' : 'Unduh Excel'}
               </Button>

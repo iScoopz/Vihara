@@ -10,7 +10,7 @@ import {
 } from '@/lib/actions/vihara-actions';
 import { InventoryItem, InventoryTransaction, Profile } from '@/types/database';
 import { SearchableUmatSelect } from '@/components/ui/SearchableUmatSelect';
-import { Button, Field, Modal, ModalActions, PageHeader, Panel, StateMessage, inputClass, selectClass } from '@/components/ui/kit';
+import { Badge, Button, Fab, Field, Modal, ModalActions, PageHeader, Panel, StateMessage, inputClass, selectClass } from '@/components/ui/kit';
 
 const LOW_STOCK_LIMIT = 10;
 
@@ -29,6 +29,8 @@ export default function InventoryPage() {
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [selectedItemForPurchase, setSelectedItemForPurchase] = useState<InventoryItem | null>(null);
+  // Opened from the phone Fab on the history tab: the item is picked inside the form.
+  const [purchasePicksItem, setPurchasePicksItem] = useState(false);
 
   const [itemName, setItemName] = useState('');
   const [category, setCategory] = useState('Dupa');
@@ -92,8 +94,9 @@ export default function InventoryPage() {
     loadData();
   };
 
-  const openPurchaseModal = (item: InventoryItem) => {
+  const openPurchaseModal = (item: InventoryItem | null) => {
     setSelectedItemForPurchase(item);
+    setPurchasePicksItem(item === null);
     setPurchaseQty('1');
     setPurchaseError('');
     setIsPurchaseModalOpen(true);
@@ -145,7 +148,7 @@ export default function InventoryPage() {
     }`;
 
   const stepperButtonClass =
-    'w-11 h-11 sm:w-8 sm:h-8 inline-flex items-center justify-center rounded-lg border border-line-strong bg-surface text-ink hover:bg-surface-2 disabled:opacity-50 cursor-pointer';
+    'w-8 h-8 inline-flex items-center justify-center rounded-lg border border-line-strong bg-surface text-ink hover:bg-surface-2 disabled:opacity-50 cursor-pointer';
 
   const renderStockStepper = (item: InventoryItem) => (
     <div className="inline-flex items-center gap-1.5">
@@ -172,6 +175,11 @@ export default function InventoryPage() {
     </div>
   );
 
+  const thClass = 'sticky top-0 z-10 bg-surface-2 border-b border-line py-2.5 px-4 font-medium first:rounded-tl-xl last:rounded-tr-xl';
+
+  const phoneStepClass =
+    'min-h-[44px] inline-flex items-center justify-center gap-1 rounded-lg border border-line-strong bg-surface text-sm font-semibold text-ink tabular-nums hover:bg-surface-2 disabled:opacity-50 cursor-pointer';
+
   const purchaseTotal = selectedItemForPurchase
     ? (parseInt(purchaseQty, 10) || 0) * selectedItemForPurchase.price_per_unit
     : 0;
@@ -182,12 +190,19 @@ export default function InventoryPage() {
         title="Inventaris"
         description="Stok barang kebaktian dan pembelian oleh umat. Stok berkurang otomatis saat pembelian dicatat."
         actions={
-          <Button variant="primary" onClick={() => setIsAddItemModalOpen(true)}>
+          <Button variant="primary" className="max-md:hidden" onClick={() => setIsAddItemModalOpen(true)}>
             <Plus size={14} aria-hidden />
             Tambah barang
           </Button>
         }
       />
+
+      {loadState === 'ready' && activeTab === 'stok' && (
+        <Fab label="Tambah barang" icon={<Plus size={18} />} onClick={() => setIsAddItemModalOpen(true)} />
+      )}
+      {loadState === 'ready' && activeTab === 'transaksi' && items.length > 0 && (
+        <Fab label="Catat pembelian" icon={<ShoppingCart size={18} />} onClick={() => openPurchaseModal(null)} />
+      )}
 
       {loadState === 'loading' && (
         <Panel><StateMessage kind="loading" title="Memuat inventaris..." /></Panel>
@@ -263,15 +278,15 @@ export default function InventoryPage() {
                   />
                 </Panel>
               ) : (
-                <Panel className="overflow-hidden">
-                  <table className="hidden md:table w-full text-left text-sm">
+                <Panel className="overflow-hidden xl:overflow-visible">
+                  <table className="hidden xl:table w-full text-left text-sm">
                     <thead>
-                      <tr className="border-b border-line bg-surface-2 text-xs text-ink-3">
-                        <th scope="col" className="py-2.5 px-4 font-medium">Barang</th>
-                        <th scope="col" className="py-2.5 px-4 font-medium">Kategori</th>
-                        <th scope="col" className="py-2.5 px-4 font-medium text-right">Harga per unit</th>
-                        <th scope="col" className="py-2.5 px-4 font-medium text-center">Stok</th>
-                        <th scope="col" className="py-2.5 px-4"><span className="sr-only">Aksi</span></th>
+                      <tr className="text-xs text-ink-3">
+                        <th scope="col" className={thClass}>Barang</th>
+                        <th scope="col" className={thClass}>Kategori</th>
+                        <th scope="col" className={`${thClass} text-right`}>Harga per unit</th>
+                        <th scope="col" className={`${thClass} text-center`}>Stok</th>
+                        <th scope="col" className={thClass}><span className="sr-only">Aksi</span></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-line">
@@ -297,24 +312,60 @@ export default function InventoryPage() {
                     </tbody>
                   </table>
 
-                  <ul className="md:hidden divide-y divide-line">
-                    {filteredItems.map((item) => (
-                      <li key={item.id} className="p-3.5 space-y-2.5">
-                        <div>
-                          <p className="text-sm font-medium text-ink break-words">{item.item_name}</p>
-                          <p className="text-xs text-ink-2">
-                            {item.category}, <span className="tabular-nums">{formatRupiah(Number(item.price_per_unit))}</span> / {item.unit}
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          {renderStockStepper(item)}
-                          <div className="flex gap-2">
-                            <Button onClick={() => handleStockAdjust(item.id, 10)}>+10</Button>
-                            <Button variant="primary" onClick={() => openPurchaseModal(item)}>Catat pembelian</Button>
+                  <ul className="xl:hidden divide-y divide-line">
+                    {filteredItems.map((item) => {
+                      const low = item.stock_quantity <= LOW_STOCK_LIMIT;
+                      return (
+                        <li key={item.id} className="p-4 space-y-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 space-y-1">
+                              <p className="text-sm font-medium text-ink break-words">{item.item_name}</p>
+                              <p className="text-xs text-ink-2">
+                                {item.category}, <span className="tabular-nums">{formatRupiah(Number(item.price_per_unit))}</span> / {item.unit}
+                              </p>
+                              {low && <Badge tone="gold">Stok menipis</Badge>}
+                            </div>
+                            <p className="shrink-0 text-right">
+                              <span className={`block font-display text-3xl font-semibold leading-none tabular-nums ${low ? 'text-gold' : 'text-ink'}`}>
+                                {item.stock_quantity}
+                              </span>
+                              <span className="text-xs text-ink-3">{item.unit}</span>
+                            </p>
                           </div>
-                        </div>
-                      </li>
-                    ))}
+                          <div className="grid grid-cols-3 gap-2" role="group" aria-label={`Ubah stok ${item.item_name}`}>
+                            <button
+                              type="button"
+                              onClick={() => handleStockAdjust(item.id, -1)}
+                              disabled={item.stock_quantity <= 0}
+                              aria-label={`Kurangi stok ${item.item_name} 1`}
+                              className={phoneStepClass}
+                            >
+                              <Minus size={14} aria-hidden />1
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleStockAdjust(item.id, 1)}
+                              aria-label={`Tambah stok ${item.item_name} 1`}
+                              className={phoneStepClass}
+                            >
+                              <Plus size={14} aria-hidden />1
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleStockAdjust(item.id, 10)}
+                              aria-label={`Tambah stok ${item.item_name} 10`}
+                              className={phoneStepClass}
+                            >
+                              <Plus size={14} aria-hidden />10
+                            </button>
+                          </div>
+                          <Button variant="primary" className="w-full" onClick={() => openPurchaseModal(item)}>
+                            <ShoppingCart size={14} aria-hidden />
+                            Catat pembelian
+                          </Button>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </Panel>
               )}
@@ -325,15 +376,15 @@ export default function InventoryPage() {
             transactions.length === 0 ? (
               <Panel><StateMessage kind="empty" title="Belum ada pembelian yang dicatat." /></Panel>
             ) : (
-              <Panel className="overflow-hidden">
+              <Panel className="overflow-hidden md:overflow-visible">
                 <table className="hidden md:table w-full text-left text-sm">
                   <thead>
-                    <tr className="border-b border-line bg-surface-2 text-xs text-ink-3">
-                      <th scope="col" className="py-2.5 px-4 font-medium">Waktu</th>
-                      <th scope="col" className="py-2.5 px-4 font-medium">Pembeli</th>
-                      <th scope="col" className="py-2.5 px-4 font-medium">Barang</th>
-                      <th scope="col" className="py-2.5 px-4 font-medium text-right">Jumlah</th>
-                      <th scope="col" className="py-2.5 px-4 font-medium text-right">Total</th>
+                    <tr className="text-xs text-ink-3">
+                      <th scope="col" className={thClass}>Waktu</th>
+                      <th scope="col" className={thClass}>Pembeli</th>
+                      <th scope="col" className={thClass}>Barang</th>
+                      <th scope="col" className={`${thClass} text-right`}>Jumlah</th>
+                      <th scope="col" className={`${thClass} text-right`}>Total</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line">
@@ -374,10 +425,29 @@ export default function InventoryPage() {
       )}
 
       <Modal
-        open={isPurchaseModalOpen && !!selectedItemForPurchase}
+        open={isPurchaseModalOpen && (!!selectedItemForPurchase || purchasePicksItem)}
         onClose={() => setIsPurchaseModalOpen(false)}
         title="Catat pembelian"
       >
+        {purchasePicksItem && (
+          <Field label="Barang" className={selectedItemForPurchase ? 'mb-4' : ''}>
+            <select
+              value={selectedItemForPurchase?.id ?? ''}
+              onChange={(e) => {
+                setSelectedItemForPurchase(items.find(i => i.id === e.target.value) ?? null);
+                setPurchaseQty('1');
+              }}
+              className={selectClass}
+            >
+              <option value="" disabled>Pilih barang</option>
+              {items.map(i => (
+                <option key={i.id} value={i.id} disabled={i.stock_quantity <= 0}>
+                  {i.item_name} (stok {i.stock_quantity} {i.unit})
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
         {selectedItemForPurchase && (
           <form onSubmit={handleProcessPurchase} className="space-y-4">
             <dl className="rounded-lg bg-surface-2 p-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
@@ -419,6 +489,7 @@ export default function InventoryPage() {
               <Field label="Jumlah">
                 <input
                   type="number"
+                  inputMode="numeric"
                   min="1"
                   max={selectedItemForPurchase.stock_quantity}
                   required
@@ -481,6 +552,7 @@ export default function InventoryPage() {
             <Field label="Stok awal">
               <input
                 type="number"
+                inputMode="numeric"
                 required
                 min={0}
                 placeholder="100"
@@ -492,6 +564,7 @@ export default function InventoryPage() {
             <Field label="Harga per unit (Rp)">
               <input
                 type="number"
+                inputMode="numeric"
                 required
                 min={0}
                 placeholder="45000"

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { ViharaEvent } from '@/types/database';
-import { Button, Panel } from '@/components/ui/kit';
+import { Button, IconButton, Panel, RowActions } from '@/components/ui/kit';
+import ConfirmModal from '@/components/ui/confirm-modal';
 
 interface EventPanitiaTabProps {
   event: ViharaEvent;
@@ -11,9 +12,6 @@ interface EventPanitiaTabProps {
 }
 
 type SubSection = { id: string; role_name: string; pic_name: string };
-
-const iconButton =
-  'inline-flex items-center justify-center w-11 h-11 sm:w-8 sm:h-8 rounded-lg text-ink-2 hover:bg-surface-2 hover:text-ink cursor-pointer';
 
 function NameOrEmpty({ name }: { name?: string }) {
   return name ? <>{name}</> : <span className="font-normal text-ink-3">Belum diisi</span>;
@@ -26,6 +24,7 @@ export const EventPanitiaTab: React.FC<EventPanitiaTabProps> = ({
   onDeleteSubSection
 }) => {
   const org = event.org_structure;
+  const [pendingDelete, setPendingDelete] = useState<{ type: 'sub_acara' | 'sub_umum'; sub: SubSection } | null>(null);
 
   const renderSubList = (type: 'sub_acara' | 'sub_umum', subs: SubSection[] | undefined, emptyText: string) =>
     subs && subs.length > 0 ? (
@@ -36,23 +35,24 @@ export const EventPanitiaTab: React.FC<EventPanitiaTabProps> = ({
               <p className="text-sm font-medium text-ink break-words">{sub.role_name}</p>
               <p className="text-xs text-ink-2 break-words">PJ: {sub.pic_name || <span className="text-ink-3">Belum diisi</span>}</p>
             </div>
-            <div className="flex items-center gap-1 shrink-0">
-              <button
-                type="button"
-                onClick={() => onOpenEditSubModal(type, sub)}
-                className={iconButton}
-                aria-label={`Ubah ${sub.role_name}`}
-              >
+            <div className="flex items-center gap-1 shrink-0 -mr-1.5 md:mr-0">
+              <IconButton label={`Ubah ${sub.role_name}`} onClick={() => onOpenEditSubModal(type, sub)}>
                 <Edit2 size={15} aria-hidden />
-              </button>
-              <button
-                type="button"
-                onClick={() => onDeleteSubSection(type, sub.id)}
-                className={`${iconButton} hover:text-danger hover:bg-danger-soft`}
-                aria-label={`Hapus ${sub.role_name}`}
+              </IconButton>
+              <IconButton
+                label={`Hapus ${sub.role_name}`}
+                tone="danger"
+                className="max-md:hidden"
+                onClick={() => setPendingDelete({ type, sub })}
               >
                 <Trash2 size={15} aria-hidden />
-              </button>
+              </IconButton>
+              <div className="md:hidden">
+                <RowActions
+                  title={sub.role_name}
+                  actions={[{ label: 'Hapus sub-bagian', tone: 'danger', icon: <Trash2 size={16} />, onSelect: () => setPendingDelete({ type, sub }) }]}
+                />
+              </div>
             </div>
           </li>
         ))}
@@ -87,7 +87,7 @@ export const EventPanitiaTab: React.FC<EventPanitiaTabProps> = ({
             <h2 className="text-base font-semibold text-ink">Bidang acara dan ritual</h2>
             <p className="text-sm text-ink-2">PJ acara: <span className="font-medium text-ink"><NameOrEmpty name={org?.pj_acara_name} /></span></p>
           </div>
-          <Button size="sm" onClick={() => onOpenAddSubModal('sub_acara')}>
+          <Button onClick={() => onOpenAddSubModal('sub_acara')} className="w-full sm:w-auto">
             <Plus size={14} aria-hidden />
             Tambah sub-bagian acara
           </Button>
@@ -101,13 +101,23 @@ export const EventPanitiaTab: React.FC<EventPanitiaTabProps> = ({
             <h2 className="text-base font-semibold text-ink">Bidang umum dan logistik</h2>
             <p className="text-sm text-ink-2">PJ umum: <span className="font-medium text-ink"><NameOrEmpty name={org?.pj_umum_name} /></span></p>
           </div>
-          <Button size="sm" onClick={() => onOpenAddSubModal('sub_umum')}>
+          <Button onClick={() => onOpenAddSubModal('sub_umum')} className="w-full sm:w-auto">
             <Plus size={14} aria-hidden />
             Tambah sub-bagian umum
           </Button>
         </div>
         {renderSubList('sub_umum', org?.sub_umum, 'Belum ada sub-bagian umum.')}
       </Panel>
+
+      <ConfirmModal
+        isOpen={pendingDelete !== null}
+        title="Hapus sub-bagian?"
+        message={pendingDelete ? `${pendingDelete.sub.role_name} akan dihapus dari susunan panitia.` : ''}
+        onConfirm={() => {
+          if (pendingDelete) onDeleteSubSection(pendingDelete.type, pendingDelete.sub.id);
+        }}
+        onClose={() => setPendingDelete(null)}
+      />
     </div>
   );
 };

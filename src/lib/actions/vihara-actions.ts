@@ -17,6 +17,7 @@ import {
   INITIAL_CETYAS,
   INITIAL_HANS
 } from '@/lib/mock-data';
+import { PUBLIC_EVENTS_TAG } from '@/lib/public-events';
 import { 
   Profile, 
   ViharaEvent, 
@@ -45,6 +46,24 @@ const committeesStore = [...INITIAL_COMMITTEES];
 const transactionsStore = [...INITIAL_TRANSACTIONS];
 let cetyasStore = [...INITIAL_CETYAS];
 let hansStore = [...INITIAL_HANS];
+
+// The public landing page caches upcoming events; expire it whenever their visibility changes.
+function refreshLandingEvents() {
+  revalidateTag(PUBLIC_EVENTS_TAG, { expire: 0 });
+  revalidatePath('/');
+}
+
+// A new real event starts with an empty committee; demo names belong only to the mock data.
+const emptyOrgStructure = (): EventOrgStructure => ({
+  ketua_name: '',
+  sekretaris_name: '',
+  bendahara_name: '',
+  pj_acara_name: '',
+  pj_umum_name: '',
+  sub_acara: [],
+  sub_umum: [],
+  vip_list: []
+});
 
 function isSupabaseConfigured() {
   return Boolean(
@@ -829,7 +848,7 @@ export async function createEvent(eventData: Omit<ViharaEvent, 'id' | 'created_a
     id: `e_${Date.now()}`,
     is_published: eventData.is_published ?? false,
     created_at: new Date().toISOString(),
-    org_structure: eventData.org_structure || (eventData.is_complex ? INITIAL_ORG_STRUCTURE : undefined)
+    org_structure: eventData.org_structure || (eventData.is_complex ? emptyOrgStructure() : undefined)
   };
 
   if (isSupabaseConfigured()) {
@@ -846,6 +865,7 @@ export async function createEvent(eventData: Omit<ViharaEvent, 'id' | 'created_a
   revalidatePath('/events');
   revalidatePath('/dashboard');
   revalidatePath('/kegiatan');
+  refreshLandingEvents();
   return { success: true, event: newEvent };
 }
 
@@ -869,6 +889,7 @@ export async function togglePublishEvent(eventId: string) {
       revalidatePath(`/events/${eventId}`);
       revalidatePath('/dashboard');
       revalidatePath('/kegiatan');
+      refreshLandingEvents();
       return { success: true, is_published: newStatus };
     } catch (e) {
       console.error('togglePublishEvent exception:', e);
@@ -883,6 +904,7 @@ export async function togglePublishEvent(eventId: string) {
   revalidatePath(`/events/${eventId}`);
   revalidatePath('/dashboard');
   revalidatePath('/kegiatan');
+  refreshLandingEvents();
   return { success: true, is_published: ev?.is_published };
 }
 
@@ -906,6 +928,7 @@ export async function toggleCompleteEvent(eventId: string) {
       revalidatePath(`/events/${eventId}`);
       revalidatePath('/dashboard');
       revalidatePath('/kegiatan');
+      refreshLandingEvents();
       return { success: true, is_completed: newStatus };
     } catch (e) {
       console.error('toggleCompleteEvent exception:', e);
@@ -920,6 +943,7 @@ export async function toggleCompleteEvent(eventId: string) {
   revalidatePath(`/events/${eventId}`);
   revalidatePath('/dashboard');
   revalidatePath('/kegiatan');
+  refreshLandingEvents();
   return { success: true, is_completed: ev?.is_completed };
 }
 
@@ -970,7 +994,7 @@ async function loadOrgStructure(eventId: string): Promise<EventOrgStructure | nu
       const supabase = await createClient();
       const { data, error } = await supabase.from('events').select('org_structure').eq('id', eventId).single();
       if (!error && data) {
-        return (data.org_structure as EventOrgStructure | null) || JSON.parse(JSON.stringify(INITIAL_ORG_STRUCTURE));
+        return (data.org_structure as EventOrgStructure | null) || emptyOrgStructure();
       }
     } catch (e) {
       console.error('loadOrgStructure exception:', e);

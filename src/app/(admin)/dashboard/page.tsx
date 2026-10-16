@@ -2,14 +2,19 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { getDashboardPageBundle } from '@/lib/actions/vihara-actions';
 import { Profile, ViharaEvent, Donation, InventoryItem } from '@/types/database';
-import { Button, PageHeader, Panel, StateMessage, buttonClass } from '@/components/ui/kit';
+import { Button, Fab, PageHeader, Panel, StateMessage, buttonClass } from '@/components/ui/kit';
 
 const LOW_STOCK_LIMIT = 10;
 
 const formatRupiah = (n: number) => `Rp ${n.toLocaleString('id-ID')}`;
+
+// Panel links: a full-width 44px button on phones, a plain text link from sm up.
+const panelLinkClass =
+  'flex sm:inline-flex items-center justify-center w-full sm:w-auto min-h-[44px] sm:min-h-0 rounded-lg border border-line-strong sm:border-0 text-sm font-medium text-brand hover:underline';
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -46,6 +51,7 @@ export default function AdminDashboardPage() {
   const [donations, setDonations] = useState<Donation[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const router = useRouter();
 
   const loadData = useCallback(async () => {
     setLoadState('loading');
@@ -113,12 +119,14 @@ export default function AdminDashboardPage() {
         title="Ringkasan"
         description={`${profiles.length} umat terdata, ${upcomingCount} event mendatang.`}
         actions={
-          <Link href="/events/new" className={buttonClass('primary')}>
+          <Link href="/events/new" className={`${buttonClass('primary')} max-md:hidden`}>
             <Plus size={14} aria-hidden />
             Buat event
           </Link>
         }
       />
+
+      <Fab label="Buat event" icon={<Plus size={18} />} onClick={() => router.push('/events/new')} />
 
       {loadState === 'loading' && (
         <Panel>
@@ -153,7 +161,7 @@ export default function AdminDashboardPage() {
                     <span className="font-display text-4xl font-semibold leading-none tabular-nums text-brand">{nextEvent.registrations_count || 0}</span>{' '}
                     umat terdaftar{nextEvent.quota ? ` dari kuota ${nextEvent.quota}` : ''}
                   </p>
-                  <Link href={`/events/${nextEvent.id}`} className={buttonClass('secondary', 'sm')}>
+                  <Link href={`/events/${nextEvent.id}`} className={`${buttonClass('secondary')} w-full sm:w-auto`}>
                     Buka detail event
                   </Link>
                 </div>
@@ -166,7 +174,7 @@ export default function AdminDashboardPage() {
               <h2 className="text-sm font-semibold text-ink">Dana masuk bulan {monthName}</h2>
               <p className="text-2xl font-semibold tabular-nums text-ink">{formatRupiah(monthDonationTotal)}</p>
               <p className="text-xs text-ink-3">{monthDonations.length} catatan dana bulan ini</p>
-              <Link href="/donations" className="inline-block text-sm font-medium text-brand hover:underline">
+              <Link href="/donations" className={panelLinkClass}>
                 Lihat semua dana
               </Link>
             </Panel>
@@ -176,7 +184,7 @@ export default function AdminDashboardPage() {
             <Panel className="p-5 space-y-3">
               <div className="flex items-baseline justify-between gap-3">
                 <h2 className="text-sm font-semibold text-ink">Stok menipis</h2>
-                <Link href="/inventory" className="text-sm font-medium text-brand hover:underline">Buka inventaris</Link>
+                <Link href="/inventory" className="max-sm:hidden text-sm font-medium text-brand hover:underline">Buka inventaris</Link>
               </div>
               {lowStockItems.length > 0 ? (
                 <>
@@ -195,6 +203,7 @@ export default function AdminDashboardPage() {
               ) : (
                 <p className="text-sm text-ink-3">Semua stok di atas {LOW_STOCK_LIMIT}.</p>
               )}
+              <Link href="/inventory" className="sm:hidden flex items-center justify-center w-full min-h-[44px] rounded-lg border border-line-strong text-sm font-medium text-brand">Buka inventaris</Link>
             </Panel>
 
             <Panel className="p-5 space-y-3">

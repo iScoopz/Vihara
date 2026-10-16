@@ -245,7 +245,7 @@ export const EventModals: React.FC<EventModalsProps> = ({
           </Field>
 
           <ModalActions>
-            <Button onClick={onCloseProposalRundownModal}>Batal</Button>
+            <Button variant="neutral" onClick={onCloseProposalRundownModal}>Batal</Button>
             <Button type="submit" variant="primary">Simpan acara</Button>
           </ModalActions>
         </form>
@@ -316,7 +316,7 @@ export const EventModals: React.FC<EventModalsProps> = ({
           </Field>
 
           <ModalActions>
-            <Button onClick={onCloseSkenarioKerjaModal}>Batal</Button>
+            <Button variant="neutral" onClick={onCloseSkenarioKerjaModal}>Batal</Button>
             <Button type="submit" variant="primary">Simpan jadwal</Button>
           </ModalActions>
         </form>
@@ -351,7 +351,7 @@ export const EventModals: React.FC<EventModalsProps> = ({
           </Field>
 
           <ModalActions>
-            <Button onClick={onCloseAddSubModal}>Batal</Button>
+            <Button variant="neutral" onClick={onCloseAddSubModal}>Batal</Button>
             <Button type="submit" variant="primary">Simpan seksi</Button>
           </ModalActions>
         </form>
@@ -368,7 +368,7 @@ export const EventModals: React.FC<EventModalsProps> = ({
           </Field>
 
           <ModalActions>
-            <Button onClick={onCloseEditSubModal}>Batal</Button>
+            <Button variant="neutral" onClick={onCloseEditSubModal}>Batal</Button>
             <Button type="submit" variant="primary">Simpan perubahan</Button>
           </ModalActions>
         </form>
@@ -391,7 +391,7 @@ export const EventModals: React.FC<EventModalsProps> = ({
           )}
 
           <ModalActions>
-            <Button onClick={onCloseRegModal}>Batal</Button>
+            <Button variant="neutral" onClick={onCloseRegModal}>Batal</Button>
             <Button type="submit" variant="primary">Daftarkan umat</Button>
           </ModalActions>
         </form>
@@ -435,7 +435,7 @@ export const EventModals: React.FC<EventModalsProps> = ({
           </Field>
 
           <ModalActions>
-            <Button onClick={onCloseBudgetModal}>Batal</Button>
+            <Button variant="neutral" onClick={onCloseBudgetModal}>Batal</Button>
             <Button type="submit" variant="primary">Simpan item</Button>
           </ModalActions>
         </form>

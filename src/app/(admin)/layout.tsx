@@ -19,6 +19,10 @@ import {
 import ThemeToggle from '@/components/ui/theme-toggle';
 import { buttonClass } from '@/components/ui/kit';
 
+// The four destinations pengurus open most often get a slot in the phone bottom bar.
+const BOTTOM_NAV = ['/dashboard', '/umat', '/events', '/calendar'];
+const BOTTOM_LABELS: Record<string, string> = { '/dashboard': 'Beranda', '/umat': 'Umat', '/events': 'Event', '/calendar': 'Kalender' };
+
 const ADMIN_NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/umat', label: 'Data Umat', icon: Users },
@@ -193,21 +197,55 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
 
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Phones get a top bar; on desktop the sidebar carries brand and controls. */}
-        <header className="md:hidden h-14 bg-nav px-2 flex items-center gap-1 sticky top-0 z-40">
-          <button
-            onClick={() => setIsMobileMenuOpen(true)}
-            aria-label="Buka menu"
-            className="w-11 h-11 inline-flex items-center justify-center text-nav-ink hover:bg-nav-active rounded-lg cursor-pointer"
-          >
-            <Menu size={20} aria-hidden />
-          </button>
+        {/* Phones get a slim top bar with the brand; navigation lives in the bottom bar. */}
+        <header className="md:hidden h-14 bg-nav px-4 flex items-center sticky top-0 z-40">
           {brandBlock}
         </header>
 
-        <main className="flex-1 px-4 py-6 sm:px-6 md:px-10 md:py-9">
+        <main className="flex-1 px-4 pt-6 pb-[calc(160px+env(safe-area-inset-bottom))] sm:px-6 md:px-10 md:py-9">
           {children}
         </main>
+
+        <nav
+          aria-label="Menu utama"
+          className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-surface border-t border-line shadow-[0_-6px_20px_-12px_rgba(30,18,50,0.35)] pb-[env(safe-area-inset-bottom)]"
+        >
+          <ul className="grid grid-cols-5">
+            {ADMIN_NAV.filter(item => BOTTOM_NAV.includes(item.href)).map(item => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`flex flex-col items-center justify-center gap-0.5 h-16 text-[11px] ${isActive ? 'text-brand-ink font-semibold' : 'text-ink-3'}`}
+                  >
+                    <span className={`flex items-center justify-center w-12 h-7 rounded-full ${isActive ? 'bg-brand-soft' : ''}`}>
+                      <Icon size={19} aria-hidden />
+                    </span>
+                    {BOTTOM_LABELS[item.href]}
+                  </Link>
+                </li>
+              );
+            })}
+            <li>
+              <button
+                type="button"
+                onClick={() => setIsMobileMenuOpen(true)}
+                aria-expanded={isMobileMenuOpen}
+                className={`w-full flex flex-col items-center justify-center gap-0.5 h-16 text-[11px] cursor-pointer ${
+                  ADMIN_NAV.some(item => !BOTTOM_NAV.includes(item.href) && pathname.startsWith(item.href)) ? 'text-brand-ink font-semibold' : 'text-ink-3'
+                }`}
+              >
+                <span className="flex items-center justify-center w-12 h-7 rounded-full">
+                  <Menu size={19} aria-hidden />
+                </span>
+                Lainnya
+              </button>
+            </li>
+          </ul>
+        </nav>
       </div>
     </div>
   );

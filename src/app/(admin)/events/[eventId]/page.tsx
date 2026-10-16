@@ -41,7 +41,7 @@ import { EventModals } from '@/components/events/EventModals';
 import { EventPricingModal } from '@/components/events/EventPricingModal';
 
 import { useToast } from '@/components/ui/ToastNotification';
-import { Badge, Button, Panel, StateMessage } from '@/components/ui/kit';
+import { Badge, Button, Panel, RowActions, StateMessage } from '@/components/ui/kit';
 
 type TabId = 'overview' | 'bidang' | 'rundown' | 'skenario' | 'rab' | 'registrasi' | 'belum' | 'laporan';
 
@@ -571,7 +571,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
         ]
       : []),
     { id: 'registrasi', label: 'Peserta', count: registrations.length },
-    { id: 'belum', label: 'Belum Daftar', count: unregisteredCount },
+    { id: 'belum', label: 'Belum daftar', count: unregisteredCount },
     ...(isComplex ? [{ id: 'rab' as const, label: 'Keuangan' }] : []),
     { id: 'laporan', label: 'Dokumen' }
   ];
@@ -613,11 +613,28 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Phones: one wide primary action, the rest in the sheet. */}
+          <div className="flex md:hidden items-center gap-2">
+            <Button variant="primary" onClick={handleTogglePublish} className="flex-1">
+              {isPublished ? 'Kembalikan ke draf' : 'Terbitkan'}
+            </Button>
+            <RowActions
+              title={event.title}
+              label="Aksi event lainnya"
+              actions={[
+                { label: isCompleted ? 'Buka kembali' : 'Tandai selesai', onSelect: handleToggleComplete },
+                { label: 'Cetak peserta', icon: <Printer size={16} />, onSelect: () => openPdf('peserta') },
+                { label: 'Cetak proposal', icon: <Printer size={16} />, onSelect: () => openPdf('proposal'), hidden: !isComplex },
+                { label: 'Cetak LPJ', icon: <Printer size={16} />, onSelect: () => openPdf('lpj'), hidden: !isComplex }
+              ]}
+            />
+          </div>
+
+          <div className="hidden md:flex flex-wrap items-center gap-2">
             <Button variant="primary" onClick={handleTogglePublish}>
               {isPublished ? 'Kembalikan ke draf' : 'Terbitkan'}
             </Button>
-            <Button onClick={handleToggleComplete}>
+            <Button variant={isCompleted ? 'secondary' : 'gold'} onClick={handleToggleComplete}>
               {isCompleted ? 'Buka kembali' : 'Tandai selesai'}
             </Button>
             <div role="group" aria-label="Cetak dokumen" className="flex flex-wrap items-center gap-2">

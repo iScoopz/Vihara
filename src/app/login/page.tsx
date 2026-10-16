@@ -297,7 +297,7 @@ export default function LoginPage() {
           )}
 
           <ModalActions>
-            <Button onClick={closeForgotModal}>Batal</Button>
+            <Button variant="neutral" onClick={closeForgotModal}>Batal</Button>
             <Button type="submit" variant="primary" disabled={resetLoading}>
               {resetLoading ? 'Mengirim...' : 'Kirim tautan'}
             </Button>
