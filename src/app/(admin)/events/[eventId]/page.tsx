@@ -14,6 +14,7 @@ import {
   updateGroupedBudget,
   addSubSectionToOrg,
   updateSubSectionInOrg,
+  updateCoreCommittee,
   deleteSubSectionFromOrg,
   addProposalRundown,
   updateProposalRundown,
@@ -26,7 +27,7 @@ import {
   updateRegistrationExtraFees,
   toggleCompleteEvent
 } from '@/lib/actions/vihara-actions';
-import { ViharaEvent, Profile, EventRegistration, EventProposalRundown, EventSkenarioKerja } from '@/types/database';
+import { ViharaEvent, Profile, EventRegistration, EventProposalRundown, EventSkenarioKerja, CoreCommittee } from '@/types/database';
 
 import { EventOverviewTab } from '@/components/events/EventOverviewTab';
 import { EventPanitiaTab } from '@/components/events/EventPanitiaTab';
@@ -319,6 +320,19 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
     setSubRoleName('');
     setSubPicName('');
     loadData();
+  };
+
+  const handleSaveCore = async (core: CoreCommittee) => {
+    if (!event) return false;
+    const res = await updateCoreCommittee(event.id, core);
+    if (res.error || !res.org_structure) {
+      showToast(res.error || 'Panitia inti belum tersimpan.', 'error', 'Gagal menyimpan');
+      return false;
+    }
+    const nextOrg = res.org_structure;
+    setEvent(prev => (prev ? { ...prev, org_structure: nextOrg } : prev));
+    showToast('Susunan panitia inti diperbarui.', 'success', 'Tersimpan');
+    return true;
   };
 
   const handleDeleteSubSection = async (type: 'sub_acara' | 'sub_umum', subId: string) => {
@@ -693,6 +707,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
       {activeTab === 'bidang' && (
         <EventPanitiaTab 
           event={event}
+          profiles={profiles}
+          onSaveCore={handleSaveCore}
           onOpenAddSubModal={openAddSubModal}
           onOpenEditSubModal={openEditSubModal}
           onDeleteSubSection={handleDeleteSubSection}

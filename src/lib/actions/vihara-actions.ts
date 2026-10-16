@@ -33,7 +33,8 @@ import {
   HanProfile,
   EventProposalRundown,
   EventSkenarioKerja,
-  EventExtraFee
+  EventExtraFee,
+  CoreCommittee
 } from '@/types/database';
 
 let profilesStore = [...INITIAL_PROFILES];
@@ -1024,6 +1025,26 @@ async function saveOrgStructure(eventId: string, org: EventOrgStructure): Promis
 
   revalidatePath(`/events/${eventId}`);
   return { success: true };
+}
+
+// Updates the core committee and guests while keeping the sub-sections as they are.
+export async function updateCoreCommittee(eventId: string, core: CoreCommittee): Promise<{ error?: string; org_structure?: EventOrgStructure }> {
+  const org = await loadOrgStructure(eventId);
+  if (!org) return { error: 'Event tidak ditemukan' };
+
+  const clean = (v: string) => v.trim();
+  const next: EventOrgStructure = {
+    ...org,
+    ketua_name: clean(core.ketua_name),
+    sekretaris_name: clean(core.sekretaris_name),
+    bendahara_name: clean(core.bendahara_name),
+    pj_acara_name: clean(core.pj_acara_name),
+    pj_umum_name: clean(core.pj_umum_name),
+    vip_list: core.vip_list.map(clean).filter(Boolean)
+  };
+
+  const res = await saveOrgStructure(eventId, next);
+  return res.error ? { error: res.error } : { org_structure: next };
 }
 
 export async function addSubSectionToOrg(eventId: string, sectionType: 'sub_acara' | 'sub_umum', roleName: string, picName: string) {

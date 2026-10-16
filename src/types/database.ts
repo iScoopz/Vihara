@@ -58,6 +58,9 @@ export interface EventOrgStructure {
   vip_list: string[];
 }
 
+// Fields of the committee edited together in the 'Panitia inti' form.
+export type CoreCommittee = Pick<EventOrgStructure, 'ketua_name' | 'sekretaris_name' | 'bendahara_name' | 'pj_acara_name' | 'pj_umum_name' | 'vip_list'>;
+
 export interface EventProposalRundown {
   id: string;
   event_id: string;
